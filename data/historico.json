@@ -1,0 +1,402 @@
+[
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5727,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 6662,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5017,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 6009,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4172,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4756,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5925,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 7147,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4375,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4976,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4953,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5820,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4062,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4617,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4407,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5201,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4554,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5327,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4387,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5090,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepeñas",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4366,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepeñas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5132,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4263,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4956,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-08",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Primaria de Toledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 6686,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5727,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 6662,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5017,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 6009,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4172,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4756,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5925,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 7147,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4375,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4976,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4953,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5820,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4062,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4617,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4407,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5201,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4554,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5327,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4387,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5090,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepeñas",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4366,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepeñas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 5132,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4263,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 4956,
+    "punto_minimo_admitido": 0.0
+  },
+  {
+    "fecha": "2026-07-09",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Primaria de Toledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 6686,
+    "punto_minimo_admitido": 0.0
+  }
+]
