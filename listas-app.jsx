@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { Search, ChevronLeft, Bell, BellRing, Lock, MapPin, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall } from "lucide-react";
+import { useDatos } from "./src/datos.jsx";
 
 // ---------------------------------------------------------------
 // TOKENS — "Expediente oficial": papel, tinta marina, sello dorado
@@ -90,10 +91,8 @@ const GRUPOS_SANIDAD = [
 
 const grupoDeCategoria = (categoria) => GRUPOS_SANIDAD.find((g) => g.categorias.includes(categoria));
 
-// Gerencias del SESCAM (bolsa organizada por categoría + gerencia + ámbito).
-// OJO: lista provisional — verificar nombres exactos contra data/latest.json
-// real antes de publicar; deben salir del scraper, no de esta constante.
-const GERENCIAS = [
+// Gerencias de respaldo para grupos sin scraper (datos de ejemplo).
+const GERENCIAS_EJEMPLO = [
   "Albacete",
   "Alcázar de San Juan",
   "Almansa",
@@ -101,11 +100,11 @@ const GERENCIAS = [
   "Cuenca",
   "Guadalajara",
   "Hellín",
-  "Manzanares",
   "Puertollano",
   "Talavera de la Reina",
   "Toledo",
   "Tomelloso",
+  "Valdepeñas",
   "Villarrobledo",
 ];
 
@@ -120,7 +119,7 @@ const APELLIDOS = ["García", "Martínez", "López", "Sánchez", "Pérez", "Góm
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";
 const TIPOS_CONTRATO = ["Larga TC.", "Larga TP.", "Corta TC.", "Corta TP.", "C.U. TC.", "C.U. TP."];
 
-function generarListadoCompleto(categoria, gerencia = "") {
+function generarListadoCompletoEjemplo(categoria, gerencia = "") {
   const seed = (categoria + "·" + gerencia).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const total = 2100 + (seed % 900);
   const filas = [];
@@ -143,24 +142,19 @@ function generarListadoCompleto(categoria, gerencia = "") {
 
 const TODAS_GERENCIAS = "Todas las gerencias";
 
-// busca coincidencias por apellido(s) sobre el listado publicado — sin pedir DNI en ningún momento
-function buscarPorApellido(categoria, gerencia, apellidos) {
-  const filas = generarListadoCompleto(categoria, gerencia);
+// busca coincidencias por apellido(s) — versión de ejemplo (grupos sin scraper)
+function buscarPorApellidoEjemplo(categoria, gerencia, apellidos) {
+  const filas = generarListadoCompletoEjemplo(categoria, gerencia);
   const q = apellidos.trim().toLowerCase();
   if (!q) return [];
   return filas.filter((f) => `${f.ap1} ${f.ap2}`.toLowerCase().includes(q));
 }
 
-// busca en una gerencia o en las 13, y agrupa por persona: la misma persona
-// puede estar apuntada en varias gerencias con posiciones distintas, y debe
-// verse como UNA persona con varias tarjetas, no como varias personas.
-// (En el prototipo agrupamos por nombre completo; con datos reales el DNI
-// parcial permitiría desambiguar homónimos entre gerencias.)
-function buscarPersonas(categoria, gerencia, apellidos) {
-  const gerencias = gerencia === TODAS_GERENCIAS ? GERENCIAS : [gerencia];
+function buscarPersonasEjemplo(categoria, gerencia, apellidos, gerencias) {
+  const gs = gerencia === TODAS_GERENCIAS ? gerencias : [gerencia];
   const porPersona = new Map();
-  gerencias.forEach((g) => {
-    buscarPorApellido(categoria, g, apellidos).forEach((f) => {
+  gs.forEach((g) => {
+    buscarPorApellidoEjemplo(categoria, g, apellidos).forEach((f) => {
       if (!porPersona.has(f.nombreCompleto)) {
         porPersona.set(f.nombreCompleto, { nombre: f.nombre, ap1: f.ap1, ap2: f.ap2, nombreCompleto: f.nombreCompleto, dniParcial: f.dniParcial, apariciones: [] });
       }
@@ -183,7 +177,7 @@ function filaAResultado(fila) {
 // no inventar una pendiente con un único punto.
 const MIN_HISTORICO_TENDENCIA = 3;
 
-function historialCorte(categoria, gerencia = "") {
+function historialCorteEjemplo(categoria, gerencia = "") {
   const seed = (categoria + "·" + gerencia).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const fechas = ["oct 2024", "feb 2025", "jun 2025", "oct 2025", "feb 2026", "jun 2026"];
   const base = (60 + (seed % 30)) / 10 + 2.8;
@@ -213,13 +207,12 @@ function zonaRiesgo(puntosCandidato, historial) {
   return { nivel: "bajo", convocatorias, velocidad };
 }
 
-function estadoActualizacion(categoria) {
+function estadoActualizacionEjemplo(categoria) {
   const grupo = grupoDeCategoria(categoria);
   if (grupo && !grupo.activo) {
     return { tipo: "sin_activar", texto: `El scraping del grupo ${grupo.nombre} todavía no está activado. Los datos mostrados son de ejemplo.` };
   }
-  if (categoria === "Fisioterapeuta") return { tipo: "desactualizado", texto: "El SESCAM no ha actualizado este listado desde hace 11 días. Puede que ya no refleje la última convocatoria." };
-  return { tipo: "ok", texto: "Actualizado hace 6 horas." };
+  return { tipo: "ok", texto: "Datos de ejemplo del prototipo." };
 }
 
 // ---------------------------------------------------------------
@@ -264,7 +257,11 @@ function Subrayado({ width = 168, color, style }) {
 }
 
 function AvisoActualizacion({ categoria }) {
-  const e = estadoActualizacion(categoria);
+  const datos = useDatos();
+  const grupo = grupoDeCategoria(categoria);
+  const e = grupo?.activo && datos.tieneDatosReales(categoria)
+    ? datos.estadoActualizacion(categoria, true)
+    : estadoActualizacionEjemplo(categoria);
   if (e.tipo === "ok") {
     return (
       <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.inkSoft, marginTop: 8, paddingLeft: 2 }}>
@@ -276,7 +273,7 @@ function AvisoActualizacion({ categoria }) {
     <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px", marginTop: 8 }}>
       <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
       <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-        <strong>{e.tipo === "sin_activar" ? "Sin scraping activo. " : "Listado desactualizado. "}</strong>
+        <strong>{e.tipo === "sin_activar" ? "Sin scraping activo. " : e.tipo === "sin_datos" ? "Sin datos scrapeados. " : "Listado desactualizado. "}</strong>
         {e.texto}
       </p>
     </div>
@@ -418,8 +415,10 @@ function PantallaSector({ ccaa, onSelect, atras }) {
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
 function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
+  const datos = useDatos();
   const [grupoId, setGrupoId] = useState(GRUPOS_SANIDAD[0].id);
   const grupo = GRUPOS_SANIDAD.find((g) => g.id === grupoId);
+  const gerencias = grupo?.activo && datos.GERENCIAS.length ? datos.GERENCIAS : GERENCIAS_EJEMPLO;
   const [categoria, setCategoria] = useState(GRUPOS_SANIDAD[0].categorias[0]);
   const [gerencia, setGerencia] = useState(TODAS_GERENCIAS);
   const [apellidos, setApellidos] = useState("");
@@ -507,7 +506,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           >
-            {[TODAS_GERENCIAS, ...GERENCIAS].map((g) => (
+            {[TODAS_GERENCIAS, ...gerencias].map((g) => (
               <option key={g}>{g}</option>
             ))}
           </select>
@@ -548,7 +547,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
         )}
 
         <button
-          onClick={() => onVerListado(categoria, gerencia === TODAS_GERENCIAS ? GERENCIAS[0] : gerencia)}
+          onClick={() => onVerListado(categoria, gerencia === TODAS_GERENCIAS ? gerencias[0] : gerencia)}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
           style={{ background: "transparent", color: C.navy, padding: "12px", fontFamily: FONT_BODY, fontSize: 13.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 16px 5px 16px" }}
         >
@@ -602,9 +601,19 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
 function PantallaListado({ categoria, gerencia, atras }) {
+  const datos = useDatos();
+  const grupo = grupoDeCategoria(categoria);
   const [filtro, setFiltro] = useState("");
-  const filas = useMemo(() => generarListadoCompleto(categoria, gerencia), [categoria, gerencia]);
+  const LIMITE_FILAS = 100;
+  const filas = useMemo(() => {
+    if (grupo?.activo && datos.tieneDatosReales(categoria)) {
+      return datos.obtenerListadoCompleto(categoria, gerencia);
+    }
+    return generarListadoCompletoEjemplo(categoria, gerencia);
+  }, [datos, categoria, gerencia, grupo]);
   const visibles = filtro ? filas.filter((f) => f.nombreCompleto.toLowerCase().includes(filtro.toLowerCase())) : filas;
+  const mostradas = visibles.slice(0, LIMITE_FILAS);
+  const esReal = grupo?.activo && datos.tieneDatosReales(categoria);
 
   return (
     <div>
@@ -629,19 +638,24 @@ function PantallaListado({ categoria, gerencia, atras }) {
             <span style={{ flex: 1, fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>NOMBRE Y APELLIDOS</span>
             <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
           </div>
-          {visibles.map((f) => (
-            <div key={f.pos} className="flex items-center" style={{ padding: "10px 14px", borderTop: `1px solid ${C.line}`, background: C.card }}>
+          {mostradas.map((f, idx) => (
+            <div key={`${f.pos}-${f.nombreCompleto}-${f.ambito || ""}-${idx}`} className="flex items-center" style={{ padding: "10px 14px", borderTop: `1px solid ${C.line}`, background: C.card }}>
               <span style={{ flex: "0 0 40px", fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 14, color: C.navy }}>{f.pos}</span>
-              <span style={{ flex: 1, fontFamily: FONT_BODY, fontSize: 13, color: C.ink }}>{f.nombreCompleto}</span>
+              <span style={{ flex: 1, fontFamily: FONT_BODY, fontSize: 13, color: C.ink }}>
+                {f.nombreCompleto}
+                {f.ambito && <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: C.inkSoft }}> · {f.ambito}</span>}
+              </span>
               <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: C.inkSoft }}>{f.puntos.toFixed(2)}</span>
             </div>
           ))}
-          {visibles.length === 0 && (
+          {mostradas.length === 0 && (
             <p style={{ padding: 16, fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, background: C.card }}>Sin coincidencias con ese nombre.</p>
           )}
         </div>
         <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "8px 0 16px" }}>
-          Vista de ejemplo con 60 filas. En producción se mostrarían las miles de personas reales de la bolsa, con scroll o paginación.
+          {esReal
+            ? `Mostrando ${mostradas.length} de ${visibles.length} filas${visibles.length > LIMITE_FILAS ? ` (límite ${LIMITE_FILAS}; usa el buscador para acotar)` : ""}.`
+            : "Vista de ejemplo con 60 filas. En producción se mostrarían las miles de personas reales de la bolsa, con scroll o paginación."}
         </p>
       </div>
     </div>
@@ -654,8 +668,13 @@ function PantallaListado({ categoria, gerencia, atras }) {
 
 // Bloque de detalle de UNA gerencia (posición, puntos, contratos, corte y avisos)
 function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+  const datos = useDatos();
+  const grupo = grupoDeCategoria(categoria);
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const percentil = Math.round((1 - r.posicion / r.total) * 100);
+  const historial = grupo?.activo && datos.tieneDatosReales(categoria)
+    ? datos.historialCorte(categoria, gerencia)
+    : historialCorteEjemplo(categoria, gerencia);
 
   return (
     <div>
@@ -741,7 +760,16 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
       )}
 
       {(() => {
-        const historial = historialCorte(categoria, gerencia);
+        if (historial.length === 0) {
+          return (
+            <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "8px 18px 8px 18px", padding: 16, marginTop: 12 }}>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Distancia al punto de corte admitido</p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 8, lineHeight: 1.45 }}>
+                Aún no hay histórico guardado para esta categoría y gerencia. Se irá acumulando con cada actualización del scraper.
+              </p>
+            </div>
+          );
+        }
         const hayTendencia = historial.length >= MIN_HISTORICO_TENDENCIA;
         const ult = historial[historial.length - 1];
         const diff = (r.puntos - ult.puntos).toFixed(2);
@@ -961,6 +989,7 @@ function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuarda
 // PANTALLA — Mis seguimientos (varias listas a la vez)
 // ---------------------------------------------------------------
 function PantallaSeguimientos({ seguimientos, atras, onAbrir }) {
+  const datos = useDatos();
   return (
     <div>
       <Barra titulo="Mis seguimientos" atras={atras} />
@@ -973,7 +1002,10 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir }) {
         <div className="flex flex-col gap-3 mt-2">
           {seguimientos.map((s, i) => {
             const r = s.candidato;
-            const e = estadoActualizacion(s.categoria);
+            const grupo = grupoDeCategoria(s.categoria);
+            const e = grupo?.activo && datos.tieneDatosReales(s.categoria)
+              ? datos.estadoActualizacion(s.categoria, true)
+              : estadoActualizacionEjemplo(s.categoria);
             return (
               <button
                 key={i}
@@ -1052,6 +1084,8 @@ function PantallaInfoLlamamientos({ atras }) {
 // APP RAÍZ
 // ---------------------------------------------------------------
 export default function ListasApp() {
+  const datos = useDatos();
+  const gerenciasActivas = datos.GERENCIAS.length ? datos.GERENCIAS : GERENCIAS_EJEMPLO;
   const [paso, setPaso] = useState("ccaa"); // ccaa | sector | buscar | confirmar | resultado | listado | seguimientos | info-llamamientos
   const [ccaa, setCcaa] = useState(null);
   const [sector, setSector] = useState(null);
@@ -1061,12 +1095,15 @@ export default function ListasApp() {
   const [seguimientos, setSeguimientos] = useState([]);
   const [recientes, setRecientes] = useState([]);
   const [listadoCategoria, setListadoCategoria] = useState(GRUPOS_SANIDAD[0].categorias[0]);
-  const [listadoGerencia, setListadoGerencia] = useState(GERENCIAS[0]);
+  const [listadoGerencia, setListadoGerencia] = useState(gerenciasActivas[0]);
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
 
   // devuelve cuántas personas hubo, para que PantallaBuscar sepa si mostrar "sin resultados"
   const iniciarBusqueda = (categoria, gerencia, apellidos) => {
-    const personas = buscarPersonas(categoria, gerencia, apellidos);
+    const grupo = grupoDeCategoria(categoria);
+    const personas = grupo?.activo && datos.tieneDatosReales(categoria)
+      ? datos.buscarPersonas(categoria, gerencia, apellidos, TODAS_GERENCIAS, gerenciasActivas)
+      : buscarPersonasEjemplo(categoria, gerencia, apellidos, gerenciasActivas);
     setCategoriaActual(categoria);
     if (apellidos.trim()) {
       setRecientes((prev) => {
