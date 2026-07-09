@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { Search, ChevronLeft, Bell, BellRing, Lock, MapPin, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall } from "lucide-react";
-import { useDatos } from "./src/datos.jsx";
+import { useDatos, ambitoLegible } from "./src/datos.jsx";
 
 // ---------------------------------------------------------------
 // TOKENS — "Expediente oficial": papel, tinta marina, sello dorado
@@ -141,6 +141,11 @@ function generarListadoCompletoEjemplo(categoria, gerencia = "") {
 }
 
 const TODAS_GERENCIAS = "Todas las gerencias";
+
+function etiquetaLista(categoria, gerencia, ambito) {
+  const base = `${categoria} · ${gerencia}`;
+  return ambito ? `${base} · ${ambitoLegible(ambito)}` : base;
+}
 
 // busca coincidencias por apellido(s) — versión de ejemplo (grupos sin scraper)
 function buscarPorApellidoEjemplo(categoria, gerencia, apellidos) {
@@ -511,7 +516,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
             ))}
           </select>
           <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 6 }}>
-            No hace falta elegir: buscamos en las 13 gerencias y te enseñamos una tarjeta por cada lista en la que aparezcas. Filtra solo si quieres una concreta.
+            No hace falta elegir: buscamos en las 13 gerencias (y en Atención Primaria y Especializada) y te enseñamos una tarjeta por cada lista en la que aparezcas. Filtra solo si quieres una gerencia concreta.
           </p>
         </div>
 
@@ -583,7 +588,7 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
             <div>
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>{c.nombreCompleto}</p>
               <p style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: C.inkSoft }}>
-                En {c.apariciones.length} gerencia{c.apariciones.length > 1 ? "s" : ""} · mejor posición #{Math.min(...c.apariciones.map((a) => a.posicion))} · DNI {c.dniParcial}
+                En {c.apariciones.length} lista{c.apariciones.length > 1 ? "s" : ""} · mejor posición #{Math.min(...c.apariciones.map((a) => a.posicion))} · DNI {c.dniParcial}
               </p>
             </div>
           </button>
@@ -600,24 +605,24 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
 // ---------------------------------------------------------------
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
-function PantallaListado({ categoria, gerencia, atras }) {
+function PantallaListado({ categoria, gerencia, ambito, atras }) {
   const datos = useDatos();
   const grupo = grupoDeCategoria(categoria);
   const [filtro, setFiltro] = useState("");
   const LIMITE_FILAS = 100;
   const filas = useMemo(() => {
     if (grupo?.activo && datos.tieneDatosReales(categoria)) {
-      return datos.obtenerListadoCompleto(categoria, gerencia);
+      return datos.obtenerListadoCompleto(categoria, gerencia, ambito || "");
     }
     return generarListadoCompletoEjemplo(categoria, gerencia);
-  }, [datos, categoria, gerencia, grupo]);
+  }, [datos, categoria, gerencia, ambito, grupo]);
   const visibles = filtro ? filas.filter((f) => f.nombreCompleto.toLowerCase().includes(filtro.toLowerCase())) : filas;
   const mostradas = visibles.slice(0, LIMITE_FILAS);
   const esReal = grupo?.activo && datos.tieneDatosReales(categoria);
 
   return (
     <div>
-      <Barra titulo={`${categoria} · ${gerencia}`} atras={atras} />
+      <Barra titulo={etiquetaLista(categoria, gerencia, ambito)} atras={atras} />
       <div className="px-5">
         <AvisoActualizacion categoria={categoria} />
 
@@ -666,14 +671,14 @@ function PantallaListado({ categoria, gerencia, atras }) {
 // PANTALLA 4 — resultado: una tarjeta por gerencia, deslizables
 // ---------------------------------------------------------------
 
-// Bloque de detalle de UNA gerencia (posición, puntos, contratos, corte y avisos)
-function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+// Bloque de detalle de UNA lista (gerencia + ámbito): posición, puntos, contratos, corte y avisos
+function TarjetaGerencia({ categoria, gerencia, ambito, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const datos = useDatos();
   const grupo = grupoDeCategoria(categoria);
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const percentil = Math.round((1 - r.posicion / r.total) * 100);
   const historial = grupo?.activo && datos.tieneDatosReales(categoria)
-    ? datos.historialCorte(categoria, gerencia)
+    ? datos.historialCorte(categoria, gerencia, ambito || r.ambito || "")
     : historialCorteEjemplo(categoria, gerencia);
 
   return (
@@ -706,7 +711,7 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
           }}
         />
 
-        <Sello>{categoria} · {gerencia}</Sello>
+        <Sello>{etiquetaLista(categoria, gerencia, ambito || r.ambito)}</Sello>
         <p
           style={{
             fontFamily: FONT_DISPLAY, fontSize: 60, fontWeight: 700, color: "#fff",
@@ -765,7 +770,7 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
             <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "8px 18px 8px 18px", padding: 16, marginTop: 12 }}>
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Distancia al punto de corte admitido</p>
               <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 8, lineHeight: 1.45 }}>
-                Aún no hay histórico guardado para esta categoría y gerencia. Se irá acumulando con cada actualización del scraper.
+                Aún no hay histórico guardado para esta lista ({etiquetaLista(categoria, gerencia, ambito || r.ambito)}). Se irá acumulando con cada actualización del scraper.
               </p>
             </div>
           );
@@ -845,7 +850,7 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-4"
           style={{ background: C.gold, color: "#fff", padding: "14px", fontFamily: FONT_BODY, fontSize: 14, borderRadius: "16px 5px 16px 5px" }}
         >
-          <Bell size={16} /> Seguir esta gerencia y activar avisos
+          <Bell size={16} /> Seguir esta lista y activar avisos
         </button>
       )}
 
@@ -856,7 +861,7 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
             <div>
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>Permitir notificaciones</p>
               <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 2 }}>
-                Te avisaremos cuando cambie tu posición en {categoria} · {gerencia}. <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial del SESCAM</strong> — esa te la hacen ellos directamente, y tienes horas contadas para responder.
+                Te avisaremos cuando cambie tu posición en {etiquetaLista(categoria, gerencia, ambito || r.ambito)}. <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial del SESCAM</strong> — esa te la hacen ellos directamente, y tienes horas contadas para responder.
               </p>
             </div>
           </div>
@@ -882,7 +887,7 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
       {notifEstado === "activo" && (
         <div className="flex items-center gap-2 justify-center mt-4" style={{ background: C.paperDeep, borderRadius: "16px 5px 16px 5px", padding: "13px" }}>
           <BellRing size={16} color={C.ok} />
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>Siguiendo {gerencia} — te avisaremos</p>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>Siguiendo {etiquetaLista(categoria, gerencia, ambito || r.ambito)} — te avisaremos</p>
         </div>
       )}
 
@@ -906,7 +911,7 @@ function TarjetaGerencia({ categoria, gerencia, r, guardado, onGuardar, onVerLis
   );
 }
 
-// Contenedor: una tarjeta por gerencia donde aparece la persona, con
+// Contenedor: una tarjeta por lista (gerencia + ámbito) donde aparece la persona, con
 // scroll horizontal + snap (deslizar en móvil) y puntos indicadores.
 function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const apariciones = candidato.apariciones;
@@ -930,12 +935,12 @@ function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuarda
         </p>
         {varias && (
           <p style={{ fontFamily: FONT_BODY, fontSize: 12.5, color: C.clay, fontWeight: 600, marginTop: 4 }}>
-            Apareces en {apariciones.length} gerencias — desliza para ver cada una.
+            Apareces en {apariciones.length} listas — desliza para ver cada una (gerencia y ámbito).
           </p>
         )}
       </div>
 
-      {/* carrusel de tarjetas, una por gerencia */}
+      {/* carrusel de tarjetas, una por lista (gerencia + ámbito) */}
       <div
         onScroll={varias ? alDesplazar : undefined}
         style={{
@@ -949,16 +954,17 @@ function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuarda
       >
         {apariciones.map((a) => (
           <div
-            key={a.gerencia}
+            key={`${a.gerencia}-${a.ambito || ""}`}
             style={{ flex: "0 0 100%", scrollSnapAlign: "start", padding: "0 20px", boxSizing: "border-box" }}
           >
             <TarjetaGerencia
               categoria={categoria}
               gerencia={a.gerencia}
+              ambito={a.ambito}
               r={a}
-              guardado={estaGuardado(a.gerencia, candidato.nombreCompleto)}
-              onGuardar={() => onGuardar(a.gerencia, { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial })}
-              onVerListado={() => onVerListado(a.gerencia)}
+              guardado={estaGuardado(a.gerencia, a.ambito, candidato.nombreCompleto)}
+              onGuardar={() => onGuardar(a.gerencia, a.ambito, { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial })}
+              onVerListado={() => onVerListado(a.gerencia, a.ambito)}
               onInfoLlamamientos={onInfoLlamamientos}
             />
           </div>
@@ -969,8 +975,8 @@ function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuarda
         <div className="flex items-center justify-center gap-2" style={{ marginTop: 14 }}>
           {apariciones.map((a, i) => (
             <span
-              key={a.gerencia}
-              aria-label={a.gerencia}
+              key={`${a.gerencia}-${a.ambito || ""}`}
+              aria-label={etiquetaLista(categoria, a.gerencia, a.ambito)}
               style={{
                 width: i === indice ? 22 : 7,
                 height: 7,
@@ -1015,7 +1021,7 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir }) {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>{s.categoria} · {s.gerencia}</p>
+                    <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>{etiquetaLista(s.categoria, s.gerencia, s.ambito)}</p>
                     <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft }}>{r.nombreCompleto}</p>
                   </div>
                   {e.tipo !== "ok" && <AlertTriangle size={14} color={C.clay} />}
@@ -1096,6 +1102,7 @@ export default function ListasApp() {
   const [recientes, setRecientes] = useState([]);
   const [listadoCategoria, setListadoCategoria] = useState(GRUPOS_SANIDAD[0].categorias[0]);
   const [listadoGerencia, setListadoGerencia] = useState(gerenciasActivas[0]);
+  const [listadoAmbito, setListadoAmbito] = useState("");
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
 
   // devuelve cuántas personas hubo, para que PantallaBuscar sepa si mostrar "sin resultados"
@@ -1122,12 +1129,13 @@ export default function ListasApp() {
     return personas.length;
   };
 
-  const estaGuardado = (categoria, gerencia, nombreCompleto) => seguimientos.some((s) => s.categoria === categoria && s.gerencia === gerencia && s.candidato.nombreCompleto === nombreCompleto);
+  const estaGuardado = (gerencia, ambito, nombreCompleto) =>
+    seguimientos.some((s) => s.categoria === categoriaActual && s.gerencia === gerencia && s.ambito === (ambito || "") && s.candidato.nombreCompleto === nombreCompleto);
 
-  const guardarSeguimiento = (gerencia, resultado) => {
+  const guardarSeguimiento = (gerencia, ambito, resultado) => {
     setSeguimientos((prev) => {
-      if (prev.some((s) => s.categoria === categoriaActual && s.gerencia === gerencia && s.candidato.nombreCompleto === resultado.nombreCompleto)) return prev;
-      return [...prev, { categoria: categoriaActual, gerencia, candidato: resultado }];
+      if (prev.some((s) => s.categoria === categoriaActual && s.gerencia === gerencia && s.ambito === (ambito || "") && s.candidato.nombreCompleto === resultado.nombreCompleto)) return prev;
+      return [...prev, { categoria: categoriaActual, gerencia, ambito: ambito || "", candidato: resultado }];
     });
   };
 
@@ -1168,7 +1176,7 @@ export default function ListasApp() {
           <PantallaBuscar
             atras={() => setPaso("sector")}
             onBuscar={iniciarBusqueda}
-            onVerListado={(categoria, gerencia) => { setListadoCategoria(categoria); setListadoGerencia(gerencia); setPantallaPrevia("buscar"); setPaso("listado"); }}
+            onVerListado={(categoria, gerencia) => { setListadoCategoria(categoria); setListadoGerencia(gerencia); setListadoAmbito(""); setPantallaPrevia("buscar"); setPaso("listado"); }}
             recientes={recientes}
           />
         )}
@@ -1187,9 +1195,9 @@ export default function ListasApp() {
             categoria={categoriaActual}
             candidato={candidatoElegido}
             atras={() => setPaso("buscar")}
-            estaGuardado={(gerencia, nombre) => estaGuardado(categoriaActual, gerencia, nombre)}
+            estaGuardado={(gerencia, ambito, nombre) => estaGuardado(gerencia, ambito, nombre)}
             onGuardar={guardarSeguimiento}
-            onVerListado={(gerencia) => { setListadoCategoria(categoriaActual); setListadoGerencia(gerencia); setPantallaPrevia("resultado"); setPaso("listado"); }}
+            onVerListado={(gerencia, ambito) => { setListadoCategoria(categoriaActual); setListadoGerencia(gerencia); setListadoAmbito(ambito || ""); setPantallaPrevia("resultado"); setPaso("listado"); }}
             onInfoLlamamientos={() => setPaso("info-llamamientos")}
           />
         )}
@@ -1199,7 +1207,7 @@ export default function ListasApp() {
         )}
 
         {paso === "listado" && (
-          <PantallaListado categoria={listadoCategoria} gerencia={listadoGerencia} atras={() => setPaso(pantallaPrevia)} />
+          <PantallaListado categoria={listadoCategoria} gerencia={listadoGerencia} ambito={listadoAmbito} atras={() => setPaso(pantallaPrevia)} />
         )}
 
         {paso === "seguimientos" && (
@@ -1211,7 +1219,7 @@ export default function ListasApp() {
               setCandidatoElegido({
                 nombreCompleto: s.candidato.nombreCompleto,
                 dniParcial: s.candidato.dniParcial,
-                apariciones: [{ gerencia: s.gerencia, ...s.candidato }],
+                apariciones: [{ gerencia: s.gerencia, ambito: s.ambito, ...s.candidato }],
               });
               setPaso("resultado");
             }}

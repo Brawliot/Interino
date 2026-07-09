@@ -19,6 +19,17 @@ export function gerenciaCorta(gerenciaCompleta) {
   return gerenciaCompleta;
 }
 
+export function ambitoLegible(ambito) {
+  if (!ambito) return "";
+  if (ambito === "Atencion Primaria") return "Atención Primaria";
+  if (ambito === "Atencion Especializada") return "Atención Especializada";
+  return ambito;
+}
+
+function puntoMinimoValido(punto) {
+  return punto != null && punto > 0;
+}
+
 function normalizarTexto(texto) {
   return texto
     .normalize("NFD")
@@ -77,8 +88,11 @@ export function crearCapaDatos(latest, historico) {
     return categoriasConDatos.has(grupo);
   }
 
-  function obtenerListadoCompleto(categoriaUi, gerenciaCortaFiltro = "") {
-    const bloques = listadosDe(categoriaUi, gerenciaCortaFiltro || null);
+  function obtenerListadoCompleto(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
+    let bloques = listadosDe(categoriaUi, gerenciaCortaFiltro || null);
+    if (ambitoFiltro) {
+      bloques = bloques.filter((b) => b.ambito === ambitoFiltro);
+    }
     const filas = [];
     bloques.forEach((bloque) => {
       const total = bloque.filas.length;
@@ -126,17 +140,22 @@ export function crearCapaDatos(latest, historico) {
     return [...porPersona.values()];
   }
 
-  function historialCorte(categoriaUi, gerenciaCortaFiltro = "") {
+  function historialCorte(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
     const cat = categoriaScraper(categoriaUi);
-    let entradas = historico.filter((h) => h.categoria === cat);
+    let entradas = historico.filter(
+      (h) => h.categoria === cat && puntoMinimoValido(h.punto_minimo_admitido)
+    );
     if (gerenciaCortaFiltro) {
       entradas = entradas.filter((h) => gerenciaCorta(h.gerencia) === gerenciaCortaFiltro);
+    }
+    if (ambitoFiltro) {
+      entradas = entradas.filter((h) => h.ambito === ambitoFiltro);
     }
     const porFecha = new Map();
     entradas.forEach((e) => {
       const prev = porFecha.get(e.fecha);
       const punto = e.punto_minimo_admitido;
-      if (prev == null || (punto != null && punto < prev)) {
+      if (prev == null || punto < prev) {
         porFecha.set(e.fecha, punto);
       }
     });

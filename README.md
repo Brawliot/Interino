@@ -7,7 +7,7 @@ Desarrollador único (estudiante de Informática + ADE), con un mes de dedicaci�
 ## Decisiones cerradas (no reabrir sin motivo nuevo)
 
 - **Monetización — freemium.** Consulta básica gratis siempre (es dato público). De pago (2,99 €, por debajo de la competencia a 4,99 €): notificaciones, seguimiento de varias bolsas, zona de riesgo con tendencia. Primeros 100 usuarios gratis de por vida. **No activar cobros** hasta hacer la consulta legal y validar gratis con usuarios reales.
-- **Lanzamiento — PWA, no tiendas.** Sin Capacitor/React Native por ahora: manifest.json + iconos + "añadir a pantalla de inicio". Se evitan los costes de Apple (99 $/año) y Google (25 $) hasta tener usuarios que lo justifiquen.
+- **Lanzamiento — web (posible PWA en el futuro), no tiendas.** Sin Capacitor/React Native por ahora. Se evitan los costes de Apple (99 $/año) y Google (25 $) hasta tener usuarios que lo justifiquen.
 - **Base de datos:** de momento JSON en el repo; Supabase recomendada para cuando toque migrar. **Backend:** GitHub Actions basta para el scraper diario; nada de Railway salvo necesidad real de backend propio.
 - **Privacidad:** nunca pedir DNI completo — se busca por apellidos, igual que el propio listado público.
 - **Honestidad del copy:** el "punto de corte" mostrado es la puntuación mínima ADMITIDA actual, no "la última persona llamada" (ese dato el SESCAM no lo publica). Mantener este matiz en cualquier texto nuevo.
