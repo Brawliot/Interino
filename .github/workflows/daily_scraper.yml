@@ -1,0 +1,40 @@
+name: Scraper Diario SESCAM
+on:
+  schedule:
+    - cron: '0 8 * * *'   # Todos los días a las 8:00 UTC
+  workflow_dispatch:      # Permite ejecución manual desde la pestaña Actions
+
+jobs:
+  scrape-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45   # red de seguridad: nunca se queda colgado horas
+    permissions:
+      contents: write    # necesario para hacer push al repo
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar scraper
+        run: python scraper.py
+
+      - name: Commit y push de data/ (histórico + snapshot del día)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data
+          git add data/historico.json data/latest.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Actualizacion automatica SESCAM - $(date +'%Y-%m-%d')"
+          git push
