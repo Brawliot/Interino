@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { Search, ChevronLeft, Bell, BellRing, Lock, MapPin, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall } from "lucide-react";
 import { useDatos, ambitoLegible } from "./src/datos.jsx";
@@ -53,43 +53,18 @@ const SECTORES = [
   { id: "administracion", nombre: "Administración General", icono: Landmark, activo: false, fuente: "Próximamente" },
 ];
 
-// Los 5 grupos profesionales del SESCAM. Solo "diplomado" tiene scraper
-// funcionando con datos reales; el resto son categorías de EJEMPLO (aún sin
-// extraer del portal) y se muestran como "sin scraping activo".
-const GRUPOS_SANIDAD = [
+// 4 grupos SESCAM en la app (facultativo fusionado en licenciados en el portal).
+// Categorías reales vienen de datos.gruposSanidad (inventario del portal).
+const GRUPOS_SANIDAD_FALLBACK = [
   {
     id: "diplomado",
     nombre: "Personal Sanitario Diplomado",
     activo: true,
-    categorias: ["Enfermero/a", "Fisioterapeuta", "Logopeda", "Óptico-Optometrista", "Podólogo/a", "Terapeuta Ocupacional", "Dietista-Nutricionista"],
-  },
-  {
-    id: "facultativo",
-    nombre: "Personal Facultativo",
-    activo: false,
-    categorias: ["Médico de Familia", "Pediatra de Atención Primaria", "Facultativo Especialista de Área"],
-  },
-  {
-    id: "licenciados",
-    nombre: "Personal Sanitario Licenciado",
-    activo: false,
-    categorias: ["Farmacéutico/a de Atención Primaria", "Psicólogo/a Clínico"],
-  },
-  {
-    id: "tecnico",
-    nombre: "Personal Sanitario Técnico",
-    activo: false,
-    categorias: ["TCAE", "Técnico de Laboratorio", "Técnico de Radiodiagnóstico", "Técnico de Farmacia"],
-  },
-  {
-    id: "gestion",
-    nombre: "Personal de Gestión y Servicios",
-    activo: false,
-    categorias: ["Auxiliar Administrativo", "Celador/a", "Pinche", "Telefonista"],
+    categorias: ["Enfermero/a"],
   },
 ];
 
-const grupoDeCategoria = (categoria) => GRUPOS_SANIDAD.find((g) => g.categorias.includes(categoria));
+const grupoDeCategoria = (categoria, grupos) => grupos.find((g) => g.categorias.includes(categoria));
 
 // Gerencias de respaldo para grupos sin scraper (datos de ejemplo).
 const GERENCIAS_EJEMPLO = [
@@ -212,8 +187,8 @@ function zonaRiesgo(puntosCandidato, historial) {
   return { nivel: "bajo", convocatorias, velocidad };
 }
 
-function estadoActualizacionEjemplo(categoria) {
-  const grupo = grupoDeCategoria(categoria);
+function estadoActualizacionEjemplo(categoria, gruposSanidad) {
+  const grupo = grupoDeCategoria(categoria, gruposSanidad);
   if (grupo && !grupo.activo) {
     return { tipo: "sin_activar", texto: `El scraping del grupo ${grupo.nombre} todavía no está activado. Los datos mostrados son de ejemplo.` };
   }
@@ -261,12 +236,21 @@ function Subrayado({ width = 168, color, style }) {
   );
 }
 
-function AvisoActualizacion({ categoria }) {
+function AvisoActualizacion({ categoria, grupoId, grupoActivo }) {
   const datos = useDatos();
-  const grupo = grupoDeCategoria(categoria);
-  const e = grupo?.activo && datos.tieneDatosReales(categoria)
-    ? datos.estadoActualizacion(categoria, true)
-    : estadoActualizacionEjemplo(categoria);
+  const [e, setE] = useState({ tipo: "ok", texto: "Comprobando actualización…" });
+
+  useEffect(() => {
+    let cancel = false;
+    if (grupoActivo && datos.tieneDatosReales(categoria, grupoId)) {
+      datos.estadoActualizacion(categoria, grupoId, true).then((est) => {
+        if (!cancel) setE(est);
+      });
+    } else {
+      setE(estadoActualizacionEjemplo(categoria, datos.gruposSanidad));
+    }
+    return () => { cancel = true; };
+  }, [categoria, grupoId, grupoActivo, datos]);
   if (e.tipo === "ok") {
     return (
       <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.inkSoft, marginTop: 8, paddingLeft: 2 }}>
@@ -419,25 +403,34 @@ function PantallaSector({ ccaa, onSelect, atras }) {
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
+function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanidad }) {
   const datos = useDatos();
-  const [grupoId, setGrupoId] = useState(GRUPOS_SANIDAD[0].id);
-  const grupo = GRUPOS_SANIDAD.find((g) => g.id === grupoId);
-  const gerencias = grupo?.activo && datos.GERENCIAS.length ? datos.GERENCIAS : GERENCIAS_EJEMPLO;
-  const [categoria, setCategoria] = useState(GRUPOS_SANIDAD[0].categorias[0]);
+  const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
+  const grupo = gruposSanidad.find((g) => g.id === grupoId);
+  const gerenciasFallback = grupo?.activo ? [] : GERENCIAS_EJEMPLO;
+  const [gerencias, setGerencias] = useState(gerenciasFallback);
+  const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
   const [gerencia, setGerencia] = useState(TODAS_GERENCIAS);
   const [apellidos, setApellidos] = useState("");
   const [sinResultados, setSinResultados] = useState(false);
 
   const cambiarGrupo = (id) => {
-    const g = GRUPOS_SANIDAD.find((x) => x.id === id);
+    const g = gruposSanidad.find((x) => x.id === id);
     setGrupoId(id);
-    setCategoria(g.categorias[0]);
+    setCategoria(g?.categorias[0] || "");
+    setGerencias(g?.activo ? [] : GERENCIAS_EJEMPLO);
     setSinResultados(false);
   };
 
-  const buscar = (cat, ger, ape) => {
-    const encontrados = onBuscar(cat, ger, ape);
+  useEffect(() => {
+    if (!grupo?.activo || !categoria) return;
+    datos.gerenciasDeCategoria(grupoId, categoria).then((gs) => {
+      if (gs.length) setGerencias(gs);
+    });
+  }, [grupoId, categoria, grupo?.activo, datos]);
+
+  const buscar = async (cat, ger, ape) => {
+    const encontrados = await onBuscar(cat, ger, ape);
     setSinResultados(encontrados === 0);
   };
 
@@ -456,7 +449,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
                 <button
                   key={i}
                   onClick={() => {
-                    const g = grupoDeCategoria(rec.categoria);
+                    const g = grupoDeCategoria(rec.categoria, gruposSanidad);
                     if (g) setGrupoId(g.id);
                     setCategoria(rec.categoria);
                     setGerencia(rec.gerencia);
@@ -481,7 +474,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           >
-            {GRUPOS_SANIDAD.map((g) => (
+            {gruposSanidad.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.nombre}{g.activo ? "" : " · datos de ejemplo"}
               </option>
@@ -559,7 +552,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes }) {
           <ListIcon size={15} /> Ver el listado completo de esta categoría
         </button>
 
-        <AvisoActualizacion categoria={categoria} />
+        <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupo?.activo} />
       </div>
     </div>
   );
@@ -605,26 +598,38 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
 // ---------------------------------------------------------------
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
-function PantallaListado({ categoria, gerencia, ambito, atras }) {
+function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras }) {
   const datos = useDatos();
-  const grupo = grupoDeCategoria(categoria);
+  const [filas, setFilas] = useState([]);
+  const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
   const LIMITE_FILAS = 100;
-  const filas = useMemo(() => {
-    if (grupo?.activo && datos.tieneDatosReales(categoria)) {
-      return datos.obtenerListadoCompleto(categoria, gerencia, ambito || "");
-    }
-    return generarListadoCompletoEjemplo(categoria, gerencia);
-  }, [datos, categoria, gerencia, ambito, grupo]);
+
+  useEffect(() => {
+    let cancel = false;
+    setCargando(true);
+    const cargar = async () => {
+      if (grupoActivo && datos.tieneDatosReales(categoria, grupoId)) {
+        const f = await datos.obtenerListadoCompleto(grupoId, categoria, gerencia, ambito || "");
+        if (!cancel) setFilas(f);
+      } else {
+        if (!cancel) setFilas(generarListadoCompletoEjemplo(categoria, gerencia));
+      }
+      if (!cancel) setCargando(false);
+    };
+    cargar();
+    return () => { cancel = true; };
+  }, [datos, categoria, gerencia, ambito, grupoId, grupoActivo]);
+
   const visibles = filtro ? filas.filter((f) => f.nombreCompleto.toLowerCase().includes(filtro.toLowerCase())) : filas;
   const mostradas = visibles.slice(0, LIMITE_FILAS);
-  const esReal = grupo?.activo && datos.tieneDatosReales(categoria);
+  const esReal = grupoActivo && datos.tieneDatosReales(categoria, grupoId);
 
   return (
     <div>
       <Barra titulo={etiquetaLista(categoria, gerencia, ambito)} atras={atras} />
       <div className="px-5">
-        <AvisoActualizacion categoria={categoria} />
+        <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} />
 
         <input
           value={filtro}
@@ -633,6 +638,9 @@ function PantallaListado({ categoria, gerencia, ambito, atras }) {
           className="w-full mt-3 focus:outline-none"
           style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "11px 14px", fontFamily: FONT_BODY, fontSize: 13.5, color: C.ink }}
         />
+        {cargando && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 8 }}>Cargando listado…</p>
+        )}
         <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "6px 0 4px" }}>
           Útil si un compañero opositor te ha dicho que está en esta lista y quieres ver en qué puesto queda.
         </p>
@@ -672,12 +680,11 @@ function PantallaListado({ categoria, gerencia, ambito, atras }) {
 // ---------------------------------------------------------------
 
 // Bloque de detalle de UNA lista (gerencia + ámbito): posición, puntos, contratos, corte y avisos
-function TarjetaGerencia({ categoria, gerencia, ambito, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const datos = useDatos();
-  const grupo = grupoDeCategoria(categoria);
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const percentil = Math.round((1 - r.posicion / r.total) * 100);
-  const historial = grupo?.activo && datos.tieneDatosReales(categoria)
+  const historial = grupoActivo && datos.tieneDatosReales(categoria, grupoId)
     ? datos.historialCorte(categoria, gerencia, ambito || r.ambito || "")
     : historialCorteEjemplo(categoria, gerencia);
 
@@ -724,7 +731,7 @@ function TarjetaGerencia({ categoria, gerencia, ambito, r, guardado, onGuardar, 
           de {r.total.toLocaleString("es-ES")} personas en la bolsa · por delante del {percentil}%
         </p>
       </div>
-      <AvisoActualizacion categoria={categoria} />
+      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} />
 
       <div className="grid grid-cols-2 gap-3 mt-4">
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16 }}>
@@ -913,7 +920,7 @@ function TarjetaGerencia({ categoria, gerencia, ambito, r, guardado, onGuardar, 
 
 // Contenedor: una tarjeta por lista (gerencia + ámbito) donde aparece la persona, con
 // scroll horizontal + snap (deslizar en móvil) y puntos indicadores.
-function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const apariciones = candidato.apariciones;
   const [indice, setIndice] = useState(0);
   const varias = apariciones.length > 1;
@@ -961,6 +968,8 @@ function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuarda
               categoria={categoria}
               gerencia={a.gerencia}
               ambito={a.ambito}
+              grupoId={grupoId}
+              grupoActivo={grupoActivo}
               r={a}
               guardado={estaGuardado(a.gerencia, a.ambito, candidato.nombreCompleto)}
               onGuardar={() => onGuardar(a.gerencia, a.ambito, { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial })}
@@ -994,7 +1003,7 @@ function PantallaResultado({ categoria, candidato, atras, estaGuardado, onGuarda
 // ---------------------------------------------------------------
 // PANTALLA — Mis seguimientos (varias listas a la vez)
 // ---------------------------------------------------------------
-function PantallaSeguimientos({ seguimientos, atras, onAbrir }) {
+function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad }) {
   const datos = useDatos();
   return (
     <div>
@@ -1008,10 +1017,10 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir }) {
         <div className="flex flex-col gap-3 mt-2">
           {seguimientos.map((s, i) => {
             const r = s.candidato;
-            const grupo = grupoDeCategoria(s.categoria);
-            const e = grupo?.activo && datos.tieneDatosReales(s.categoria)
-              ? datos.estadoActualizacion(s.categoria, true)
-              : estadoActualizacionEjemplo(s.categoria);
+            const grupo = grupoDeCategoria(s.categoria, gruposSanidad);
+            const e = grupo?.activo && datos.tieneDatosReales(s.categoria, grupo.id)
+              ? { tipo: "ok", texto: "Datos reales disponibles." }
+              : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
             return (
               <button
                 key={i}
@@ -1091,27 +1100,33 @@ function PantallaInfoLlamamientos({ atras }) {
 // ---------------------------------------------------------------
 export default function ListasApp() {
   const datos = useDatos();
-  const gerenciasActivas = datos.GERENCIAS.length ? datos.GERENCIAS : GERENCIAS_EJEMPLO;
-  const [paso, setPaso] = useState("ccaa"); // ccaa | sector | buscar | confirmar | resultado | listado | seguimientos | info-llamamientos
+  const gruposSanidad = datos.gruposSanidad?.length ? datos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
+  const [paso, setPaso] = useState("ccaa");
   const [ccaa, setCcaa] = useState(null);
   const [sector, setSector] = useState(null);
   const [categoriaActual, setCategoriaActual] = useState("");
+  const [grupoIdActual, setGrupoIdActual] = useState("diplomado");
   const [candidatos, setCandidatos] = useState([]);
   const [candidatoElegido, setCandidatoElegido] = useState(null);
   const [seguimientos, setSeguimientos] = useState([]);
   const [recientes, setRecientes] = useState([]);
-  const [listadoCategoria, setListadoCategoria] = useState(GRUPOS_SANIDAD[0].categorias[0]);
-  const [listadoGerencia, setListadoGerencia] = useState(gerenciasActivas[0]);
+  const [listadoCategoria, setListadoCategoria] = useState(gruposSanidad[0]?.categorias[0] || "");
+  const [listadoGerencia, setListadoGerencia] = useState(GERENCIAS_EJEMPLO[0]);
   const [listadoAmbito, setListadoAmbito] = useState("");
+  const [listadoGrupoId, setListadoGrupoId] = useState("diplomado");
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
 
-  // devuelve cuántas personas hubo, para que PantallaBuscar sepa si mostrar "sin resultados"
-  const iniciarBusqueda = (categoria, gerencia, apellidos) => {
-    const grupo = grupoDeCategoria(categoria);
-    const personas = grupo?.activo && datos.tieneDatosReales(categoria)
-      ? datos.buscarPersonas(categoria, gerencia, apellidos, TODAS_GERENCIAS, gerenciasActivas)
-      : buscarPersonasEjemplo(categoria, gerencia, apellidos, gerenciasActivas);
+  const iniciarBusqueda = async (categoria, gerencia, apellidos) => {
+    const grupo = grupoDeCategoria(categoria, gruposSanidad);
     setCategoriaActual(categoria);
+    setGrupoIdActual(grupo?.id || "diplomado");
+    let personas = [];
+    if (grupo?.activo && datos.tieneDatosReales(categoria, grupo.id)) {
+      const res = await datos.buscarPersonas(grupo.id, categoria, gerencia, apellidos, TODAS_GERENCIAS, []);
+      personas = res.personas;
+    } else {
+      personas = buscarPersonasEjemplo(categoria, gerencia, apellidos, GERENCIAS_EJEMPLO);
+    }
     if (apellidos.trim()) {
       setRecientes((prev) => {
         const sinDuplicado = prev.filter((r) => !(r.categoria === categoria && r.gerencia === gerencia && r.apellidos === apellidos));
@@ -1176,8 +1191,17 @@ export default function ListasApp() {
           <PantallaBuscar
             atras={() => setPaso("sector")}
             onBuscar={iniciarBusqueda}
-            onVerListado={(categoria, gerencia) => { setListadoCategoria(categoria); setListadoGerencia(gerencia); setListadoAmbito(""); setPantallaPrevia("buscar"); setPaso("listado"); }}
+            onVerListado={(categoria, gerencia) => {
+              const g = grupoDeCategoria(categoria, gruposSanidad);
+              setListadoCategoria(categoria);
+              setListadoGerencia(gerencia);
+              setListadoAmbito("");
+              setListadoGrupoId(g?.id || "diplomado");
+              setPantallaPrevia("buscar");
+              setPaso("listado");
+            }}
             recientes={recientes}
+            gruposSanidad={gruposSanidad}
           />
         )}
 
@@ -1193,11 +1217,20 @@ export default function ListasApp() {
         {paso === "resultado" && candidatoElegido && (
           <PantallaResultado
             categoria={categoriaActual}
+            grupoId={grupoIdActual}
+            grupoActivo={grupoDeCategoria(categoriaActual, gruposSanidad)?.activo}
             candidato={candidatoElegido}
             atras={() => setPaso("buscar")}
             estaGuardado={(gerencia, ambito, nombre) => estaGuardado(gerencia, ambito, nombre)}
             onGuardar={guardarSeguimiento}
-            onVerListado={(gerencia, ambito) => { setListadoCategoria(categoriaActual); setListadoGerencia(gerencia); setListadoAmbito(ambito || ""); setPantallaPrevia("resultado"); setPaso("listado"); }}
+            onVerListado={(gerencia, ambito) => {
+              setListadoCategoria(categoriaActual);
+              setListadoGerencia(gerencia);
+              setListadoAmbito(ambito || "");
+              setListadoGrupoId(grupoIdActual);
+              setPantallaPrevia("resultado");
+              setPaso("listado");
+            }}
             onInfoLlamamientos={() => setPaso("info-llamamientos")}
           />
         )}
@@ -1207,13 +1240,21 @@ export default function ListasApp() {
         )}
 
         {paso === "listado" && (
-          <PantallaListado categoria={listadoCategoria} gerencia={listadoGerencia} ambito={listadoAmbito} atras={() => setPaso(pantallaPrevia)} />
+          <PantallaListado
+            categoria={listadoCategoria}
+            gerencia={listadoGerencia}
+            ambito={listadoAmbito}
+            grupoId={listadoGrupoId}
+            grupoActivo={grupoDeCategoria(listadoCategoria, gruposSanidad)?.activo}
+            atras={() => setPaso(pantallaPrevia)}
+          />
         )}
 
         {paso === "seguimientos" && (
           <PantallaSeguimientos
             seguimientos={seguimientos}
             atras={() => setPaso("buscar")}
+            gruposSanidad={gruposSanidad}
             onAbrir={(s) => {
               setCategoriaActual(s.categoria);
               setCandidatoElegido({

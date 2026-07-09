@@ -22,8 +22,10 @@ dejar esto claro, no presentarlo como si fuera lo mismo.
 
 import io
 import os
+import re
 import time
 import json
+import argparse
 import unicodedata
 from datetime import datetime
 
@@ -37,11 +39,15 @@ from dataclasses import dataclass, asdict, field
 
 BASE_PDFS = "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/"
 
+# TODO: El patrón URL PDF de licenciados, técnico y gestión no coincide con diplomado
+# (404 con Vigésima 2025). No investigado — no prioritario.
+
 # Ajustar cuando cambie la convocatoria (hoy: 20a, año 2025)
 ORDINAL_CONVOCATORIA = "Vigesima"
 ANIO_CONVOCATORIA = "2025"
 
 CATEGORIAS_SANIDAD_DIPLOMADO = [
+    "DIETISTA-NUTRICIONISTA",
     "ENFERMERO/A",
     "ENFERMERO/A DE EMERGENCIAS",
     "ENFERMERO/A ESPECIALISTA DEL TRABAJO",
@@ -50,12 +56,13 @@ CATEGORIAS_SANIDAD_DIPLOMADO = [
     "ENFERMERO/A ESPECIALISTA EN ENF. PEDIATRICA",
     "ENFERMERO/A ESPECIALISTA EN SALUD MENTAL",
     "ENFERMERO/A ESPECIALISTA OBSTETRICIO - GINECOLOGICA (MATRONA)",
+    "ENFERMERO/A INSPECTOR/A DE SERVICIOS SANITARIOS Y PRESTACIONES",
+    "ENFERMERO/A P.E.A.C.",
     "FISIOTERAPEUTA",
     "LOGOPEDA",
     "OPTICO/A OPTOMETRISTA",
     "PODOLOGO/A",
     "TERAPEUTA OCUPACIONAL",
-    "DIETISTA-NUTRICIONISTA",
 ]
 
 GERENCIAS = [
@@ -77,8 +84,18 @@ GERENCIAS = [
 AMBITOS = ["Atencion Primaria", "Atencion Especializada"]
 
 DATA_DIR = "data"
-LATEST_PATH = os.path.join(DATA_DIR, "latest.json")
 HISTORICO_PATH = os.path.join(DATA_DIR, "historico.json")
+MANIFEST_PATH = os.path.join(DATA_DIR, "manifest.json")
+CATEGORIAS_JSON = os.path.join(DATA_DIR, "categorias_por_grupo.json")
+LATEST_PATH = os.path.join(DATA_DIR, "latest.json")  # legacy; migrar y borrar
+
+GRUPOS = {
+    "diplomado": CATEGORIAS_SANIDAD_DIPLOMADO,
+    "gestion": [],
+    "tecnico": [],
+    "licenciados": [],
+    "facultativo": [],
+}
 
 
 def quitar_acentos(texto: str) -> str:
@@ -214,7 +231,131 @@ def scrapear_todo(categorias=CATEGORIAS_SANIDAD_DIPLOMADO, gerencias=GERENCIAS,
     return resultado
 
 
-def resumir_para_historico(resultado: dict, fecha: str) -> list[dict]:
+def slug_archivo(categoria: str) -> str:
+    """Nombre de fichero JSON: minúsculas, sin tildes, espacios → guiones."""
+    s = quitar_acentos(categoria).lower()
+    s = s.replace("/", "-")
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    return s.strip("-")
+
+
+def path_categoria_json(grupo: str, categoria: str) -> str:
+    return os.path.join(DATA_DIR, grupo, slug_archivo(categoria) + ".json")
+
+
+def cargar_categorias_desde_inventario() -> dict[str, list[str]]:
+    """Lee data/categorias_por_grupo.json (generado por scripts/inventario_categorias.py)."""
+    if not os.path.exists(CATEGORIAS_JSON):
+        return {"diplomado": CATEGORIAS_SANIDAD_DIPLOMADO}
+    with open(CATEGORIAS_JSON, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    out = {}
+    for grupo, info in raw.items():
+        pdfs = info.get("categorias_pdf") or []
+        if pdfs:
+            out[grupo] = pdfs
+    if "diplomado" not in out:
+        out["diplomado"] = CATEGORIAS_SANIDAD_DIPLOMADO
+    return out
+
+
+def scrapear_categoria(categoria: str, gerencias=GERENCIAS, ambitos=AMBITOS,
+                       pausa=1.5, presupuesto_segundos=None) -> list[dict]:
+    """Scrapea una sola categoría (todas gerencias × ámbitos). Devuelve listados."""
+    inicio = time.time()
+    listados = []
+    for gerencia in gerencias:
+        for ambito in ambitos:
+            if presupuesto_segundos and time.time() - inicio > presupuesto_segundos:
+                print(f"\nPresupuesto agotado ({presupuesto_segundos}s) en {categoria}.")
+                return listados
+            try:
+                filas = obtener_listado(categoria, gerencia, ambito)
+                if not filas:
+                    continue
+                listados.append({
+                    "categoria": categoria, "gerencia": gerencia, "ambito": ambito,
+                    "filas": [asdict(f) for f in filas],
+                })
+                print(f"OK  {categoria} · {gerencia} · {ambito} -> {len(filas)} filas")
+            except Exception as e:
+                print(f"ERROR  {categoria} · {gerencia} · {ambito} -> {e}")
+            time.sleep(pausa)
+    return listados
+
+
+def guardar_categoria_json(grupo: str, categoria: str, listados: list[dict]) -> str:
+    os.makedirs(os.path.join(DATA_DIR, grupo), exist_ok=True)
+    path = path_categoria_json(grupo, categoria)
+    payload = {
+        "generado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "grupo": grupo,
+        "categoria": categoria,
+        "listados": listados,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    personas = sum(len(l["filas"]) for l in listados)
+    print(f"Guardado {path} -> {len(listados)} listas, {personas} personas")
+    return path
+
+
+def leer_todos_listados_data() -> list[dict]:
+    """Recorre data/{grupo}/*.json y devuelve todos los listados (para histórico)."""
+    todos = []
+    if not os.path.isdir(DATA_DIR):
+        return todos
+    for grupo in os.listdir(DATA_DIR):
+        dir_grupo = os.path.join(DATA_DIR, grupo)
+        if not os.path.isdir(dir_grupo):
+            continue
+        for nombre in os.listdir(dir_grupo):
+            if not nombre.endswith(".json"):
+                continue
+            with open(os.path.join(dir_grupo, nombre), "r", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError:
+                    continue
+            todos.extend(data.get("listados", []))
+    return todos
+
+
+def actualizar_manifest():
+    archivos = []
+    for grupo in sorted(os.listdir(DATA_DIR)):
+        dir_grupo = os.path.join(DATA_DIR, grupo)
+        if not os.path.isdir(dir_grupo):
+            continue
+        for nombre in sorted(os.listdir(dir_grupo)):
+            if nombre.endswith(".json"):
+                archivos.append(f"{grupo}/{nombre}")
+    manifest = {
+        "generado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "archivos": archivos,
+    }
+    with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+    print(f"Manifest: {len(archivos)} archivos en {MANIFEST_PATH}")
+
+
+def migrar_latest_json():
+    """Convierte data/latest.json monolítico a JSON por categoría y lo borra."""
+    if not os.path.exists(LATEST_PATH):
+        print("No hay latest.json que migrar.")
+        return
+    with open(LATEST_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    por_categoria: dict[str, list] = {}
+    for listado in data.get("listados", []):
+        por_categoria.setdefault(listado["categoria"], []).append(listado)
+    for categoria, listados in por_categoria.items():
+        guardar_categoria_json("diplomado", categoria, listados)
+    os.remove(LATEST_PATH)
+    print(f"Migrado latest.json -> {len(por_categoria)} categorías en data/diplomado/")
+
+
+def resumir_listados(listados: list[dict], fecha: str) -> list[dict]:
     """
     Por cada categoria+gerencia+ambito, guarda un resumen pequeño (no las
     filas completas, para no reventar el tamaño del repo con el tiempo):
@@ -223,7 +364,7 @@ def resumir_para_historico(resultado: dict, fecha: str) -> list[dict]:
     eso no lo publica el SESCAM; ver aviso al principio del fichero).
     """
     resumen = []
-    for listado in resultado["listados"]:
+    for listado in listados:
         puntos = [f["comprobado_baremo"] for f in listado["filas"]]
         resumen.append({
             "fecha": fecha,
@@ -263,20 +404,58 @@ def actualizar_historico(nuevas_entradas: list[dict]):
     print(f"Historico: {añadidas} entradas nuevas añadidas, {len(historico)} en total.")
 
 
+def resumir_para_historico(resultado: dict, fecha: str) -> list[dict]:
+    return resumir_listados(resultado.get("listados", []), fecha)
+
+
+def ejecutar_scrape(grupo: str, categorias: list[str], presupuesto_segundos=35 * 60):
+    """Scrapea categorías de un grupo y guarda un JSON por categoría."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    inicio = time.time()
+    for categoria in categorias:
+        restante = None
+        if presupuesto_segundos:
+            restante = presupuesto_segundos - (time.time() - inicio)
+            if restante <= 0:
+                print("Presupuesto global agotado.")
+                break
+        listados = scrapear_categoria(
+            categoria, presupuesto_segundos=restante
+        )
+        if listados:
+            guardar_categoria_json(grupo, categoria, listados)
+    actualizar_manifest()
+    hoy = datetime.now().strftime("%Y-%m-%d")
+    resumen = resumir_listados(leer_todos_listados_data(), hoy)
+    actualizar_historico(resumen)
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Scraper SESCAM — JSON por categoría")
+    p.add_argument("--grupo", default="diplomado",
+                   choices=["diplomado", "facultativo", "licenciados", "tecnico", "gestion"])
+    p.add_argument("--categoria", help="Una categoría concreta (nombre PDF, ej. FISIOTERAPEUTA)")
+    p.add_argument("--migrar-latest", action="store_true", help="Migrar data/latest.json y borrarlo")
+    p.add_argument("--presupuesto", type=int, default=35 * 60,
+                   help="Segundos máximos por ejecución (default 2100)")
+    return p.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    # 1. Scrapear todo -- esta es la foto completa de HOY (personas, DNI parcial,
-    #    puntos, tipos de contrato). Se sobrescribe cada dia: es "el dato actual",
-    #    no historico.
-    resultado_hoy = scrapear_todo()
-    with open(LATEST_PATH, "w", encoding="utf-8") as f:
-        json.dump(resultado_hoy, f, ensure_ascii=False, indent=2)
-    total_personas = sum(len(l["filas"]) for l in resultado_hoy["listados"])
-    print(f"\nGuardado {LATEST_PATH} -> {len(resultado_hoy['listados'])} listas, {total_personas} personas en total")
+    if args.migrar_latest:
+        migrar_latest_json()
+        actualizar_manifest()
+        raise SystemExit(0)
 
-    # 2. Resumir para historico -- esto SI se acumula dia a dia, pero solo
-    #    numeros pequeños por combinacion, no las filas completas.
-    hoy = datetime.now().strftime("%Y-%m-%d")
-    resumen_hoy = resumir_para_historico(resultado_hoy, hoy)
-    actualizar_historico(resumen_hoy)
+    inventario = cargar_categorias_desde_inventario()
+    cats = inventario.get(args.grupo, GRUPOS.get(args.grupo, []))
+    if args.categoria:
+        cats = [args.categoria]
+    if not cats:
+        print(f"Sin categorías para grupo {args.grupo}. Ejecuta scripts/inventario_categorias.py")
+        raise SystemExit(1)
+
+    ejecutar_scrape(args.grupo, cats, presupuesto_segundos=args.presupuesto)

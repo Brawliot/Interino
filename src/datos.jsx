@@ -1,15 +1,46 @@
 import { createContext, useContext } from "react";
 
-// UI (prototipo) → categoría del scraper / PDF
-export const CATEGORIA_UI_A_SCRAPER = {
-  "Enfermero/a": "ENFERMERO/A",
-  "Fisioterapeuta": "FISIOTERAPEUTA",
-  "Logopeda": "LOGOPEDA",
-  "Óptico-Optometrista": "OPTICO/A OPTOMETRISTA",
-  "Podólogo/a": "PODOLOGO/A",
-  "Terapeuta Ocupacional": "TERAPEUTA OCUPACIONAL",
-  "Dietista-Nutricionista": "DIETISTA-NUTRICIONISTA",
-};
+/**
+ * Base URL para JSON de listados por categoría (archivos grandes).
+ * Desarrollo: /data/  |  Producción (R2): VITE_DATA_CATEGORIAS_URL=https://…
+ */
+export const DATA_CATEGORIAS_BASE_URL = (
+  import.meta.env.VITE_DATA_CATEGORIAS_URL || "/data/"
+).replace(/\/?$/, "/");
+
+/** Metadatos pequeños (historico, manifest, inventario) — siempre en /data/ del repo. */
+const DATA_META_BASE_URL = "/data/";
+
+/** Nombre PDF → slug de archivo (debe coincidir con scraper.slug_archivo). */
+export function slugArchivo(categoriaScraper) {
+  return categoriaScraper
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\//g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Nombre del portal/PDF → etiqueta legible en UI. */
+export function portalAUi(nombreScraper) {
+  if (!nombreScraper) return nombreScraper;
+  return nombreScraper
+    .toLowerCase()
+    .split(" ")
+    .map((palabra) => {
+      if (palabra.includes("/")) {
+        const [a, b] = palabra.split("/");
+        return `${a.charAt(0).toUpperCase()}${a.slice(1)}/${b || ""}`;
+      }
+      if (palabra.includes(":")) {
+        const [a, b] = palabra.split(":");
+        return `${a.charAt(0).toUpperCase()}${a.slice(1)}: ${b.trim().charAt(0).toUpperCase()}${b.trim().slice(1)}`;
+      }
+      return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+    })
+    .join(" ");
+}
 
 export function gerenciaCorta(gerenciaCompleta) {
   if (!gerenciaCompleta) return "";
@@ -60,62 +91,111 @@ function filaScraperAApp(fila, total) {
   };
 }
 
-export function crearCapaDatos(latest, historico) {
-  const listados = latest?.listados ?? [];
-  const generado = latest?.generado ?? null;
+/** Construye mapa UI → scraper a partir del inventario del portal. */
+export function construirMapasCategorias(categoriasPorGrupo) {
+  const uiAScraper = {};
+  const scraperAUi = {};
+  const porGrupo = {};
+  if (!categoriasPorGrupo) return { uiAScraper, scraperAUi, porGrupo };
 
-  const gerenciasSet = new Set();
-  listados.forEach((l) => gerenciasSet.add(gerenciaCorta(l.gerencia)));
-  const GERENCIAS = [...gerenciasSet].sort((a, b) => a.localeCompare(b, "es"));
-
-  const categoriasConDatos = new Set(listados.map((l) => l.categoria));
-
-  function categoriaScraper(categoriaUi) {
-    return CATEGORIA_UI_A_SCRAPER[categoriaUi] ?? categoriaUi;
-  }
-
-  function listadosDe(categoriaUi, gerenciaCortaFiltro = null) {
-    const cat = categoriaScraper(categoriaUi);
-    return listados.filter((l) => {
-      if (l.categoria !== cat) return false;
-      if (!gerenciaCortaFiltro) return true;
-      return gerenciaCorta(l.gerencia) === gerenciaCortaFiltro;
+  for (const [grupoId, info] of Object.entries(categoriasPorGrupo)) {
+    const pdfs = info.categorias_pdf || [];
+    const uis = pdfs.map(portalAUi);
+    porGrupo[grupoId] = { pdfs, uis };
+    pdfs.forEach((pdf, i) => {
+      uiAScraper[uis[i]] = pdf;
+      scraperAUi[pdf] = uis[i];
     });
   }
+  return { uiAScraper, scraperAUi, porGrupo };
+}
 
-  function tieneDatosReales(categoriaUi) {
-    const grupo = categoriaScraper(categoriaUi);
-    return categoriasConDatos.has(grupo);
+export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
+  const { uiAScraper, scraperAUi } = construirMapasCategorias(categoriasPorGrupo);
+  const archivosDisponibles = new Set(manifest?.archivos || []);
+  const cache = new Map();
+
+  function rutaRelativa(grupoId, categoriaScraper) {
+    return `${grupoId}/${slugArchivo(categoriaScraper)}.json`;
   }
 
-  function obtenerListadoCompleto(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
-    let bloques = listadosDe(categoriaUi, gerenciaCortaFiltro || null);
-    if (ambitoFiltro) {
-      bloques = bloques.filter((b) => b.ambito === ambitoFiltro);
+  function categoriaScraper(categoriaUi) {
+    return uiAScraper[categoriaUi] ?? categoriaUi.toUpperCase();
+  }
+
+  function categoriaUiDesdeScraper(nombre) {
+    return scraperAUi[nombre] ?? portalAUi(nombre);
+  }
+
+  function tieneDatosReales(categoriaUi, grupoId) {
+    const cat = categoriaScraper(categoriaUi);
+    return archivosDisponibles.has(rutaRelativa(grupoId, cat));
+  }
+
+  async function cargarCategoria(grupoId, categoriaUi) {
+    const cat = categoriaScraper(categoriaUi);
+    const key = `${grupoId}/${cat}`;
+    if (cache.has(key)) return cache.get(key);
+    const rel = rutaRelativa(grupoId, cat);
+    const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
+    if (!res.ok) throw new Error(`No se pudo cargar ${DATA_CATEGORIAS_BASE_URL}${rel} (${res.status})`);
+    const data = await res.json();
+    cache.set(key, data);
+    return data;
+  }
+
+  function listadosDeSnapshot(snapshot, categoriaUi, gerenciaCortaFiltro = null, ambitoFiltro = "") {
+    const cat = categoriaScraper(categoriaUi);
+    let listados = (snapshot?.listados ?? []).filter((l) => l.categoria === cat);
+    if (gerenciaCortaFiltro) {
+      listados = listados.filter((l) => gerenciaCorta(l.gerencia) === gerenciaCortaFiltro);
     }
+    if (ambitoFiltro) {
+      listados = listados.filter((l) => l.ambito === ambitoFiltro);
+    }
+    return listados;
+  }
+
+  function filasDesdeListados(listados) {
     const filas = [];
-    bloques.forEach((bloque) => {
+    listados.forEach((bloque) => {
       const total = bloque.filas.length;
       bloque.filas.forEach((f) => {
-        filas.push(filaScraperAApp({ ...f, gerencia: bloque.gerencia, ambito: bloque.ambito, categoria: bloque.categoria }, total));
+        filas.push(
+          filaScraperAApp(
+            { ...f, gerencia: bloque.gerencia, ambito: bloque.ambito, categoria: bloque.categoria },
+            total
+          )
+        );
       });
     });
     return filas.sort((a, b) => a.pos - b.pos);
   }
 
-  function buscarPorApellido(categoriaUi, gerenciaCortaFiltro, apellidos) {
-    const q = normalizarTexto(apellidos);
-    if (!q) return [];
-    return obtenerListadoCompleto(categoriaUi, gerenciaCortaFiltro).filter((f) =>
-      normalizarTexto(f.apellidos).includes(q)
-    );
+  async function obtenerListadoCompleto(grupoId, categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
+    const snap = await cargarCategoria(grupoId, categoriaUi);
+    const listados = listadosDeSnapshot(snap, categoriaUi, gerenciaCortaFiltro || null, ambitoFiltro);
+    return filasDesdeListados(listados);
   }
 
-  function buscarPersonas(categoriaUi, gerencia, apellidos, TODAS_GERENCIAS, gerenciasLista) {
-    const gerencias = gerencia === TODAS_GERENCIAS ? gerenciasLista : [gerencia];
+  async function buscarPorApellido(grupoId, categoriaUi, gerenciaCortaFiltro, apellidos) {
+    const q = normalizarTexto(apellidos);
+    if (!q) return [];
+    const filas = await obtenerListadoCompleto(grupoId, categoriaUi, gerenciaCortaFiltro);
+    return filas.filter((f) => normalizarTexto(f.apellidos).includes(q));
+  }
+
+  async function buscarPersonas(grupoId, categoriaUi, gerencia, apellidos, TODAS_GERENCIAS, gerenciasLista) {
+    const snap = await cargarCategoria(grupoId, categoriaUi);
+    const gerenciasEnDatos = [...new Set((snap.listados ?? []).map((l) => gerenciaCorta(l.gerencia)))].sort((a, b) =>
+      a.localeCompare(b, "es")
+    );
+    const gerencias = gerencia === TODAS_GERENCIAS ? gerenciasEnDatos : [gerencia];
     const porPersona = new Map();
-    gerencias.forEach((g) => {
-      buscarPorApellido(categoriaUi, g, apellidos).forEach((f) => {
+    for (const g of gerencias) {
+      const filas = filasDesdeListados(listadosDeSnapshot(snap, categoriaUi, g));
+      const q = normalizarTexto(apellidos);
+      filas.filter((f) => normalizarTexto(f.apellidos).includes(q)).forEach((f) => {
         const clave = f.dniParcial || f.nombreCompleto;
         if (!porPersona.has(clave)) {
           porPersona.set(clave, {
@@ -136,8 +216,8 @@ export function crearCapaDatos(latest, historico) {
           tiposContrato: f.tiposContrato,
         });
       });
-    });
-    return [...porPersona.values()];
+    }
+    return { personas: [...porPersona.values()], gerencias: gerenciasEnDatos };
   }
 
   function historialCorte(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
@@ -155,9 +235,7 @@ export function crearCapaDatos(latest, historico) {
     entradas.forEach((e) => {
       const prev = porFecha.get(e.fecha);
       const punto = e.punto_minimo_admitido;
-      if (prev == null || punto < prev) {
-        porFecha.set(e.fecha, punto);
-      }
+      if (prev == null || punto < prev) porFecha.set(e.fecha, punto);
     });
     return [...porFecha.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
@@ -167,12 +245,19 @@ export function crearCapaDatos(latest, historico) {
       }));
   }
 
-  function estadoActualizacion(categoriaUi, grupoActivo) {
+  async function estadoActualizacion(categoriaUi, grupoId, grupoActivo) {
     if (grupoActivo === false) {
       return { tipo: "sin_activar", texto: "El scraping de este grupo todavía no está activado. Los datos mostrados son de ejemplo." };
     }
-    if (!tieneDatosReales(categoriaUi)) {
-      return { tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría en data/latest.json." };
+    if (!tieneDatosReales(categoriaUi, grupoId)) {
+      return { tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." };
+    }
+    let generado = null;
+    try {
+      const snap = await cargarCategoria(grupoId, categoriaUi);
+      generado = snap.generado;
+    } catch {
+      return { tipo: "sin_datos", texto: "No se pudo cargar el listado de esta categoría." };
     }
     if (!generado) {
       return { tipo: "desactualizado", texto: "No consta cuándo se actualizó el listado por última vez." };
@@ -180,33 +265,70 @@ export function crearCapaDatos(latest, historico) {
     const fecha = new Date(generado);
     const dias = Math.floor((Date.now() - fecha.getTime()) / (1000 * 60 * 60 * 24));
     if (dias > 14) {
-      return { tipo: "desactualizado", texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). El SESCAM puede haber publicado cambios desde entonces.` };
+      return {
+        tipo: "desactualizado",
+        texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). El SESCAM puede haber publicado cambios desde entonces.`,
+      };
     }
     const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
     return { tipo: "ok", texto: `Snapshot del listado: ${fecha.toLocaleString("es-ES")} (${hace}).` };
   }
 
+  const gruposSanidad = categoriasPorGrupo
+    ? Object.entries(categoriasPorGrupo)
+        .filter(([id]) => id !== "facultativo")
+        .map(([id, info]) => ({
+        id,
+        nombre: {
+          diplomado: "Personal Sanitario Diplomado",
+          licenciados: "Personal Sanitario Licenciado",
+          tecnico: "Personal Sanitario Técnico",
+          gestion: "Personal de Gestión y Servicios",
+        }[id] || id,
+        activo: id === "diplomado",
+        categorias: (info.categorias_pdf || []).map(portalAUi),
+      }))
+    : [];
+
+  async function gerenciasDeCategoria(grupoId, categoriaUi) {
+    try {
+      const snap = await cargarCategoria(grupoId, categoriaUi);
+      return [...new Set((snap.listados ?? []).map((l) => gerenciaCorta(l.gerencia)))].sort((a, b) =>
+        a.localeCompare(b, "es")
+      );
+    } catch {
+      return [];
+    }
+  }
+
   return {
-    GERENCIAS,
-    generado,
+    uiAScraper,
+    scraperAUi,
+    categoriaUiDesdeScraper,
+    gruposSanidad,
     tieneDatosReales,
+    cargarCategoria,
+    gerenciasDeCategoria,
     obtenerListadoCompleto,
     buscarPorApellido,
     buscarPersonas,
     historialCorte,
     estadoActualizacion,
+    archivosDisponibles,
   };
 }
 
 export async function cargarDatos() {
-  const [latestRes, historicoRes] = await Promise.all([
-    fetch("/data/latest.json"),
-    fetch("/data/historico.json"),
+  const [historicoRes, manifestRes, catsRes] = await Promise.all([
+    fetch(`${DATA_META_BASE_URL}historico.json`),
+    fetch(`${DATA_META_BASE_URL}manifest.json`),
+    fetch(`${DATA_META_BASE_URL}categorias_por_grupo.json`),
   ]);
-  if (!latestRes.ok) throw new Error(`No se pudo cargar latest.json (${latestRes.status})`);
   if (!historicoRes.ok) throw new Error(`No se pudo cargar historico.json (${historicoRes.status})`);
-  const [latest, historico] = await Promise.all([latestRes.json(), historicoRes.json()]);
-  return crearCapaDatos(latest, historico);
+  const historico = await historicoRes.json();
+  const manifest = manifestRes.ok ? await manifestRes.json() : { archivos: [] };
+  const categoriasPorGrupo = catsRes.ok ? await catsRes.json() : null;
+  return crearCapaDatos(historico, manifest, categoriasPorGrupo);
 }
 
 const DatosContext = createContext(null);

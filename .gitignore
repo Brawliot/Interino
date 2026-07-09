@@ -74,4 +74,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Listados scrapeados (grandes); se servirán desde R2 en producción
+data/diplomado/*.json
+
 dist/

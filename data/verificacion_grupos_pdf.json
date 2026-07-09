@@ -1,0 +1,49 @@
+{
+  "diplomado": {
+    "ok": true,
+    "categoria": "FISIOTERAPEUTA",
+    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/FISIOTERAPEUTA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
+    "status": 200,
+    "filas": 1293,
+    "muestra": {
+      "orden": 1,
+      "nombre": "SOLERA CARNICERO,\nASCENSION",
+      "dni": "****4208D",
+      "baremo": 1346.8,
+      "contratos": [
+        "Larga TC.",
+        "Larga TP.",
+        "Corta TC."
+      ]
+    }
+  },
+  "facultativo": {
+    "ok": false,
+    "categoria": "MEDICO/A DE FAMILIA",
+    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/MEDICO_A_DE_FAMILIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
+    "status": 404,
+    "filas": 0
+  },
+  "licenciados": {
+    "ok": false,
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/FARMACEUTICO_A_DE_ATENCION_PRIMARIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
+    "status": 404,
+    "filas": 0
+  },
+  "tecnico": {
+    "ok": false,
+    "categoria": "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERÍA",
+    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/TECNICO_A_MEDIO_SANITARIO%3A_CUIDADOS_AUXILIARES_DE_ENFERMER%C3%8DA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
+    "status": 404,
+    "filas": 0
+  },
+  "gestion": {
+    "ok": true,
+    "categoria": "CELADOR/A",
+    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/CELADOR_A_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
+    "status": 200,
+    "filas": 10967,
+    "nota": "AUXILIAR ADMINISTRATIVO/A devuelve 404 con el mismo patrón; CELADOR/A sí funciona."
+  }
+}
