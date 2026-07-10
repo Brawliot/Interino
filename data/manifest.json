@@ -1,6 +1,19 @@
 {
-  "generado": "2026-07-10T11:26:23",
+  "generado": "2026-07-10T14:33:28",
   "archivos": [
-    "diplomado/dietista-nutricionista.json"
+    "diplomado/dietista-nutricionista.json",
+    "diplomado/enfermero-a-especialista-del-trabajo.json",
+    "diplomado/enfermero-a-especialista-en-enf-familiar-y-comunitaria.json",
+    "diplomado/enfermero-a-especialista-en-enf-geriatrica.json",
+    "diplomado/enfermero-a-especialista-en-enf-pediatrica.json",
+    "diplomado/enfermero-a-especialista-en-salud-mental.json",
+    "diplomado/enfermero-a-especialista-obstetricio-ginecologica-matrona.json",
+    "diplomado/enfermero-a-p-e-a-c.json",
+    "diplomado/enfermero-a.json",
+    "diplomado/fisioterapeuta.json",
+    "diplomado/logopeda.json",
+    "diplomado/optico-a-optometrista.json",
+    "diplomado/podologo-a.json",
+    "diplomado/terapeuta-ocupacional.json"
   ]
 }
