@@ -7,9 +7,11 @@ Convocatoria 2025) que la tabla tiene estas columnas:
   ORDEN | APELLIDOS Y NOMBRE | DNI (****1234X) | AUTOBAR | COMPROBADO
   BAREMO | G.P | Larga TC | Larga TP | Corta TC | Corta TP | C.U. TC | C.U. TP
 
-Los PDFs viven en una carpeta publica con nombre de archivo predecible,
-asi que NO hace falta replicar el formulario JavaScript: basta con
-construir la URL y pedirla (si no existe, da 404 y se salta).
+Los PDFs se obtienen consultando el formulario web del SESCAM (Drupal,
+formulario sescam_baremo_bolsa_form): POST a la misma URL de baremos del
+grupo con categoria, gerencia y (si aplica) ambito. No hay endpoint AJAX
+JSON separado; el navegador recarga la pagina via POST al cambiar cada
+desplegable.
 
 IMPORTANTE - honestidad sobre lo que este dato representa:
 El PDF es el listado de ADMITIDOS en la bolsa (ordenado por puntuacion),
@@ -28,6 +30,7 @@ import json
 import argparse
 import unicodedata
 from datetime import datetime
+from html import unescape
 
 import requests
 import pdfplumber
@@ -37,10 +40,25 @@ from dataclasses import dataclass, asdict, field
 # CONFIGURACION
 # ---------------------------------------------------------------
 
+BASE_BAREMOS = (
+    "https://sanidad.castillalamancha.es/profesionales/atencion-al-profesional/"
+    "bolsas-constituidas/baremos/"
+)
 BASE_PDFS = "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/"
 
-# TODO: El patrón URL PDF de licenciados, técnico y gestión no coincide con diplomado
-# (404 con Vigésima 2025). No investigado — no prioritario.
+GRUPOS_PORTAL_SLUG = {
+    "diplomado": "personal-sanitario-diplomado",
+    "facultativo": "personal-facultativo",
+    "licenciados": "personal-sanitario-licenciados",
+    "tecnico": "personal-sanitario-tecnico",
+    "gestion": "personal-de-gestion-y-servicios",
+}
+
+USER_AGENT = "Mozilla/5.0 (compatible; ListasApp/0.2; +contacto@ejemplo.es)"
+REQUEST_HEADERS = {"User-Agent": USER_AGENT, "Cache-Control": "no-cache"}
+PDF_TIMEOUT_SEG = 180
+PDF_REINTENTOS = 3
+PDF_BACKOFF_SEG = (5, 15, 30)
 
 # Ajustar cuando cambie la convocatoria (hoy: 20a, año 2025)
 ORDINAL_CONVOCATORIA = "Vigesima"
@@ -109,14 +127,281 @@ def slug_categoria(categoria: str) -> str:
     return categoria.replace("/", "_").replace(" ", "_")
 
 
+def _normalizar_clave(texto: str) -> str:
+    return quitar_acentos(texto).upper().strip()
+
+
+def _coincide_etiqueta(opciones: dict[str, str], buscada: str) -> str | None:
+    """Devuelve la clave real del <select> que coincide con la etiqueta buscada."""
+    w = _normalizar_clave(buscada)
+    for etiqueta in opciones:
+        if _normalizar_clave(etiqueta) == w:
+            return etiqueta
+    for etiqueta in opciones:
+        if w in _normalizar_clave(etiqueta):
+            return etiqueta
+    return None
+
+
+def _variantes_gerencia(gerencia: str, ambito: str) -> list[str]:
+    """Algunas gerencias AE/AP tienen nombre distinto en el portal (p. ej. Toledo)."""
+    variantes = [gerencia]
+    if "Primaria de Toledo" in gerencia and "Especializada" in ambito:
+        variantes.append("Gerencia de Atencion Especializada de Toledo")
+    return variantes
+
+
+@dataclass
+class _SesionCategoria:
+    html: str
+    cat_id: str
+    categoria: str
+
+
+@dataclass
+class ResultadoListado:
+    filas: list["FilaBaremo"]
+    estado: str  # ok | sin_pdf | sin_gerencia | 404 | timeout | error
+    url: str | None = None
+
+
+def _log_listado(categoria: str, gerencia: str, ambito: str, estado: str, url: str | None, filas: int = 0):
+    prefijos = {
+        "ok": "OK",
+        "sin_pdf": "SIN PDF",
+        "sin_gerencia": "SIN GERENCIA",
+        "404": "404",
+        "timeout": "TIMEOUT",
+        "error": "ERROR",
+    }
+    pref = prefijos.get(estado, estado.upper())
+    extra = f" -> {filas} filas" if estado == "ok" else ""
+    print(f"{pref}  {categoria} · {gerencia} · {ambito}{extra}")
+    if url and estado != "ok":
+        print(f"      {url[:100]}")
+
+
+class ClienteFormularioBaremo:
+    """
+    Replica el formulario web de baremos del SESCAM para obtener URLs reales de PDF.
+
+    Endpoint: POST a la URL de baremos del grupo (una por grupo profesional).
+    Mismo mecanismo para diplomado, tecnico, licenciados y gestion.
+    """
+
+    def __init__(self, grupo: str):
+        if grupo not in GRUPOS_PORTAL_SLUG:
+            raise ValueError(f"Grupo desconocido: {grupo}")
+        self.grupo = grupo
+        self.page_url = BASE_BAREMOS + GRUPOS_PORTAL_SLUG[grupo]
+        self.session = requests.Session()
+
+    def _get(self) -> str:
+        r = self.session.get(self.page_url, headers=REQUEST_HEADERS, timeout=45)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding or "utf-8"
+        return r.text
+
+    def _post(self, data: dict) -> str:
+        r = self.session.post(
+            self.page_url,
+            data=data,
+            headers={**REQUEST_HEADERS, "Referer": self.page_url},
+            timeout=45,
+        )
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding or "utf-8"
+        return r.text
+
+    @staticmethod
+    def _chunk_baremo(html: str) -> str:
+        idx = html.find("sescam-baremo-bolsa-form")
+        return html[idx : idx + 16000] if idx >= 0 else ""
+
+    def _tokens(self, html: str) -> tuple[str, str]:
+        chunk = self._chunk_baremo(html)
+        fb = re.search(r'name="form_build_id"[^>]*value="([^"]+)"', chunk)
+        fid = re.search(r'name="form_id"[^>]*value="([^"]+)"', chunk)
+        if not fb or not fid:
+            raise ValueError("No se encontraron tokens del formulario baremo")
+        return fb.group(1), fid.group(1)
+
+    def _opciones_select(self, html: str, nombre: str) -> dict[str, str]:
+        chunk = self._chunk_baremo(html)
+        m = re.search(rf'name="{nombre}"[^>]*>(.*?)</select>', chunk, re.I | re.S)
+        if not m:
+            return {}
+        out: dict[str, str] = {}
+        for valor, texto in re.findall(
+            r'<option[^>]*value="([^"]*)"[^>]*>(.*?)</option>', m.group(1), re.I | re.S
+        ):
+            etiqueta = unescape(re.sub(r"<[^>]+>", "", texto)).strip()
+            if valor and valor != "0":
+                out[etiqueta] = valor
+        return out
+
+    @staticmethod
+    def _urls_pdf(html: str) -> list[str]:
+        urls = []
+        for href in re.findall(r'href="([^"]*selecta-pdfs[^"]+\.pdf)"', html, re.I):
+            urls.append(unescape(href))
+        return list(dict.fromkeys(urls))
+
+    @staticmethod
+    def _elegir_pdf(urls: list[str], ambito: str) -> str | None:
+        if not urls:
+            return None
+        amb = _normalizar_clave(ambito)
+        candidatas = [u for u in urls if "DISCAPACIDAD" not in u.upper()]
+        for url in candidatas:
+            if amb in _normalizar_clave(url):
+                return url
+        return candidatas[0] if candidatas else urls[0]
+
+    def iniciar_categoria(self, categoria: str) -> _SesionCategoria:
+        """GET + POST categoria (una vez por categoria scrapeada)."""
+        html = self._get()
+        fb, fid = self._tokens(html)
+        opciones = self._opciones_select(html, "categoria")
+        etiqueta = _coincide_etiqueta(opciones, categoria)
+        if not etiqueta:
+            raise ValueError(f"Categoria no encontrada en portal: {categoria}")
+        cat_id = opciones[etiqueta]
+        html = self._post({
+            "categoria": cat_id,
+            "form_build_id": fb,
+            "form_id": fid,
+        })
+        return _SesionCategoria(html=html, cat_id=cat_id, categoria=categoria)
+
+    def renovar_tras_post(self, html_respuesta: str, cat_id: str) -> str:
+        """Vuelve al estado 'categoria elegida' sin GET (tokens del ultimo POST)."""
+        fb, fid = self._tokens(html_respuesta)
+        return self._post({
+            "categoria": cat_id,
+            "form_build_id": fb,
+            "form_id": fid,
+        })
+
+    def _post_gerencia(self, html_estado: str, cat_id: str, gerencia_id: str) -> str:
+        fb, fid = self._tokens(html_estado)
+        return self._post({
+            "categoria": cat_id,
+            "gerencia": gerencia_id,
+            "form_build_id": fb,
+            "form_id": fid,
+        })
+
+    def _id_gerencia_en_html(self, html_estado: str, gerencia: str) -> tuple[str, str] | None:
+        gerencias = self._opciones_select(html_estado, "gerencia")
+        candidatas = list(_variantes_gerencia(gerencia, "Atencion Primaria"))
+        candidatas += [g for g in _variantes_gerencia(gerencia, "Atencion Especializada") if g not in candidatas]
+        for nombre in candidatas:
+            etiqueta = _coincide_etiqueta(gerencias, nombre)
+            if etiqueta:
+                return etiqueta, gerencias[etiqueta]
+        return None
+
+    def pdfs_por_gerencia(self, sesion: _SesionCategoria, gerencia: str) -> tuple[dict[str, str], str]:
+        """
+        Un POST de gerencia; devuelve mapa ambito->url y html tras el POST (para renovar).
+        """
+        match = self._id_gerencia_en_html(sesion.html, gerencia)
+        if not match:
+            return {}, sesion.html
+
+        _, ger_id = match
+        html_g = self._post_gerencia(sesion.html, sesion.cat_id, ger_id)
+        urls = self._urls_pdf(html_g)
+        por_ambito: dict[str, str] = {}
+
+        for amb in AMBITOS:
+            u = self._elegir_pdf(urls, amb)
+            if u:
+                por_ambito[amb] = u
+
+        if not por_ambito:
+            fb2, fid2 = self._tokens(html_g)
+            ambitos_op = self._opciones_select(html_g, "ambito")
+            if ambitos_op:
+                for etiqueta_a, amb_id in ambitos_op.items():
+                    html_a = self._post({
+                        "categoria": sesion.cat_id,
+                        "gerencia": ger_id,
+                        "ambito": amb_id,
+                        "form_build_id": fb2,
+                        "form_id": fid2,
+                    })
+                    for amb in AMBITOS:
+                        u = self._elegir_pdf(self._urls_pdf(html_a), amb)
+                        if u:
+                            por_ambito[amb] = u
+                    html_g = html_a
+
+        return por_ambito, html_g
+
+    def url_pdf_en_sesion(
+        self, sesion: _SesionCategoria, gerencia: str, ambito: str
+    ) -> tuple[str | None, str]:
+        """
+        Resuelve URL del PDF para una gerencia/ambito.
+        Devuelve (url o None, html tras el POST de gerencia para renovar sesion).
+        """
+        html_estado = sesion.html
+        gerencias = self._opciones_select(html_estado, "gerencia")
+
+        for gerencia_buscar in _variantes_gerencia(gerencia, ambito):
+            etiqueta_g = _coincide_etiqueta(gerencias, gerencia_buscar)
+            if not etiqueta_g:
+                continue
+
+            html_g = self._post_gerencia(html_estado, sesion.cat_id, gerencias[etiqueta_g])
+            url = self._elegir_pdf(self._urls_pdf(html_g), ambito)
+            if url:
+                return url, html_g
+
+            fb2, fid2 = self._tokens(html_g)
+            ambitos_op = self._opciones_select(html_g, "ambito")
+            if ambitos_op:
+                etiqueta_a = _coincide_etiqueta(ambitos_op, ambito) or next(iter(ambitos_op))
+                html_a = self._post({
+                    "categoria": sesion.cat_id,
+                    "gerencia": gerencias[etiqueta_g],
+                    "ambito": ambitos_op[etiqueta_a],
+                    "form_build_id": fb2,
+                    "form_id": fid2,
+                })
+                url = self._elegir_pdf(self._urls_pdf(html_a), ambito)
+                if url:
+                    return url, html_a
+            return None, html_g
+
+        return None, html_estado
+
+    def resolver_url_pdf(self, categoria: str, gerencia: str, ambito: str) -> str | None:
+        """Atajo para una sola consulta (no reutiliza sesion entre gerencias)."""
+        try:
+            sesion = self.iniciar_categoria(categoria)
+            url, _ = self.url_pdf_en_sesion(sesion, gerencia, ambito)
+            return url
+        except (requests.exceptions.RequestException, ValueError):
+            return None
+
+
+_clientes_portal: dict[str, ClienteFormularioBaremo] = {}
+
+
+def cliente_portal(grupo: str) -> ClienteFormularioBaremo:
+    if grupo not in _clientes_portal:
+        _clientes_portal[grupo] = ClienteFormularioBaremo(grupo)
+    return _clientes_portal[grupo]
+
+
 def construir_url_pdf(categoria: str, gerencia: str, ambito: str,
                        estado: str = "ADMITIDOS", subtipo: str | None = None,
                        tipo_listado: str = "DEFINITIVO") -> str:
     """
-    Reconstruye la URL del PDF a partir del patron real confirmado:
-
-    {CATEGORIA}_Listado {TIPO} de {ESTADO}[. {SUBTIPO}].
-    {ORDINAL} Convocatoria {AÑO} - {AMBITO} - {GERENCIA sin acentos}.pdf
+    Patron historico (solo diplomado). Preferir resolver_url_pdf() via formulario.
     """
     partes_nombre = [f"Listado {tipo_listado} de {estado}"]
     if subtipo:
@@ -180,28 +465,82 @@ def parsear_pdf(contenido: bytes, categoria: str, gerencia: str, ambito: str) ->
     return filas
 
 
-def obtener_listado(categoria: str, gerencia: str, ambito: str, intentos: int = 2) -> list[FilaBaremo]:
-    url = construir_url_pdf(categoria, gerencia, ambito)
-    for intento in range(intentos):
+def descargar_pdf(url: str) -> tuple[bytes | None, str]:
+    """Descarga con reintentos y backoff. Devuelve (contenido, estado)."""
+    estado = "error"
+    for intento in range(PDF_REINTENTOS):
         try:
-            resp = requests.get(
-                url,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; ListasApp/0.1; +contacto@ejemplo.es)"},
-                timeout=12,
-            )
+            resp = requests.get(url, headers=REQUEST_HEADERS, timeout=PDF_TIMEOUT_SEG)
             if resp.status_code == 404:
-                return []  # esta combinacion no existe, es normal
+                return None, "404"
             resp.raise_for_status()
-            return parsear_pdf(resp.content, categoria, gerencia, ambito)
+            return resp.content, "ok"
+        except requests.exceptions.Timeout:
+            estado = "timeout"
         except requests.exceptions.RequestException:
-            if intento == intentos - 1:
-                return []  # tras los reintentos, se salta y sigue -- no revienta el resto
-            time.sleep(3)
-    return []
+            estado = "error"
+        if intento < PDF_REINTENTOS - 1:
+            time.sleep(PDF_BACKOFF_SEG[min(intento, len(PDF_BACKOFF_SEG) - 1)])
+    return None, estado
+
+
+def resolver_url_pdf(categoria: str, gerencia: str, ambito: str, grupo: str = "diplomado") -> str | None:
+    try:
+        return cliente_portal(grupo).resolver_url_pdf(categoria, gerencia, ambito)
+    except (requests.exceptions.RequestException, ValueError):
+        return None
+
+
+def obtener_listado_detalle(
+    categoria: str,
+    gerencia: str,
+    ambito: str,
+    grupo: str = "diplomado",
+    cliente: ClienteFormularioBaremo | None = None,
+    sesion: _SesionCategoria | None = None,
+) -> ResultadoListado:
+    """Resuelve URL, descarga y parsea. Una sola pasada por el formulario."""
+    try:
+        cli = cliente or cliente_portal(grupo)
+        ses = sesion or cli.iniciar_categoria(categoria)
+        url, html_tras = cli.url_pdf_en_sesion(ses, gerencia, ambito)
+
+        if not url:
+            hay_gerencia = cli._id_gerencia_en_html(ses.html, gerencia) is not None
+            estado = "sin_gerencia" if not hay_gerencia else "sin_pdf"
+            _log_listado(categoria, gerencia, ambito, estado, None)
+            return ResultadoListado([], estado)
+
+        contenido, estado_dl = descargar_pdf(url)
+        if estado_dl != "ok":
+            _log_listado(categoria, gerencia, ambito, estado_dl, url)
+            return ResultadoListado([], estado_dl, url)
+
+        filas = parsear_pdf(contenido, categoria, gerencia, ambito)
+        _log_listado(categoria, gerencia, ambito, "ok", url, len(filas))
+        return ResultadoListado(filas, "ok", url)
+
+    except (requests.exceptions.RequestException, ValueError) as e:
+        print(f"ERROR  {categoria} · {gerencia} · {ambito} -> {e}")
+        return ResultadoListado([], "error")
+
+
+def obtener_listado(
+    categoria: str,
+    gerencia: str,
+    ambito: str,
+    grupo: str = "diplomado",
+    cliente: ClienteFormularioBaremo | None = None,
+    sesion: _SesionCategoria | None = None,
+) -> list[FilaBaremo]:
+    return obtener_listado_detalle(
+        categoria, gerencia, ambito, grupo=grupo, cliente=cliente, sesion=sesion
+    ).filas
 
 
 def scrapear_todo(categorias=CATEGORIAS_SANIDAD_DIPLOMADO, gerencias=GERENCIAS,
-                   ambitos=AMBITOS, pausa=1.5, presupuesto_segundos=35 * 60) -> dict:
+                   ambitos=AMBITOS, grupo: str = "diplomado", pausa=1.5,
+                   presupuesto_segundos=35 * 60) -> dict:
     """Devuelve un unico dict con la foto completa de hoy. Nada de tuplas raras:
     todo lo que hace falta para guardar y para resumir esta aqui dentro.
 
@@ -217,7 +556,7 @@ def scrapear_todo(categorias=CATEGORIAS_SANIDAD_DIPLOMADO, gerencias=GERENCIAS,
                     print(f"\nPresupuesto de tiempo agotado ({presupuesto_segundos}s) -- paro aqui con lo que hay.")
                     return resultado
                 try:
-                    filas = obtener_listado(categoria, gerencia, ambito)
+                    filas = obtener_listado(categoria, gerencia, ambito, grupo=grupo)
                     if not filas:
                         continue
                     resultado["listados"].append({
@@ -259,28 +598,69 @@ def cargar_categorias_desde_inventario() -> dict[str, list[str]]:
     return out
 
 
-def scrapear_categoria(categoria: str, gerencias=GERENCIAS, ambitos=AMBITOS,
-                       pausa=1.5, presupuesto_segundos=None) -> list[dict]:
-    """Scrapea una sola categoría (todas gerencias × ámbitos). Devuelve listados."""
+def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GERENCIAS,
+                       ambitos=AMBITOS, pausa=1.5, presupuesto_segundos=None) -> list[dict]:
+    """Scrapea una sola categoría reutilizando sesión del formulario (1 GET+POST cat)."""
     inicio = time.time()
     listados = []
+    cliente = ClienteFormularioBaremo(grupo)
+    try:
+        sesion = cliente.iniciar_categoria(categoria)
+    except (requests.exceptions.RequestException, ValueError) as e:
+        print(f"ERROR  No se pudo iniciar categoria {categoria}: {e}")
+        return listados
+
+    html_estado = sesion.html
     for gerencia in gerencias:
+        if presupuesto_segundos and time.time() - inicio > presupuesto_segundos:
+            print(f"\nPresupuesto agotado ({presupuesto_segundos}s) en {categoria}.")
+            return listados
+
+        sesion.html = html_estado
+        try:
+            pdfs, html_tras = cliente.pdfs_por_gerencia(sesion, gerencia)
+        except (requests.exceptions.RequestException, ValueError) as e:
+            print(f"ERROR  {categoria} · {gerencia} -> {e}")
+            continue
+
+        if not pdfs:
+            for ambito in ambitos:
+                estado = "sin_gerencia" if not cliente._id_gerencia_en_html(html_estado, gerencia) else "sin_pdf"
+                _log_listado(categoria, gerencia, ambito, estado, None)
+            continue
+
         for ambito in ambitos:
             if presupuesto_segundos and time.time() - inicio > presupuesto_segundos:
-                print(f"\nPresupuesto agotado ({presupuesto_segundos}s) en {categoria}.")
                 return listados
-            try:
-                filas = obtener_listado(categoria, gerencia, ambito)
-                if not filas:
-                    continue
+            url = pdfs.get(ambito)
+            if not url:
+                _log_listado(categoria, gerencia, ambito, "sin_pdf", None)
+                continue
+
+            contenido, estado = descargar_pdf(url)
+            if estado != "ok":
+                _log_listado(categoria, gerencia, ambito, estado, url)
+                continue
+
+            filas = parsear_pdf(contenido, categoria, gerencia, ambito)
+            if filas:
                 listados.append({
                     "categoria": categoria, "gerencia": gerencia, "ambito": ambito,
                     "filas": [asdict(f) for f in filas],
                 })
-                print(f"OK  {categoria} · {gerencia} · {ambito} -> {len(filas)} filas")
-            except Exception as e:
-                print(f"ERROR  {categoria} · {gerencia} · {ambito} -> {e}")
+            _log_listado(categoria, gerencia, ambito, "ok", url, len(filas))
             time.sleep(pausa)
+
+        try:
+            html_estado = cliente.renovar_tras_post(html_tras, sesion.cat_id)
+        except (requests.exceptions.RequestException, ValueError) as e:
+            print(f"AVISO  Renovacion de sesion tras {gerencia}: {e}")
+            try:
+                sesion = cliente.iniciar_categoria(categoria)
+                html_estado = sesion.html
+            except (requests.exceptions.RequestException, ValueError):
+                return listados
+
     return listados
 
 
@@ -420,7 +800,7 @@ def ejecutar_scrape(grupo: str, categorias: list[str], presupuesto_segundos=35 *
                 print("Presupuesto global agotado.")
                 break
         listados = scrapear_categoria(
-            categoria, presupuesto_segundos=restante
+            categoria, grupo=grupo, presupuesto_segundos=restante
         )
         if listados:
             guardar_categoria_json(grupo, categoria, listados)

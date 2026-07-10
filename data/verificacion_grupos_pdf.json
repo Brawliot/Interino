@@ -1,49 +1,71 @@
 {
-  "diplomado": {
-    "ok": true,
-    "categoria": "FISIOTERAPEUTA",
-    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/FISIOTERAPEUTA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-    "status": 200,
-    "filas": 1293,
-    "muestra": {
-      "orden": 1,
-      "nombre": "SOLERA CARNICERO,\nASCENSION",
-      "dni": "****4208D",
-      "baremo": 1346.8,
-      "contratos": [
-        "Larga TC.",
-        "Larga TP.",
-        "Corta TC."
-      ]
+  "generado": "2026-07-10T12:02:31",
+  "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+  "ambito": "Atencion Primaria",
+  "grupos": {
+    "diplomado": {
+      "ok": true,
+      "grupo": "diplomado",
+      "categoria": "ENFERMERO/A",
+      "estado": "ok",
+      "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/ENFERMERO_A_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Cuenca.pdf",
+      "filas": 4375,
+      "muestra": {
+        "orden": 1,
+        "nombre": "SALGUERO PARIAS, MARIA\nANTONIA",
+        "dni": "****9660C",
+        "baremo": 1484.75
+      },
+      "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+      "ambito": "Atencion Primaria"
+    },
+    "licenciados": {
+      "ok": true,
+      "grupo": "licenciados",
+      "categoria": "MEDICO/A DE FAMILIA",
+      "estado": "ok",
+      "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/MEDICO_A%20DE%20FAMILIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Decimonovena%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Cuenca.pdf",
+      "filas": 258,
+      "muestra": {
+        "orden": 1,
+        "nombre": "ALARCON BLANCO, JOSE\nLUIS",
+        "dni": "****4459K",
+        "baremo": 1529.2
+      },
+      "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+      "ambito": "Atencion Primaria"
+    },
+    "tecnico": {
+      "ok": true,
+      "grupo": "tecnico",
+      "categoria": "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERIA",
+      "estado": "ok",
+      "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/TECNICO_A%20MEDIO%20SANITARIO%3A%20CUIDADOS%20AUXILIARES%20DE%20ENFERMERIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Cuenca.pdf",
+      "filas": 3460,
+      "muestra": {
+        "orden": 1,
+        "nombre": "BUENO ARDID, MARIA DE\nLOS ANGELES",
+        "dni": "****1753C",
+        "baremo": 1307.6
+      },
+      "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+      "ambito": "Atencion Primaria"
+    },
+    "gestion": {
+      "ok": true,
+      "grupo": "gestion",
+      "categoria": "CELADOR/A",
+      "estado": "ok",
+      "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/CELADOR_A_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Cuenca.pdf",
+      "filas": 8603,
+      "muestra": {
+        "orden": 1,
+        "nombre": "PATON GOMEZ, TRINIDAD",
+        "dni": "****4307S",
+        "baremo": 1095.76
+      },
+      "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+      "ambito": "Atencion Primaria"
     }
-  },
-  "facultativo": {
-    "ok": false,
-    "categoria": "MEDICO/A DE FAMILIA",
-    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/MEDICO_A_DE_FAMILIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-    "status": 404,
-    "filas": 0
-  },
-  "licenciados": {
-    "ok": false,
-    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
-    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/FARMACEUTICO_A_DE_ATENCION_PRIMARIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-    "status": 404,
-    "filas": 0
-  },
-  "tecnico": {
-    "ok": false,
-    "categoria": "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERÍA",
-    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/TECNICO_A_MEDIO_SANITARIO%3A_CUIDADOS_AUXILIARES_DE_ENFERMER%C3%8DA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-    "status": 404,
-    "filas": 0
-  },
-  "gestion": {
-    "ok": true,
-    "categoria": "CELADOR/A",
-    "url": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/CELADOR_A_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-    "status": 200,
-    "filas": 10967,
-    "nota": "AUXILIAR ADMINISTRATIVO/A devuelve 404 con el mismo patrón; CELADOR/A sí funciona."
   }
 }

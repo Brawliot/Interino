@@ -1,86 +1,71 @@
-"""Verifica UN PDF por grupo: URL, descarga y parser."""
+"""Verifica UN PDF por grupo: URL, descarga y parser (formulario portal SESCAM)."""
 import json
 import sys
-import unicodedata
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scraper import GERENCIAS, AMBITOS, construir_url_pdf, obtener_listado, parsear_pdf
-import requests
+from scraper import GERENCIAS, AMBITOS, obtener_listado_detalle, GRUPOS_PORTAL_SLUG, BASE_BAREMOS
 
-GERENCIA = GERENCIAS[0]  # Albacete
+GERENCIA = GERENCIAS[4]  # Cuenca
 AMBITO = AMBITOS[0]  # Atencion Primaria
 
-# Categoría de prueba por grupo (nombre PDF, sin acentos)
 PRUEBAS = {
-    "diplomado": "FISIOTERAPEUTA",
-    "facultativo": "MEDICO/A DE FAMILIA",
-    "licenciados": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "diplomado": "ENFERMERO/A",
+    "licenciados": "MEDICO/A DE FAMILIA",
     "tecnico": "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERIA",
-    "gestion": "AUXILIAR ADMINISTRATIVO/A",
-}
-
-VARIANTES_EXTRA = {
-    "tecnico": [
-        "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERIA",
-        "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERÍA",
-    ],
-    "gestion": ["AUXILIAR ADMINISTRATIVO/A", "AUXILIAR ADMINISTRATIVO/AB"],
+    "gestion": "CELADOR/A",
 }
 
 
-def probar_categoria(categoria: str) -> dict:
-    url = construir_url_pdf(categoria, GERENCIA, AMBITO)
-    try:
-        resp = requests.get(
-            url,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; ListasApp/0.1)"},
-            timeout=20,
-        )
-        status = resp.status_code
-        if status == 404:
-            return {"ok": False, "categoria": categoria, "url": url, "status": 404, "filas": 0}
-        resp.raise_for_status()
-        filas = parsear_pdf(resp.content, categoria, GERENCIA, AMBITO)
-        muestra = None
-        if filas:
-            f = filas[0]
-            muestra = {
-                "orden": f.orden,
-                "nombre": f.apellidos_nombre[:50],
-                "dni": f.dni_parcial,
-                "baremo": f.comprobado_baremo,
-                "contratos": list(f.tipos_contrato.keys())[:3],
-            }
-        return {
-            "ok": len(filas) > 0,
-            "categoria": categoria,
-            "url": url,
-            "status": status,
-            "filas": len(filas),
-            "muestra": muestra,
+def probar_grupo(grupo: str, categoria: str) -> dict:
+    resultado = obtener_listado_detalle(categoria, GERENCIA, AMBITO, grupo=grupo)
+    muestra = None
+    if resultado.filas:
+        f = resultado.filas[0]
+        muestra = {
+            "orden": f.orden,
+            "nombre": f.apellidos_nombre[:50],
+            "dni": f.dni_parcial,
+            "baremo": f.comprobado_baremo,
         }
-    except Exception as e:
-        return {"ok": False, "categoria": categoria, "url": url, "error": str(e), "filas": 0}
+    return {
+        "ok": resultado.estado == "ok" and len(resultado.filas) > 0,
+        "grupo": grupo,
+        "categoria": categoria,
+        "estado": resultado.estado,
+        "url": resultado.url,
+        "filas": len(resultado.filas),
+        "muestra": muestra,
+        "gerencia": GERENCIA,
+        "ambito": AMBITO,
+    }
 
 
 def main():
-    out = {}
+    print(f"Endpoint: POST {BASE_BAREMOS}{{slug}}")
+    print(f"Grupos: {GRUPOS_PORTAL_SLUG}\n")
+
+    out = {
+        "generado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "gerencia": GERENCIA,
+        "ambito": AMBITO,
+        "grupos": {},
+    }
     for grupo, cat in PRUEBAS.items():
-        variantes = VARIANTES_EXTRA.get(grupo, [cat])
-        detalle = None
-        for v in variantes:
-            detalle = probar_categoria(v)
-            if detalle["ok"]:
-                break
-        out[grupo] = detalle
-        estado = "OK" if detalle["ok"] else "FALLO"
-        print(f"{grupo}: {estado} ({detalle.get('filas', 0)} filas) {detalle.get('categoria')}")
+        detalle = probar_grupo(grupo, cat)
+        out["grupos"][grupo] = detalle
+        estado = "OK" if detalle["ok"] else detalle["estado"].upper()
+        print(f"{grupo}: {estado} ({detalle['filas']} filas) — {cat}")
 
     path = Path("data/verificacion_grupos_pdf.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Guardado {path}")
+    print(f"\nGuardado {path}")
+    fallos = [g for g, d in out["grupos"].items() if not d["ok"]]
+    if fallos:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
