@@ -1,7 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { Search, ChevronLeft, Bell, BellRing, Lock, MapPin, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall } from "lucide-react";
-import { useDatos, ambitoLegible } from "./src/datos.jsx";
+import { Search, ChevronLeft, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map, Banknote, Award } from "lucide-react";
+import { useDatos, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
+import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
+import SelectorSectores from "./src/SelectorSectores.jsx";
+import SimuladorBaremo from "./src/herramientas/SimuladorBaremo.jsx";
+import SimuladorGerencia from "./src/herramientas/SimuladorGerencia.jsx";
+import MapaOportunidades from "./src/herramientas/MapaOportunidades.jsx";
+import CalculadoraNomina from "./src/herramientas/CalculadoraNomina.jsx";
+import GuiaLlamamiento from "./src/herramientas/GuiaLlamamiento.jsx";
+import CalculadoraMeritos from "./src/herramientas/CalculadoraMeritos.jsx";
 
 // ---------------------------------------------------------------
 // TOKENS — "Expediente oficial": papel, tinta marina, sello dorado
@@ -37,14 +45,23 @@ const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 // DATOS DE EJEMPLO — solo Sanidad / Castilla-La Mancha es real
 // ---------------------------------------------------------------
 const CCAA = [
-  { id: "clm", nombre: "Castilla-La Mancha", activo: true },
-  { id: "mad", nombre: "Madrid", activo: false },
-  { id: "and", nombre: "Andalucía", activo: false },
-  { id: "cat", nombre: "Cataluña", activo: false },
-  { id: "val", nombre: "C. Valenciana", activo: false },
   { id: "gal", nombre: "Galicia", activo: false },
+  { id: "ast", nombre: "Asturias", activo: false },
+  { id: "cant", nombre: "Cantabria", activo: false },
   { id: "pv", nombre: "País Vasco", activo: false },
+  { id: "nav", nombre: "Navarra", activo: false },
+  { id: "rioja", nombre: "La Rioja", activo: false },
+  { id: "ar", nombre: "Aragón", activo: false },
+  { id: "cat", nombre: "Cataluña", activo: false },
+  { id: "val", nombre: "Comunitat Valenciana", activo: false },
+  { id: "bal", nombre: "Illes Balears", activo: false },
+  { id: "mad", nombre: "Comunidad de Madrid", activo: false },
   { id: "cyl", nombre: "Castilla y León", activo: false },
+  { id: "clm", nombre: "Castilla-La Mancha", activo: true },
+  { id: "ext", nombre: "Extremadura", activo: false },
+  { id: "mur", nombre: "Región de Murcia", activo: false },
+  { id: "and", nombre: "Andalucía", activo: false },
+  { id: "can", nombre: "Canarias", activo: false },
 ];
 
 const SECTORES = [
@@ -52,6 +69,17 @@ const SECTORES = [
   { id: "educacion", nombre: "Educación", icono: GraduationCap, activo: false, fuente: "Próximamente" },
   { id: "administracion", nombre: "Administración General", icono: Landmark, activo: false, fuente: "Próximamente" },
 ];
+
+const HERRAMIENTAS = [
+  { id: "simulador-baremo", titulo: "Simulador de baremo", subtitulo: "¿Cuántos puntos tendrías?", icono: Calculator, activo: true },
+  { id: "simulador-gerencia", titulo: "Simulador de gerencia", subtitulo: "Tu posición en otra gerencia", icono: ArrowLeftRight, activo: true },
+  { id: "mapa-oportunidades", titulo: "Mapa de oportunidades", subtitulo: "Dónde tienes más opciones", icono: Map, activo: true },
+  { id: "calculadora-nomina", titulo: "Calculadora de nómina", subtitulo: "¿Cuánto cobrarías?", icono: Banknote, activo: true },
+  { id: "guia-llamamiento", titulo: "Guía del llamamiento", subtitulo: "Te han llamado, ¿ahora qué?", icono: PhoneCall, activo: true },
+  { id: "calculadora-meritos", titulo: "Calculadora de méritos", subtitulo: "¿Cuánto sube tu baremo?", icono: Award, activo: true },
+];
+
+const NOMBRE_APP = "Interino";
 
 // 4 grupos SESCAM en la app (facultativo fusionado en licenciados en el portal).
 // Categorías reales vienen de datos.gruposSanidad (inventario del portal).
@@ -78,6 +106,7 @@ const GERENCIAS_EJEMPLO = [
   "Puertollano",
   "Talavera de la Reina",
   "Toledo",
+  "Toledo AE",
   "Tomelloso",
   "Valdepeñas",
   "Villarrobledo",
@@ -115,31 +144,30 @@ function generarListadoCompletoEjemplo(categoria, gerencia = "") {
   return filas;
 }
 
-const TODAS_GERENCIAS = "Todas las gerencias";
-
 function etiquetaLista(categoria, gerencia, ambito) {
   const base = `${categoria} · ${gerencia}`;
   return ambito ? `${base} · ${ambitoLegible(ambito)}` : base;
 }
 
-// busca coincidencias por apellido(s) — versión de ejemplo (grupos sin scraper)
-function buscarPorApellidoEjemplo(categoria, gerencia, apellidos) {
-  const filas = generarListadoCompletoEjemplo(categoria, gerencia);
-  const q = apellidos.trim().toLowerCase();
-  if (!q) return [];
-  return filas.filter((f) => `${f.ap1} ${f.ap2}`.toLowerCase().includes(q));
-}
-
-function buscarPersonasEjemplo(categoria, gerencia, apellidos, gerencias) {
-  const gs = gerencia === TODAS_GERENCIAS ? gerencias : [gerencia];
+// busca coincidencias por apellidos, DNI parcial o ambos — versión de ejemplo (grupos sin scraper)
+function buscarPersonasEjemplo(categoria, consulta, gerencias) {
   const porPersona = new Map();
-  gs.forEach((g) => {
-    buscarPorApellidoEjemplo(categoria, g, apellidos).forEach((f) => {
-      if (!porPersona.has(f.nombreCompleto)) {
-        porPersona.set(f.nombreCompleto, { nombre: f.nombre, ap1: f.ap1, ap2: f.ap2, nombreCompleto: f.nombreCompleto, dniParcial: f.dniParcial, apariciones: [] });
-      }
-      porPersona.get(f.nombreCompleto).apariciones.push({ gerencia: g, ...filaAResultado(f) });
-    });
+  gerencias.forEach((g) => {
+    generarListadoCompletoEjemplo(categoria, g)
+      .filter((f) => coincideBusqueda(f, consulta))
+      .forEach((f) => {
+        if (!porPersona.has(f.nombreCompleto)) {
+          porPersona.set(f.nombreCompleto, {
+            nombre: f.nombre,
+            ap1: f.ap1,
+            ap2: f.ap2,
+            nombreCompleto: f.nombreCompleto,
+            dniParcial: f.dniParcial,
+            apariciones: [],
+          });
+        }
+        porPersona.get(f.nombreCompleto).apariciones.push({ gerencia: g, ...filaAResultado(f) });
+      });
   });
   return [...porPersona.values()];
 }
@@ -190,7 +218,7 @@ function zonaRiesgo(puntosCandidato, historial) {
 function estadoActualizacionEjemplo(categoria, gruposSanidad) {
   const grupo = grupoDeCategoria(categoria, gruposSanidad);
   if (grupo && !grupo.activo) {
-    return { tipo: "sin_activar", texto: `El scraping del grupo ${grupo.nombre} todavía no está activado. Los datos mostrados son de ejemplo.` };
+    return { tipo: "sin_activar", texto: `El grupo ${grupo.nombre} aún no tiene listados scrapeados. Sin datos todavía.` };
   }
   return { tipo: "ok", texto: "Datos de ejemplo del prototipo." };
 }
@@ -309,52 +337,189 @@ function Barra({ titulo, atras }) {
 }
 
 // ---------------------------------------------------------------
+// PANTALLA 0 — inicio (hub)
+// ---------------------------------------------------------------
+function TarjetaSeguimientoResumen({ seguimiento, index, onAbrir, gruposSanidad }) {
+  const datos = useDatos();
+  const s = seguimiento;
+  const r = s.candidato;
+  const grupo = grupoDeCategoria(s.categoria, gruposSanidad);
+  const e = grupo?.activo && datos.tieneDatosReales(s.categoria, grupo.id)
+    ? { tipo: "ok", texto: "Datos reales disponibles." }
+    : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onAbrir(s)}
+      className="text-left focus:outline-none focus:ring-2 w-full"
+      style={{
+        background: C.card,
+        border: `1.5px solid ${C.line}`,
+        borderRadius: index % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
+        padding: "16px 18px",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>
+            {etiquetaLista(s.categoria, s.gerencia, s.ambito)}
+          </p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft }}>{r.nombreCompleto}</p>
+        </div>
+        {e.tipo !== "ok" && <AlertTriangle size={14} color={C.clay} />}
+      </div>
+      <p style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: C.navy, marginTop: 4 }}>#{r.posicion}</p>
+      <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft }}>{r.puntos.toFixed(2)} puntos · SESCAM</p>
+    </button>
+  );
+}
+
+function PantallaInicio({ onConsultar, onHerramienta, seguimientos, onAbrirSeguimiento, onVerSeguimientos, gruposSanidad }) {
+  return (
+    <div className="pb-4">
+      <div className="px-5 pt-8 pb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ width: 44, height: 44, background: C.navy, color: C.goldSoft, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 20 }}
+          >
+            L
+          </div>
+          <div>
+            <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 600, color: C.navy, lineHeight: 1.1, margin: 0 }}>
+              {NOMBRE_APP}
+            </h1>
+            <div style={{ marginTop: 8 }}>
+              <Sello>Expediente oficial</Sello>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5">
+        <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, marginBottom: 10 }}>
+          Consulta tu posición
+        </p>
+        <button
+          type="button"
+          onClick={onConsultar}
+          className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
+          style={{
+            background: C.navy,
+            color: "#fff",
+            padding: "18px 16px",
+            fontFamily: FONT_BODY,
+            fontSize: 16,
+            borderRadius: "16px 5px 16px 5px",
+            boxShadow: `0 4px 14px ${C.navy}44`,
+          }}
+        >
+          <Search size={18} /> Buscar en la bolsa
+        </button>
+
+        <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, marginTop: 28, marginBottom: 12 }}>
+          Herramientas
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {HERRAMIENTAS.map((h, i) => {
+            const Icono = h.icono;
+            return (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => h.activo && onHerramienta(h.id)}
+                disabled={!h.activo}
+                className="text-left focus:outline-none focus:ring-2 relative"
+                style={{
+                  background: C.card,
+                  border: `1.5px solid ${h.activo ? C.navy : C.line}`,
+                  borderRadius: i % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
+                  padding: "14px 12px",
+                  opacity: h.activo ? 1 : 0.62,
+                  cursor: h.activo ? "pointer" : "default",
+                  minHeight: 118,
+                }}
+              >
+                <div
+                  className="rounded-lg flex items-center justify-center"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    background: h.activo ? C.navy : C.paperDeep,
+                    marginBottom: 10,
+                  }}
+                >
+                  <Icono size={20} color={h.activo ? C.goldSoft : C.inkSoft} />
+                </div>
+                <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.navy, lineHeight: 1.25 }}>
+                  {h.titulo}
+                </p>
+                <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, marginTop: 4, lineHeight: 1.35 }}>
+                  {h.subtitulo}
+                </p>
+                {!h.activo && (
+                  <span className="absolute top-2 right-2">
+                    <Candado label="Pronto" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {seguimientos.length > 0 && (
+          <div style={{ marginTop: 28 }}>
+            <div className="flex items-center justify-between mb-3">
+              <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, margin: 0 }}>
+                Mis seguimientos
+              </p>
+              {seguimientos.length > 2 && (
+                <button
+                  type="button"
+                  onClick={onVerSeguimientos}
+                  className="focus:outline-none"
+                  style={{ fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, color: C.navy }}
+                >
+                  Ver todos
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-3">
+              {seguimientos.slice(0, 2).map((s, i) => (
+                <TarjetaSeguimientoResumen
+                  key={`${s.categoria}-${s.gerencia}-${s.ambito}-${s.candidato.nombreCompleto}`}
+                  seguimiento={s}
+                  index={i}
+                  onAbrir={onAbrirSeguimiento}
+                  gruposSanidad={gruposSanidad}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------
 // PANTALLA 1 — elegir comunidad
 // ---------------------------------------------------------------
-function PantallaCCAA({ onSelect }) {
+function PantallaCCAA({ onSelect, atras }) {
   return (
-    <div>
-      <div className="px-5 pt-8 pb-2">
+    <div className="flex flex-col" style={{ height: "calc(100dvh - 48px)", maxHeight: "100dvh" }}>
+      {atras && <Barra titulo="Tu comunidad" atras={atras} />}
+      <div className="px-4 pt-4 pb-0 flex-shrink-0">
         <Sello>Expediente nacional · 17 CC. AA.</Sello>
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 34, fontWeight: 600, color: C.navy, lineHeight: 1.15, marginTop: 16 }}>
-          Tu posición,<br />
-          sin adivinar<span style={{ color: C.clay }}>.</span>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 600, color: C.navy, lineHeight: 1.2, marginTop: 8, marginBottom: 0 }}>
+          Tu posición, sin adivinar<span style={{ color: C.clay }}>.</span>
         </h1>
-        <Subrayado width={132} style={{ marginLeft: 2 }} />
-        <p style={{ fontFamily: FONT_BODY, fontSize: 15, color: C.inkSoft, marginTop: 6, maxWidth: 320 }}>
-          Consulta tu lugar en las listas de interinos de sanidad, educación y administración. Elige tu comunidad para empezar.
-        </p>
       </div>
 
-      <div className="px-5 mt-5 grid grid-cols-2 gap-3">
-        {CCAA.map((c, i) => (
-          <button
-            key={c.id}
-            onClick={() => c.activo && onSelect(c)}
-            disabled={!c.activo}
-            className="text-left focus:outline-none focus:ring-2"
-            style={{
-              background: c.activo ? C.navy : C.card,
-              border: `1px solid ${c.activo ? C.navy : C.line}`,
-              borderRadius: i % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
-              padding: "16px 14px",
-              opacity: c.activo ? 1 : 0.62,
-              cursor: c.activo ? "pointer" : "default",
-              transform: c.activo ? "rotate(-0.4deg)" : "none",
-            }}
-          >
-            <MapPin size={16} color={c.activo ? C.goldSoft : C.inkSoft} />
-            <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: c.activo ? "#fff" : C.ink, marginTop: 8 }}>{c.nombre}</p>
-            <p style={{ fontFamily: FONT_MONO, fontSize: 10, color: c.activo ? C.goldSoft : C.inkSoft, marginTop: 4 }}>
-              {c.activo ? "DISPONIBLE" : "PRÓXIMAMENTE"}
-            </p>
-          </button>
-        ))}
+      <div className="flex-1 px-1 pb-4 pt-2" style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <MapaEspanaCCAA ccaaList={CCAA} onConfirm={onSelect} colors={C} />
       </div>
-
-      <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, textAlign: "center", margin: "22px 5px 0" }}>
-        Empezamos por Castilla-La Mancha. El resto de comunidades se irán añadiendo.
-      </p>
     </div>
   );
 }
@@ -364,37 +529,10 @@ function PantallaCCAA({ onSelect }) {
 // ---------------------------------------------------------------
 function PantallaSector({ ccaa, onSelect, atras }) {
   return (
-    <div>
+    <div className="flex flex-col" style={{ height: "calc(100dvh - 48px)", maxHeight: "100dvh" }}>
       <Barra titulo={ccaa.nombre} atras={atras} />
-      <p style={{ fontFamily: FONT_BODY, fontSize: 14, color: C.inkSoft, padding: "0 20px" }}>¿Qué lista quieres consultar?</p>
-
-      <div className="px-5 mt-4 flex flex-col gap-3">
-        {SECTORES.map((s) => {
-          const Icono = s.icono;
-          return (
-            <button
-              key={s.id}
-              onClick={() => s.activo && onSelect(s)}
-              disabled={!s.activo}
-              className="text-left rounded-2xl focus:outline-none focus:ring-2 flex items-center gap-4"
-              style={{
-                background: C.card,
-                border: `1.5px solid ${s.activo ? C.navy : C.line}`,
-                padding: "18px 16px",
-                opacity: s.activo ? 1 : 0.6,
-              }}
-            >
-              <div className="rounded-xl flex items-center justify-center" style={{ width: 46, height: 46, background: s.activo ? C.navy : C.paperDeep }}>
-                <Icono size={22} color={s.activo ? C.goldSoft : C.inkSoft} />
-              </div>
-              <div className="flex-1">
-                <p style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, color: C.navy }}>{s.nombre}</p>
-                <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 2 }}>{s.fuente}</p>
-              </div>
-              {!s.activo && <Candado label="Pronto" />}
-            </button>
-          );
-        })}
+      <div className="flex-1 px-3 pb-4" style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <SelectorSectores sectores={SECTORES} onConfirm={onSelect} colors={C} />
       </div>
     </div>
   );
@@ -407,30 +545,31 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
   const datos = useDatos();
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
   const grupo = gruposSanidad.find((g) => g.id === grupoId);
-  const gerenciasFallback = grupo?.activo ? [] : GERENCIAS_EJEMPLO;
-  const [gerencias, setGerencias] = useState(gerenciasFallback);
   const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
-  const [gerencia, setGerencia] = useState(TODAS_GERENCIAS);
-  const [apellidos, setApellidos] = useState("");
+  const [consulta, setConsulta] = useState("");
   const [sinResultados, setSinResultados] = useState(false);
+  const [gerenciaListado, setGerenciaListado] = useState(GERENCIAS_EJEMPLO[0]);
 
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
     setGrupoId(id);
     setCategoria(g?.categorias[0] || "");
-    setGerencias(g?.activo ? [] : GERENCIAS_EJEMPLO);
     setSinResultados(false);
   };
 
   useEffect(() => {
-    if (!grupo?.activo || !categoria) return;
-    datos.gerenciasDeCategoria(grupoId, categoria).then((gs) => {
-      if (gs.length) setGerencias(gs);
-    });
+    if (!categoria) return;
+    if (grupo?.activo) {
+      datos.gerenciasDeCategoria(grupoId, categoria).then((gs) => {
+        if (gs.length) setGerenciaListado(gs[0]);
+      });
+    } else {
+      setGerenciaListado(GERENCIAS_EJEMPLO[0]);
+    }
   }, [grupoId, categoria, grupo?.activo, datos]);
 
-  const buscar = async (cat, ger, ape) => {
-    const encontrados = await onBuscar(cat, ger, ape);
+  const buscar = async (cat, q) => {
+    const encontrados = await onBuscar(cat, q);
     setSinResultados(encontrados === 0);
   };
 
@@ -452,14 +591,13 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
                     const g = grupoDeCategoria(rec.categoria, gruposSanidad);
                     if (g) setGrupoId(g.id);
                     setCategoria(rec.categoria);
-                    setGerencia(rec.gerencia);
-                    setApellidos(rec.apellidos);
-                    buscar(rec.categoria, rec.gerencia, rec.apellidos);
+                    setConsulta(rec.consulta);
+                    buscar(rec.categoria, rec.consulta);
                   }}
                   className="focus:outline-none"
                   style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "6px 12px", fontFamily: FONT_BODY, fontSize: 12, color: C.navy }}
                 >
-                  {rec.apellidos} · {rec.categoria} · {rec.gerencia}
+                  {rec.consulta} · {rec.categoria}
                 </button>
               ))}
             </div>
@@ -476,7 +614,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
           >
             {gruposSanidad.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.nombre}{g.activo ? "" : " · datos de ejemplo"}
+                {g.nombre}{g.activo ? "" : " · sin datos todavía"}
               </option>
             ))}
           </select>
@@ -497,38 +635,21 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
         </div>
 
         <div>
-          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Gerencia</label>
-          <select
-            value={gerencia}
-            onChange={(e) => { setGerencia(e.target.value); setSinResultados(false); }}
-            className="w-full mt-2 focus:outline-none"
-            style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
-          >
-            {[TODAS_GERENCIAS, ...gerencias].map((g) => (
-              <option key={g}>{g}</option>
-            ))}
-          </select>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 6 }}>
-            No hace falta elegir: buscamos en las 13 gerencias (y en Atención Primaria y Especializada) y te enseñamos una tarjeta por cada lista en la que aparezcas. Filtra solo si quieres una gerencia concreta.
-          </p>
-        </div>
-
-        <div>
-          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Tus apellidos</label>
+          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Apellidos o DNI parcial</label>
           <input
-            value={apellidos}
-            onChange={(e) => { setApellidos(e.target.value); setSinResultados(false); }}
-            placeholder="Ej. García Martínez"
+            value={consulta}
+            onChange={(e) => { setConsulta(e.target.value); setSinResultados(false); }}
+            placeholder="Apellidos, DNI parcial o ambos — ej. García 4208"
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           />
           <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 6 }}>
-            Así es como el SESCAM publica el listado: por nombre y apellidos, no por DNI. No te pedimos ni guardamos tu DNI en ningún momento.
+            Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SESCAM) o por una combinación de ambos. Buscamos en las 13 gerencias y en Atención Primaria y Especializada. No te pedimos ni guardamos tu DNI completo.
           </p>
         </div>
 
         <button
-          onClick={() => buscar(categoria, gerencia, apellidos)}
+          onClick={() => buscar(categoria, consulta)}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
           style={{ background: C.navy, color: "#fff", padding: "15px", fontFamily: FONT_BODY, fontSize: 15, borderRadius: "16px 5px 16px 5px" }}
         >
@@ -539,13 +660,13 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No encontramos ese apellido en {gerencia === TODAS_GERENCIAS ? `ninguna gerencia para ${categoria}` : `el listado de ${categoria} · ${gerencia}`}. Comprueba cómo lo has escrito, o puede que aún no estés incluido en esta bolsa.
+              No encontramos coincidencias para «{consulta.trim()}» en ninguna gerencia de {categoria}. Comprueba cómo lo has escrito, o puede que aún no estés incluido en esta bolsa.
             </p>
           </div>
         )}
 
         <button
-          onClick={() => onVerListado(categoria, gerencia === TODAS_GERENCIAS ? gerencias[0] : gerencia)}
+          onClick={() => onVerListado(categoria, gerenciaListado)}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
           style={{ background: "transparent", color: C.navy, padding: "12px", fontFamily: FONT_BODY, fontSize: 13.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 16px 5px 16px" }}
         >
@@ -566,7 +687,7 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
     <div>
       <Barra titulo="¿Cuál eres tú?" atras={atras} />
       <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.inkSoft, padding: "0 20px 4px" }}>
-        Encontramos {candidatos.length} personas con ese apellido en las listas de {categoria}. Toca tu nombre — si dudas, el listado real también muestra los últimos dígitos del DNI para confirmar.
+        Encontramos {candidatos.length} personas que coinciden con tu búsqueda en las listas de {categoria}. Toca tu nombre — si dudas, el listado también muestra los últimos dígitos del DNI para confirmar.
       </p>
 
       <div className="px-5 mt-4 flex flex-col gap-3">
@@ -589,7 +710,7 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
       </div>
 
       <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, padding: "16px 20px 0" }}>
-        Si no te encuentras, vuelve atrás y prueba con el nombre de pila incluido, o revisa que el apellido esté bien escrito.
+        Si no te encuentras, vuelve atrás y prueba con más apellidos, con los dígitos del DNI o con una combinación de ambos.
       </p>
     </div>
   );
@@ -621,7 +742,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
     return () => { cancel = true; };
   }, [datos, categoria, gerencia, ambito, grupoId, grupoActivo]);
 
-  const visibles = filtro ? filas.filter((f) => f.nombreCompleto.toLowerCase().includes(filtro.toLowerCase())) : filas;
+  const visibles = filtro ? filas.filter((f) => coincideBusqueda(f, filtro)) : filas;
   const mostradas = visibles.slice(0, LIMITE_FILAS);
   const esReal = grupoActivo && datos.tieneDatosReales(categoria, grupoId);
 
@@ -634,7 +755,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
         <input
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          placeholder="Buscar por nombre o apellido…"
+          placeholder="Apellidos, DNI parcial o ambos…"
           className="w-full mt-3 focus:outline-none"
           style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "11px 14px", fontFamily: FONT_BODY, fontSize: 13.5, color: C.ink }}
         />
@@ -1101,7 +1222,8 @@ function PantallaInfoLlamamientos({ atras }) {
 export default function ListasApp() {
   const datos = useDatos();
   const gruposSanidad = datos.gruposSanidad?.length ? datos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
-  const [paso, setPaso] = useState("ccaa");
+  const [paso, setPaso] = useState("inicio");
+  const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [ccaa, setCcaa] = useState(null);
   const [sector, setSector] = useState(null);
   const [categoriaActual, setCategoriaActual] = useState("");
@@ -1115,22 +1237,28 @@ export default function ListasApp() {
   const [listadoAmbito, setListadoAmbito] = useState("");
   const [listadoGrupoId, setListadoGrupoId] = useState("diplomado");
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
+  const [herramientasCtx, setHerramientasCtx] = useState({ puntos: null, categoria: "" });
 
-  const iniciarBusqueda = async (categoria, gerencia, apellidos) => {
+  const irSimuladorGerencia = (puntos, categoria = herramientasCtx.categoria || categoriaActual) => {
+    setHerramientasCtx({ puntos, categoria: categoria || "" });
+    setPaso("simulador-gerencia");
+  };
+
+  const iniciarBusqueda = async (categoria, consulta) => {
     const grupo = grupoDeCategoria(categoria, gruposSanidad);
     setCategoriaActual(categoria);
     setGrupoIdActual(grupo?.id || "diplomado");
     let personas = [];
     if (grupo?.activo && datos.tieneDatosReales(categoria, grupo.id)) {
-      const res = await datos.buscarPersonas(grupo.id, categoria, gerencia, apellidos, TODAS_GERENCIAS, []);
+      const res = await datos.buscarPersonas(grupo.id, categoria, consulta);
       personas = res.personas;
     } else {
-      personas = buscarPersonasEjemplo(categoria, gerencia, apellidos, GERENCIAS_EJEMPLO);
+      personas = buscarPersonasEjemplo(categoria, consulta, GERENCIAS_EJEMPLO);
     }
-    if (apellidos.trim()) {
+    if (consulta.trim()) {
       setRecientes((prev) => {
-        const sinDuplicado = prev.filter((r) => !(r.categoria === categoria && r.gerencia === gerencia && r.apellidos === apellidos));
-        return [{ categoria, gerencia, apellidos }, ...sinDuplicado].slice(0, 4);
+        const sinDuplicado = prev.filter((r) => !(r.categoria === categoria && r.consulta === consulta));
+        return [{ categoria, consulta }, ...sinDuplicado].slice(0, 4);
       });
     }
     if (personas.length === 0) return 0;
@@ -1154,6 +1282,17 @@ export default function ListasApp() {
     });
   };
 
+  const abrirSeguimiento = (s) => {
+    setCategoriaActual(s.categoria);
+    setGrupoIdActual(grupoDeCategoria(s.categoria, gruposSanidad)?.id || "diplomado");
+    setCandidatoElegido({
+      nombreCompleto: s.candidato.nombreCompleto,
+      dniParcial: s.candidato.dniParcial,
+      apariciones: [{ gerencia: s.gerencia, ambito: s.ambito, ...s.candidato }],
+    });
+    setPaso("resultado");
+  };
+
   return (
     <div
       className="min-h-screen"
@@ -1169,10 +1308,10 @@ export default function ListasApp() {
       `}</style>
 
       <div className="max-w-md mx-auto pb-10">
-        {paso !== "ccaa" && seguimientos.length > 0 && (
+        {paso !== "inicio" && paso !== "ccaa" && seguimientos.length > 0 && (
           <div className="flex justify-end px-5 pt-4">
             <button
-              onClick={() => setPaso("seguimientos")}
+              onClick={() => { setPasoSeguimientosOrigen(paso); setPaso("seguimientos"); }}
               className="flex items-center gap-1.5 focus:outline-none"
               style={{ background: C.navy, color: "#fff", padding: "7px 13px", borderRadius: "12px 4px 12px 4px", fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700 }}
             >
@@ -1181,7 +1320,23 @@ export default function ListasApp() {
           </div>
         )}
 
-        {paso === "ccaa" && <PantallaCCAA onSelect={(c) => { setCcaa(c); setPaso("sector"); }} />}
+        {paso === "inicio" && (
+          <PantallaInicio
+            onConsultar={() => setPaso("ccaa")}
+            onHerramienta={(id) => setPaso(id)}
+            seguimientos={seguimientos}
+            onAbrirSeguimiento={abrirSeguimiento}
+            onVerSeguimientos={() => { setPasoSeguimientosOrigen("inicio"); setPaso("seguimientos"); }}
+            gruposSanidad={gruposSanidad}
+          />
+        )}
+
+        {paso === "ccaa" && (
+          <PantallaCCAA
+            onSelect={(c) => { setCcaa(c); setPaso("sector"); }}
+            atras={() => setPaso("inicio")}
+          />
+        )}
 
         {paso === "sector" && (
           <PantallaSector ccaa={ccaa} atras={() => setPaso("ccaa")} onSelect={(s) => { setSector(s); setPaso("buscar"); }} />
@@ -1253,17 +1408,60 @@ export default function ListasApp() {
         {paso === "seguimientos" && (
           <PantallaSeguimientos
             seguimientos={seguimientos}
-            atras={() => setPaso("buscar")}
+            atras={() => setPaso(pasoSeguimientosOrigen)}
             gruposSanidad={gruposSanidad}
-            onAbrir={(s) => {
-              setCategoriaActual(s.categoria);
-              setCandidatoElegido({
-                nombreCompleto: s.candidato.nombreCompleto,
-                dniParcial: s.candidato.dniParcial,
-                apariciones: [{ gerencia: s.gerencia, ambito: s.ambito, ...s.candidato }],
-              });
-              setPaso("resultado");
-            }}
+            onAbrir={abrirSeguimiento}
+          />
+        )}
+
+        {paso === "simulador-baremo" && (
+          <SimuladorBaremo
+            C={C}
+            Barra={Barra}
+            atras={() => setPaso("inicio")}
+            onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
+          />
+        )}
+
+        {paso === "simulador-gerencia" && (
+          <SimuladorGerencia
+            C={C}
+            Barra={Barra}
+            gruposSanidad={gruposSanidad}
+            grupoDeCategoria={grupoDeCategoria}
+            categoriaInicial={herramientasCtx.categoria || categoriaActual}
+            puntosIniciales={herramientasCtx.puntos}
+            atras={() => setPaso("inicio")}
+          />
+        )}
+
+        {paso === "mapa-oportunidades" && (
+          <MapaOportunidades
+            C={C}
+            Barra={Barra}
+            gruposSanidad={gruposSanidad}
+            grupoDeCategoria={grupoDeCategoria}
+            categoriaInicial={herramientasCtx.categoria || categoriaActual}
+            puntosIniciales={herramientasCtx.puntos}
+            atras={() => setPaso("inicio")}
+          />
+        )}
+
+        {paso === "calculadora-nomina" && (
+          <CalculadoraNomina C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+        )}
+
+        {paso === "guia-llamamiento" && (
+          <GuiaLlamamiento C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+        )}
+
+        {paso === "calculadora-meritos" && (
+          <CalculadoraMeritos
+            C={C}
+            Barra={Barra}
+            puntosIniciales={herramientasCtx.puntos ?? candidatoElegido?.apariciones?.[0]?.puntos}
+            atras={() => setPaso("inicio")}
+            onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
           />
         )}
 

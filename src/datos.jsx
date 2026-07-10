@@ -45,6 +45,7 @@ export function portalAUi(nombreScraper) {
 export function gerenciaCorta(gerenciaCompleta) {
   if (!gerenciaCompleta) return "";
   if (gerenciaCompleta.includes("Primaria de Toledo")) return "Toledo";
+  if (gerenciaCompleta.includes("Especializada de Toledo")) return "Toledo AE";
   const prefijo = "Gerencia de Atencion Integrada de ";
   if (gerenciaCompleta.startsWith(prefijo)) return gerenciaCompleta.slice(prefijo.length);
   return gerenciaCompleta;
@@ -68,6 +69,20 @@ function normalizarTexto(texto) {
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** Coincide si todos los términos encajan en apellidos, nombre o DNI parcial. */
+export function coincideBusqueda(fila, consulta) {
+  const tokens = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
+  if (!tokens.length) return false;
+  const apellidos = normalizarTexto(
+    fila.apellidos || `${fila.ap1 || ""} ${fila.ap2 || ""}`.trim()
+  );
+  const nombre = normalizarTexto(fila.nombreCompleto || "");
+  const dni = normalizarTexto((fila.dniParcial || "").replace(/\*/g, ""));
+  return tokens.every(
+    (token) => apellidos.includes(token) || nombre.includes(token) || dni.includes(token)
+  );
 }
 
 function formatearNombre(apellidosNombre) {
@@ -132,6 +147,14 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
     return archivosDisponibles.has(rutaRelativa(grupoId, cat));
   }
 
+  function grupoTieneDatos(grupoId) {
+    const prefix = `${grupoId}/`;
+    for (const archivo of archivosDisponibles) {
+      if (archivo.startsWith(prefix)) return true;
+    }
+    return false;
+  }
+
   async function cargarCategoria(grupoId, categoriaUi) {
     const cat = categoriaScraper(categoriaUi);
     const key = `${grupoId}/${cat}`;
@@ -178,45 +201,36 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
     return filasDesdeListados(listados);
   }
 
-  async function buscarPorApellido(grupoId, categoriaUi, gerenciaCortaFiltro, apellidos) {
-    const q = normalizarTexto(apellidos);
-    if (!q) return [];
-    const filas = await obtenerListadoCompleto(grupoId, categoriaUi, gerenciaCortaFiltro);
-    return filas.filter((f) => normalizarTexto(f.apellidos).includes(q));
-  }
-
-  async function buscarPersonas(grupoId, categoriaUi, gerencia, apellidos, TODAS_GERENCIAS, gerenciasLista) {
+  async function buscarPersonas(grupoId, categoriaUi, consulta) {
+    const q = consulta.trim();
+    if (!q) return { personas: [], gerencias: [] };
     const snap = await cargarCategoria(grupoId, categoriaUi);
     const gerenciasEnDatos = [...new Set((snap.listados ?? []).map((l) => gerenciaCorta(l.gerencia)))].sort((a, b) =>
       a.localeCompare(b, "es")
     );
-    const gerencias = gerencia === TODAS_GERENCIAS ? gerenciasEnDatos : [gerencia];
+    const filas = filasDesdeListados(listadosDeSnapshot(snap, categoriaUi));
     const porPersona = new Map();
-    for (const g of gerencias) {
-      const filas = filasDesdeListados(listadosDeSnapshot(snap, categoriaUi, g));
-      const q = normalizarTexto(apellidos);
-      filas.filter((f) => normalizarTexto(f.apellidos).includes(q)).forEach((f) => {
-        const clave = f.dniParcial || f.nombreCompleto;
-        if (!porPersona.has(clave)) {
-          porPersona.set(clave, {
-            nombreCompleto: f.nombreCompleto,
-            dniParcial: f.dniParcial,
-            apariciones: [],
-          });
-        }
-        porPersona.get(clave).apariciones.push({
-          gerencia: f.gerencia,
-          ambito: f.ambito,
-          posicion: f.pos,
-          total: f.total,
-          puntos: f.puntos,
-          delante: f.pos - 1,
+    filas.filter((f) => coincideBusqueda(f, q)).forEach((f) => {
+      const clave = f.dniParcial || f.nombreCompleto;
+      if (!porPersona.has(clave)) {
+        porPersona.set(clave, {
           nombreCompleto: f.nombreCompleto,
           dniParcial: f.dniParcial,
-          tiposContrato: f.tiposContrato,
+          apariciones: [],
         });
+      }
+      porPersona.get(clave).apariciones.push({
+        gerencia: f.gerencia,
+        ambito: f.ambito,
+        posicion: f.pos,
+        total: f.total,
+        puntos: f.puntos,
+        delante: f.pos - 1,
+        nombreCompleto: f.nombreCompleto,
+        dniParcial: f.dniParcial,
+        tiposContrato: f.tiposContrato,
       });
-    }
+    });
     return { personas: [...porPersona.values()], gerencias: gerenciasEnDatos };
   }
 
@@ -285,7 +299,7 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
           tecnico: "Personal Sanitario Técnico",
           gestion: "Personal de Gestión y Servicios",
         }[id] || id,
-        activo: id === "diplomado",
+        activo: grupoTieneDatos(id),
         categorias: (info.categorias_pdf || []).map(portalAUi),
       }))
     : [];
@@ -310,7 +324,6 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
     cargarCategoria,
     gerenciasDeCategoria,
     obtenerListadoCompleto,
-    buscarPorApellido,
     buscarPersonas,
     historialCorte,
     estadoActualizacion,
