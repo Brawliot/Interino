@@ -44,8 +44,6 @@ BASE_BAREMOS = (
     "https://sanidad.castillalamancha.es/profesionales/atencion-al-profesional/"
     "bolsas-constituidas/baremos/"
 )
-BASE_PDFS = "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/"
-
 GRUPOS_PORTAL_SLUG = {
     "diplomado": "personal-sanitario-diplomado",
     "facultativo": "personal-facultativo",
@@ -61,9 +59,6 @@ PDF_REINTENTOS = 3
 PDF_BACKOFF_SEG = (5, 15, 30)
 
 # Ajustar cuando cambie la convocatoria (hoy: 20a, año 2025)
-ORDINAL_CONVOCATORIA = "Vigesima"
-ANIO_CONVOCATORIA = "2025"
-
 CATEGORIAS_SANIDAD_DIPLOMADO = [
     "DIETISTA-NUTRICIONISTA",
     "ENFERMERO/A",
@@ -97,6 +92,7 @@ GERENCIAS = [
     "Gerencia de Atencion Integrada de Valdepeñas",
     "Gerencia de Atencion Integrada de Villarrobledo",
     "Gerencia de Atencion Primaria de Toledo",
+    "Gerencia de Atencion Especializada de Toledo",
 ]
 
 AMBITOS = ["Atencion Primaria", "Atencion Especializada"]
@@ -395,24 +391,6 @@ def cliente_portal(grupo: str) -> ClienteFormularioBaremo:
     if grupo not in _clientes_portal:
         _clientes_portal[grupo] = ClienteFormularioBaremo(grupo)
     return _clientes_portal[grupo]
-
-
-def construir_url_pdf(categoria: str, gerencia: str, ambito: str,
-                       estado: str = "ADMITIDOS", subtipo: str | None = None,
-                       tipo_listado: str = "DEFINITIVO") -> str:
-    """
-    Patron historico (solo diplomado). Preferir resolver_url_pdf() via formulario.
-    """
-    partes_nombre = [f"Listado {tipo_listado} de {estado}"]
-    if subtipo:
-        partes_nombre[0] += f". {subtipo}"
-    nombre = (
-        f"{slug_categoria(categoria)}_"
-        + ". ".join(partes_nombre)
-        + f". {ORDINAL_CONVOCATORIA} Convocatoria {ANIO_CONVOCATORIA}"
-        + f" - {ambito} - {quitar_acentos(gerencia)}.pdf"
-    )
-    return BASE_PDFS + requests.utils.quote(nombre)
 
 
 @dataclass
