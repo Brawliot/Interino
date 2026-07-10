@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { Search, ChevronLeft, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map, Banknote, Award } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map, Banknote, Award } from "lucide-react";
 import { useDatos, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import SelectorSectores from "./src/SelectorSectores.jsx";
@@ -142,6 +142,18 @@ function generarListadoCompletoEjemplo(categoria, gerencia = "") {
     });
   }
   return filas;
+}
+
+function ambitoCorto(ambito) {
+  if (!ambito) return "";
+  if (ambito === "Atencion Primaria" || ambito.includes("Primaria")) return "AP";
+  if (ambito === "Atencion Especializada" || ambito.includes("Especializada")) return "AE";
+  return ambito;
+}
+
+function etiquetaGerenciaCorta(categoria, gerencia, ambito) {
+  const ab = ambitoCorto(ambito);
+  return ab ? `${gerencia} · ${ab}` : gerencia;
 }
 
 function etiquetaLista(categoria, gerencia, ambito) {
@@ -1039,17 +1051,38 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, r,
   );
 }
 
-// Contenedor: una tarjeta por lista (gerencia + ámbito) donde aparece la persona, con
-// scroll horizontal + snap (deslizar en móvil) y puntos indicadores.
+// Contenedor: una tarjeta por lista (gerencia + ámbito) donde aparece la persona.
+// Pestañas + carrusel con peek lateral, flechas y puntos clicables.
 function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const apariciones = candidato.apariciones;
   const [indice, setIndice] = useState(0);
+  const carruselRef = useRef(null);
   const varias = apariciones.length > 1;
 
-  const alDesplazar = (e) => {
-    const el = e.currentTarget;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
-    if (i !== indice) setIndice(Math.min(apariciones.length - 1, Math.max(0, i)));
+  const pasoSlide = useCallback(() => {
+    const el = carruselRef.current;
+    if (!el?.firstElementChild) return el?.clientWidth ?? 0;
+    const slide = el.firstElementChild;
+    const gap = parseFloat(getComputedStyle(el).columnGap || getComputedStyle(el).gap || "0") || 12;
+    return slide.offsetWidth + gap;
+  }, []);
+
+  const irAIndice = useCallback((i) => {
+    const el = carruselRef.current;
+    if (!el) return;
+    const next = Math.min(apariciones.length - 1, Math.max(0, i));
+    setIndice(next);
+    el.scrollTo({ left: next * pasoSlide(), behavior: "smooth" });
+  }, [apariciones.length, pasoSlide]);
+
+  const alDesplazar = () => {
+    const el = carruselRef.current;
+    if (!el) return;
+    const step = pasoSlide();
+    if (!step) return;
+    const i = Math.round(el.scrollLeft / step);
+    const clamped = Math.min(apariciones.length - 1, Math.max(0, i));
+    if (clamped !== indice) setIndice(clamped);
   };
 
   return (
@@ -1063,59 +1096,178 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
         </p>
         {varias && (
           <p style={{ fontFamily: FONT_BODY, fontSize: 12.5, color: C.clay, fontWeight: 600, marginTop: 4 }}>
-            Apareces en {apariciones.length} listas — desliza para ver cada una (gerencia y ámbito).
+            Apareces en {apariciones.length} listas — desliza o usa las pestañas para ver cada gerencia.
           </p>
         )}
       </div>
 
-      {/* carrusel de tarjetas, una por lista (gerencia + ámbito) */}
-      <div
-        onScroll={varias ? alDesplazar : undefined}
-        style={{
-          display: "flex",
-          overflowX: varias ? "auto" : "visible",
-          scrollSnapType: varias ? "x mandatory" : "none",
-          scrollbarWidth: "none",
-          gap: 0,
-          marginTop: 8,
-        }}
-      >
-        {apariciones.map((a) => (
-          <div
-            key={`${a.gerencia}-${a.ambito || ""}`}
-            style={{ flex: "0 0 100%", scrollSnapAlign: "start", padding: "0 20px", boxSizing: "border-box" }}
-          >
-            <TarjetaGerencia
-              categoria={categoria}
-              gerencia={a.gerencia}
-              ambito={a.ambito}
-              grupoId={grupoId}
-              grupoActivo={grupoActivo}
-              r={a}
-              guardado={estaGuardado(a.gerencia, a.ambito, candidato.nombreCompleto)}
-              onGuardar={() => onGuardar(a.gerencia, a.ambito, { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial })}
-              onVerListado={() => onVerListado(a.gerencia, a.ambito)}
-              onInfoLlamamientos={onInfoLlamamientos}
-            />
-          </div>
-        ))}
+      {varias && (
+        <div
+          className="carrusel-gerencias-tabs"
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            padding: "12px 20px 4px",
+            scrollSnapType: "x proximity",
+          }}
+        >
+          {apariciones.map((a, i) => {
+            const activa = i === indice;
+            return (
+              <button
+                key={`tab-${a.gerencia}-${a.ambito || ""}`}
+                type="button"
+                onClick={() => irAIndice(i)}
+                className="flex-shrink-0 focus:outline-none focus:ring-2"
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "12px 4px 12px 4px",
+                  border: activa ? `2px solid ${C.navy}` : `1.5px solid ${C.line}`,
+                  background: activa ? C.navy : C.card,
+                  color: activa ? "#fff" : C.ink,
+                  fontFamily: FONT_BODY,
+                  fontSize: 12.5,
+                  fontWeight: activa ? 700 : 500,
+                  transition: "background .2s ease, border-color .2s ease, transform .15s ease",
+                  transform: activa ? "scale(1.02)" : "scale(1)",
+                  boxShadow: activa ? "0 4px 14px rgba(26,39,68,0.18)" : "none",
+                }}
+              >
+                <span style={{ display: "block", lineHeight: 1.3 }}>{a.gerencia}</span>
+                <span style={{ fontFamily: FONT_MONO, fontSize: 10, opacity: activa ? 0.85 : 0.65 }}>
+                  {ambitoLegible(a.ambito) || "—"} · #{a.posicion}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="relative" style={{ marginTop: varias ? 8 : 12 }}>
+        {varias && (
+          <>
+            <button
+              type="button"
+              aria-label="Lista anterior"
+              disabled={indice === 0}
+              onClick={() => irAIndice(indice - 1)}
+              className="absolute left-1 top-1/2 z-10 -translate-y-1/2 focus:outline-none focus:ring-2"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                border: `1.5px solid ${C.line}`,
+                background: indice === 0 ? "rgba(255,255,255,0.5)" : C.card,
+                opacity: indice === 0 ? 0.4 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                cursor: indice === 0 ? "default" : "pointer",
+              }}
+            >
+              <ChevronLeft size={20} color={C.navy} />
+            </button>
+            <button
+              type="button"
+              aria-label="Lista siguiente"
+              disabled={indice === apariciones.length - 1}
+              onClick={() => irAIndice(indice + 1)}
+              className="absolute right-1 top-1/2 z-10 -translate-y-1/2 focus:outline-none focus:ring-2"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                border: `1.5px solid ${C.line}`,
+                background: indice === apariciones.length - 1 ? "rgba(255,255,255,0.5)" : C.card,
+                opacity: indice === apariciones.length - 1 ? 0.4 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                cursor: indice === apariciones.length - 1 ? "default" : "pointer",
+              }}
+            >
+              <ChevronRight size={20} color={C.navy} />
+            </button>
+          </>
+        )}
+
+        <div
+          ref={carruselRef}
+          onScroll={varias ? alDesplazar : undefined}
+          className="carrusel-gerencias"
+          style={{
+            display: "flex",
+            overflowX: varias ? "auto" : "visible",
+            scrollSnapType: varias ? "x mandatory" : "none",
+            gap: varias ? 12 : 0,
+            padding: varias ? "4px 44px 8px" : "0 20px",
+            scrollPaddingLeft: varias ? 44 : 20,
+            scrollPaddingRight: varias ? 44 : 20,
+          }}
+        >
+          {apariciones.map((a, i) => {
+            const activa = !varias || i === indice;
+            return (
+              <div
+                key={`${a.gerencia}-${a.ambito || ""}`}
+                className="carrusel-gerencias-slide"
+                style={{
+                  flex: varias ? "0 0 calc(100% - 88px)" : "0 0 100%",
+                  scrollSnapAlign: "center",
+                  boxSizing: "border-box",
+                  opacity: activa ? 1 : 0.72,
+                  transform: activa ? "scale(1)" : "scale(0.97)",
+                  transition: "opacity .25s ease, transform .25s ease",
+                  filter: activa ? "none" : "saturate(0.92)",
+                }}
+              >
+                <TarjetaGerencia
+                  categoria={categoria}
+                  gerencia={a.gerencia}
+                  ambito={a.ambito}
+                  grupoId={grupoId}
+                  grupoActivo={grupoActivo}
+                  r={a}
+                  guardado={estaGuardado(a.gerencia, a.ambito, candidato.nombreCompleto)}
+                  onGuardar={() => onGuardar(a.gerencia, a.ambito, { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial })}
+                  onVerListado={() => onVerListado(a.gerencia, a.ambito)}
+                  onInfoLlamamientos={onInfoLlamamientos}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {varias && (
-        <div className="flex items-center justify-center gap-2" style={{ marginTop: 14 }}>
-          {apariciones.map((a, i) => (
-            <span
-              key={`${a.gerencia}-${a.ambito || ""}`}
-              aria-label={etiquetaLista(categoria, a.gerencia, a.ambito)}
-              style={{
-                width: i === indice ? 22 : 7,
-                height: 7,
-                borderRadius: 6,
-                background: i === indice ? C.navy : C.line,
-                transition: "width .2s ease, background .2s ease",
-              }}
-            />
-          ))}
+        <div className="flex flex-col items-center gap-2" style={{ marginTop: 10, paddingBottom: 8 }}>
+          <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, margin: 0 }}>
+            {indice + 1} de {apariciones.length} · {etiquetaGerenciaCorta(categoria, apariciones[indice].gerencia, apariciones[indice].ambito)}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            {apariciones.map((a, i) => (
+              <button
+                key={`dot-${a.gerencia}-${a.ambito || ""}`}
+                type="button"
+                aria-label={etiquetaLista(categoria, a.gerencia, a.ambito)}
+                onClick={() => irAIndice(i)}
+                className="focus:outline-none focus:ring-2"
+                style={{
+                  width: i === indice ? 22 : 7,
+                  height: 7,
+                  borderRadius: 6,
+                  border: "none",
+                  padding: 0,
+                  background: i === indice ? C.navy : C.line,
+                  transition: "width .2s ease, background .2s ease",
+                  cursor: "pointer",
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

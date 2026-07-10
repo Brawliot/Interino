@@ -5,3 +5,22 @@
 body {
   margin: 0;
 }
+
+.carrusel-gerencias {
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.carrusel-gerencias::-webkit-scrollbar {
+  display: none;
+}
+
+.carrusel-gerencias-tabs {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.carrusel-gerencias-tabs::-webkit-scrollbar {
+  display: none;
+}
