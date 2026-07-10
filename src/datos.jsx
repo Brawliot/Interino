@@ -1,15 +1,12 @@
 import { createContext, useContext } from "react";
 
 /**
- * Base URL para JSON de listados por categoría (archivos grandes).
+ * Base URL para todos los JSON de datos (listados + metadatos).
  * Desarrollo: /data/  |  Producción (R2): VITE_DATA_CATEGORIAS_URL=https://…
  */
 export const DATA_CATEGORIAS_BASE_URL = (
   import.meta.env.VITE_DATA_CATEGORIAS_URL || "/data/"
 ).replace(/\/?$/, "/");
-
-/** Metadatos pequeños (historico, manifest, inventario) — siempre en /data/ del repo. */
-const DATA_META_BASE_URL = "/data/";
 
 /** Nombre PDF → slug de archivo (debe coincidir con scraper.slug_archivo). */
 export function slugArchivo(categoriaScraper) {
@@ -333,9 +330,9 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
 
 export async function cargarDatos() {
   const [historicoRes, manifestRes, catsRes] = await Promise.all([
-    fetch(`${DATA_META_BASE_URL}historico.json`),
-    fetch(`${DATA_META_BASE_URL}manifest.json`),
-    fetch(`${DATA_META_BASE_URL}categorias_por_grupo.json`),
+    fetch(`${DATA_CATEGORIAS_BASE_URL}historico.json`),
+    fetch(`${DATA_CATEGORIAS_BASE_URL}manifest.json`),
+    fetch(`${DATA_CATEGORIAS_BASE_URL}categorias_por_grupo.json`),
   ]);
   if (!historicoRes.ok) throw new Error(`No se pudo cargar historico.json (${historicoRes.status})`);
   const historico = await historicoRes.json();
