@@ -79,5 +79,6 @@ data/diplomado/*.json
 data/tecnico/*.json
 data/gestion/*.json
 data/licenciados/*.json
+data/**/*.busqueda.json
 
 dist/

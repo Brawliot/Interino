@@ -560,6 +560,77 @@ def path_categoria_json(grupo: str, categoria: str) -> str:
     return os.path.join(DATA_DIR, grupo, slug_archivo(categoria) + ".json")
 
 
+def path_indice_busqueda_json(grupo: str, categoria: str) -> str:
+    return os.path.join(DATA_DIR, grupo, slug_archivo(categoria) + ".busqueda.json")
+
+
+def _gerencia_corta(gerencia_completa: str) -> str:
+    if not gerencia_completa:
+        return ""
+    if "Primaria de Toledo" in gerencia_completa:
+        return "Toledo"
+    if "Especializada de Toledo" in gerencia_completa:
+        return "Toledo AE"
+    prefijo = "Gerencia de Atencion Integrada de "
+    if gerencia_completa.startswith(prefijo):
+        return gerencia_completa[len(prefijo):]
+    return gerencia_completa
+
+
+def _formatear_nombre(apellidos_nombre: str) -> str:
+    return re.sub(r"\s+", " ", apellidos_nombre.replace("\n", " ")).strip()
+
+
+def construir_indice_busqueda(listados: list[dict], categoria: str) -> dict:
+    """Índice compacto para búsqueda por apellidos/DNI sin cargar el JSON completo."""
+    gerencias = sorted({
+        _gerencia_corta(b["gerencia"]) for b in listados if b.get("gerencia")
+    }, key=lambda x: x.lower())
+    por_persona: dict[str, dict] = {}
+
+    for bloque in listados:
+        total = len(bloque.get("filas") or [])
+        g = _gerencia_corta(bloque.get("gerencia", ""))
+        ambito = bloque.get("ambito", "")
+        for fila in bloque.get("filas") or []:
+            clave = fila.get("dni_parcial") or _formatear_nombre(fila.get("apellidos_nombre", ""))
+            nombre_completo = _formatear_nombre(fila.get("apellidos_nombre", ""))
+            apellidos = nombre_completo.split(",")[0].strip() if "," in nombre_completo else nombre_completo
+            aparicion = {
+                "gerencia": g,
+                "ambito": ambito,
+                "posicion": fila.get("orden"),
+                "total": total,
+                "puntos": fila.get("comprobado_baremo"),
+                "delante": max(0, (fila.get("orden") or 1) - 1),
+                "tiposContrato": fila.get("tipos_contrato") or {},
+            }
+            if clave not in por_persona:
+                por_persona[clave] = {
+                    "nombreCompleto": nombre_completo,
+                    "dniParcial": fila.get("dni_parcial", ""),
+                    "apellidos": apellidos,
+                    "apariciones": [],
+                }
+            por_persona[clave]["apariciones"].append(aparicion)
+
+    return {
+        "generado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "categoria": categoria,
+        "gerencias": gerencias,
+        "personas": list(por_persona.values()),
+    }
+
+
+def guardar_indice_busqueda(grupo: str, categoria: str, listados: list[dict]) -> str:
+    path = path_indice_busqueda_json(grupo, categoria)
+    payload = construir_indice_busqueda(listados, categoria)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"Indice busqueda {path} -> {len(payload['personas'])} personas")
+    return path
+
+
 def cargar_categorias_desde_inventario() -> dict[str, list[str]]:
     """Lee data/categorias_por_grupo.json (generado por scripts/inventario_categorias.py)."""
     if not os.path.exists(CATEGORIAS_JSON):
@@ -655,6 +726,7 @@ def guardar_categoria_json(grupo: str, categoria: str, listados: list[dict]) -> 
         json.dump(payload, f, ensure_ascii=False, indent=2)
     personas = sum(len(l["filas"]) for l in listados)
     print(f"Guardado {path} -> {len(listados)} listas, {personas} personas")
+    guardar_indice_busqueda(grupo, categoria, listados)
     return path
 
 
@@ -668,7 +740,7 @@ def leer_todos_listados_data() -> list[dict]:
         if not os.path.isdir(dir_grupo):
             continue
         for nombre in os.listdir(dir_grupo):
-            if not nombre.endswith(".json"):
+            if not nombre.endswith(".json") or nombre.endswith(".busqueda.json"):
                 continue
             with open(os.path.join(dir_grupo, nombre), "r", encoding="utf-8") as f:
                 try:
@@ -723,13 +795,13 @@ def resumir_listados(listados: list[dict], fecha: str) -> list[dict]:
     """
     resumen = []
     for listado in listados:
-        puntos = [f["comprobado_baremo"] for f in listado["filas"]]
+        puntos = [f["comprobado_baremo"] for f in listado["filas"] if f.get("comprobado_baremo", 0) > 0]
         resumen.append({
             "fecha": fecha,
             "categoria": listado["categoria"],
             "gerencia": listado["gerencia"],
             "ambito": listado["ambito"],
-            "total_admitidos": len(puntos),
+            "total_admitidos": len(listado["filas"]),
             "punto_minimo_admitido": min(puntos) if puntos else None,
         })
     return resumen

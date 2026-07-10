@@ -3,6 +3,8 @@ import { useDatos, ambitoLegible } from "../datos.jsx";
 import { analizarPorGerencias, analizarGerenciaDestino } from "./posicionLista.js";
 import { SelectCampo, CampoNumero, AvisoEstimacion, BotonSecundario, FONT_BODY, FONT_MONO, FONT_DISPLAY } from "./shared.jsx";
 
+const NUM_GERENCIAS = 14;
+
 const GERENCIAS_FALLBACK = [
   "Albacete", "Alcázar de San Juan", "Almansa", "Ciudad Real", "Cuenca", "Guadalajara",
   "Hellín", "Puertollano", "Talavera de la Reina", "Toledo", "Toledo AE", "Tomelloso", "Valdepeñas", "Villarrobledo",
@@ -11,9 +13,18 @@ const GERENCIAS_FALLBACK = [
 export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCategoria, categoriaInicial, puntosIniciales, atras }) {
   const datos = useDatos();
   const categorias = useMemo(() => {
-    const g = gruposSanidad.find((x) => x.activo) || gruposSanidad[0];
-    return g?.categorias || ["Enfermero/a"];
-  }, [gruposSanidad]);
+    const vistos = new Set();
+    const out = [];
+    for (const g of gruposSanidad) {
+      if (!g.activo) continue;
+      for (const c of g.categorias) {
+        if (vistos.has(c) || !datos.tieneDatosReales(c, g.id)) continue;
+        vistos.add(c);
+        out.push(c);
+      }
+    }
+    return out.length ? out : (gruposSanidad.find((x) => x.activo)?.categorias || ["Enfermero/a"]);
+  }, [gruposSanidad, datos]);
 
   const [categoria, setCategoria] = useState(categoriaInicial || categorias[0]);
   const [puntos, setPuntos] = useState(puntosIniciales != null ? String(puntosIniciales) : "");
@@ -26,6 +37,12 @@ export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCate
   const grupo = grupoDeCategoria(categoria, gruposSanidad);
   const grupoId = grupo?.id || "diplomado";
   const puntosNum = Number(puntos) || 0;
+
+  useEffect(() => {
+    if (categorias.length && !categorias.includes(categoria)) {
+      setCategoria(categorias[0]);
+    }
+  }, [categorias, categoria]);
 
   useEffect(() => {
     let cancel = false;
@@ -92,14 +109,14 @@ export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCate
             </p>
             {mejor.corte != null && (
               <p style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: C.goldSoft, marginTop: 10 }}>
-                Corte estimado: {mejor.corte.toFixed(2)} pt · Distancia: {mejor.distanciaCorte >= 0 ? "+" : ""}{mejor.distanciaCorte?.toFixed(2)} pt
+                Punto mínimo admitido: {mejor.corte.toFixed(2)} pt · Distancia: {mejor.distanciaCorte >= 0 ? "+" : ""}{mejor.distanciaCorte?.toFixed(2)} pt
               </p>
             )}
           </div>
         )}
 
         <BotonSecundario C={C} onClick={() => setVerTodas(!verTodas)}>
-          {verTodas ? "Ocultar todas las gerencias" : "Ver posición en las 13 gerencias"}
+          {verTodas ? "Ocultar todas las gerencias" : `Ver posición en las ${NUM_GERENCIAS} gerencias`}
         </BotonSecundario>
 
         {verTodas && todas.length > 0 && (

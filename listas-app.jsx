@@ -1,15 +1,30 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
+import { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map, Banknote, Award } from "lucide-react";
 import { useDatos, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
+import { etiquetaAmbitoAparicion } from "./src/utils/apariciones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import SelectorSectores from "./src/SelectorSectores.jsx";
-import SimuladorBaremo from "./src/herramientas/SimuladorBaremo.jsx";
-import SimuladorGerencia from "./src/herramientas/SimuladorGerencia.jsx";
-import MapaOportunidades from "./src/herramientas/MapaOportunidades.jsx";
-import CalculadoraNomina from "./src/herramientas/CalculadoraNomina.jsx";
-import GuiaLlamamiento from "./src/herramientas/GuiaLlamamiento.jsx";
-import CalculadoraMeritos from "./src/herramientas/CalculadoraMeritos.jsx";
+
+const SimuladorBaremo = lazy(() => import("./src/herramientas/SimuladorBaremo.jsx"));
+const SimuladorGerencia = lazy(() => import("./src/herramientas/SimuladorGerencia.jsx"));
+const MapaOportunidades = lazy(() => import("./src/herramientas/MapaOportunidades.jsx"));
+const CalculadoraNomina = lazy(() => import("./src/herramientas/CalculadoraNomina.jsx"));
+const GuiaLlamamiento = lazy(() => import("./src/herramientas/GuiaLlamamiento.jsx"));
+const CalculadoraMeritos = lazy(() => import("./src/herramientas/CalculadoraMeritos.jsx"));
+const GraficoHistoricoCorte = lazy(() => import("./src/components/GraficoHistoricoCorte.jsx"));
+
+const LS_SEGUIMIENTOS = "interino_seguimientos_v1";
+const LS_RECIENTES = "interino_recientes_v1";
+const NUM_GERENCIAS = 14;
+
+function leerStorage(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 // ---------------------------------------------------------------
 // TOKENS — "Expediente oficial": papel, tinta marina, sello dorado
@@ -156,9 +171,10 @@ function etiquetaGerenciaCorta(categoria, gerencia, ambito) {
   return ab ? `${gerencia} · ${ab}` : gerencia;
 }
 
-function etiquetaLista(categoria, gerencia, ambito) {
+function etiquetaLista(categoria, gerencia, ambito, aparicion) {
   const base = `${categoria} · ${gerencia}`;
-  return ambito ? `${base} · ${ambitoLegible(ambito)}` : base;
+  const ab = aparicion?.ambitosMerged || (ambito ? ambitoLegible(ambito) : "");
+  return ab ? `${base} · ${ab}` : base;
 }
 
 // busca coincidencias por apellidos, DNI parcial o ambos — versión de ejemplo (grupos sin scraper)
@@ -230,7 +246,7 @@ function zonaRiesgo(puntosCandidato, historial) {
 function estadoActualizacionEjemplo(categoria, gruposSanidad) {
   const grupo = grupoDeCategoria(categoria, gruposSanidad);
   if (grupo && !grupo.activo) {
-    return { tipo: "sin_activar", texto: `El grupo ${grupo.nombre} aún no tiene listados scrapeados. Sin datos todavía.` };
+    return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
   }
   return { tipo: "ok", texto: "Datos de ejemplo del prototipo." };
 }
@@ -238,6 +254,14 @@ function estadoActualizacionEjemplo(categoria, gruposSanidad) {
 // ---------------------------------------------------------------
 // PIEZAS
 // ---------------------------------------------------------------
+function CargandoHerramienta() {
+  return (
+    <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, padding: 24, textAlign: "center" }}>
+      Cargando…
+    </p>
+  );
+}
+
 function Sello({ children }) {
   return (
     <div
@@ -286,6 +310,8 @@ function AvisoActualizacion({ categoria, grupoId, grupoActivo }) {
       datos.estadoActualizacion(categoria, grupoId, true).then((est) => {
         if (!cancel) setE(est);
       });
+    } else if (grupoActivo) {
+      setE({ tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." });
     } else {
       setE(estadoActualizacionEjemplo(categoria, datos.gruposSanidad));
     }
@@ -560,13 +586,17 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
   const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
   const [consulta, setConsulta] = useState("");
   const [sinResultados, setSinResultados] = useState(false);
+  const [sinDatosCategoria, setSinDatosCategoria] = useState(false);
   const [gerenciaListado, setGerenciaListado] = useState(GERENCIAS_EJEMPLO[0]);
+
+  const categoriaConDatos = grupo?.activo && datos.tieneDatosReales(categoria, grupoId);
 
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
     setGrupoId(id);
     setCategoria(g?.categorias[0] || "");
     setSinResultados(false);
+    setSinDatosCategoria(false);
   };
 
   useEffect(() => {
@@ -581,8 +611,14 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
   }, [grupoId, categoria, grupo?.activo, datos]);
 
   const buscar = async (cat, q) => {
-    const encontrados = await onBuscar(cat, q);
-    setSinResultados(encontrados === 0);
+    setSinDatosCategoria(false);
+    const res = await onBuscar(cat, q);
+    if (res === -1) {
+      setSinDatosCategoria(true);
+      setSinResultados(false);
+      return;
+    }
+    setSinResultados(res === 0);
   };
 
   return (
@@ -636,12 +672,14 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Categoría</label>
           <select
             value={categoria}
-            onChange={(e) => { setCategoria(e.target.value); setSinResultados(false); }}
+            onChange={(e) => { setCategoria(e.target.value); setSinResultados(false); setSinDatosCategoria(false); }}
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           >
             {grupo.categorias.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c} value={c}>
+                {c}{datos.tieneDatosReales(c, grupoId) ? "" : " · sin datos"}
+              </option>
             ))}
           </select>
         </div>
@@ -650,25 +688,54 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Apellidos o DNI parcial</label>
           <input
             value={consulta}
-            onChange={(e) => { setConsulta(e.target.value); setSinResultados(false); }}
+            onChange={(e) => { setConsulta(e.target.value); setSinResultados(false); setSinDatosCategoria(false); }}
             placeholder="Apellidos, DNI parcial o ambos — ej. García 4208"
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           />
           <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 6 }}>
-            Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SESCAM) o por una combinación de ambos. Buscamos en las 13 gerencias y en Atención Primaria y Especializada. No te pedimos ni guardamos tu DNI completo.
+            Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SESCAM) o por una combinación de ambos. Buscamos en las {NUM_GERENCIAS} gerencias y en Atención Primaria y Especializada. No te pedimos ni guardamos tu DNI completo.
           </p>
         </div>
 
+        {!categoriaConDatos && (
+          <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+            <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
+              {grupo?.activo
+                ? "Esta categoría aún no tiene listado scrapeado. Elige otra del mismo grupo o vuelve más tarde."
+                : "Este grupo profesional aún no tiene datos. Sin datos todavía."}
+            </p>
+          </div>
+        )}
+
         <button
           onClick={() => buscar(categoria, consulta)}
+          disabled={!categoriaConDatos || !consulta.trim()}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{ background: C.navy, color: "#fff", padding: "15px", fontFamily: FONT_BODY, fontSize: 15, borderRadius: "16px 5px 16px 5px" }}
+          style={{
+            background: categoriaConDatos && consulta.trim() ? C.navy : C.paperDeep,
+            color: categoriaConDatos && consulta.trim() ? "#fff" : C.inkSoft,
+            padding: "15px",
+            fontFamily: FONT_BODY,
+            fontSize: 15,
+            borderRadius: "16px 5px 16px 5px",
+            cursor: categoriaConDatos && consulta.trim() ? "pointer" : "default",
+          }}
         >
           <Search size={16} /> Buscar en la lista
         </button>
 
-        {sinResultados && (
+        {sinDatosCategoria && (
+          <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+            <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
+              No hay datos reales para buscar en esta categoría. No mostramos resultados inventados.
+            </p>
+          </div>
+        )}
+
+        {sinResultados && !sinDatosCategoria && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
@@ -679,8 +746,18 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
 
         <button
           onClick={() => onVerListado(categoria, gerenciaListado)}
+          disabled={!categoriaConDatos}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{ background: "transparent", color: C.navy, padding: "12px", fontFamily: FONT_BODY, fontSize: 13.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 16px 5px 16px" }}
+          style={{
+            background: "transparent",
+            color: categoriaConDatos ? C.navy : C.inkSoft,
+            padding: "12px",
+            fontFamily: FONT_BODY,
+            fontSize: 13.5,
+            border: `1.5px solid ${C.line}`,
+            borderRadius: "5px 16px 5px 16px",
+            opacity: categoriaConDatos ? 1 : 0.6,
+          }}
         >
           <ListIcon size={15} /> Ver el listado completo de esta categoría
         </button>
@@ -705,7 +782,7 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
       <div className="px-5 mt-4 flex flex-col gap-3">
         {candidatos.map((c, i) => (
           <button
-            key={i}
+            key={c.dniParcial || `${c.nombreCompleto}-${i}`}
             onClick={() => onElegir(c)}
             className="text-left flex items-center gap-3 focus:outline-none focus:ring-2"
             style={{ background: C.card, border: `1.5px solid ${C.line}`, borderRadius: i % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px", padding: "14px 16px" }}
@@ -736,27 +813,33 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
+  const [errorDatos, setErrorDatos] = useState(false);
   const LIMITE_FILAS = 100;
+  const esReal = grupoActivo && datos.tieneDatosReales(categoria, grupoId);
 
   useEffect(() => {
     let cancel = false;
     setCargando(true);
+    setErrorDatos(false);
     const cargar = async () => {
-      if (grupoActivo && datos.tieneDatosReales(categoria, grupoId)) {
-        const f = await datos.obtenerListadoCompleto(grupoId, categoria, gerencia, ambito || "");
-        if (!cancel) setFilas(f);
+      if (esReal) {
+        try {
+          const f = await datos.obtenerListadoCompleto(grupoId, categoria, gerencia, ambito || "");
+          if (!cancel) setFilas(f);
+        } catch {
+          if (!cancel) { setFilas([]); setErrorDatos(true); }
+        }
       } else {
-        if (!cancel) setFilas(generarListadoCompletoEjemplo(categoria, gerencia));
+        if (!cancel) { setFilas([]); setErrorDatos(true); }
       }
       if (!cancel) setCargando(false);
     };
     cargar();
     return () => { cancel = true; };
-  }, [datos, categoria, gerencia, ambito, grupoId, grupoActivo]);
+  }, [datos, categoria, gerencia, ambito, grupoId, esReal]);
 
   const visibles = filtro ? filas.filter((f) => coincideBusqueda(f, filtro)) : filas;
   const mostradas = visibles.slice(0, LIMITE_FILAS);
-  const esReal = grupoActivo && datos.tieneDatosReales(categoria, grupoId);
 
   return (
     <div>
@@ -773,6 +856,14 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
         />
         {cargando && (
           <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 8 }}>Cargando listado…</p>
+        )}
+        {!cargando && errorDatos && (
+          <div className="flex items-start gap-2 mt-3" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+            <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
+              No hay listado scrapeado para esta categoría. No mostramos datos inventados.
+            </p>
+          </div>
         )}
         <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "6px 0 4px" }}>
           Útil si un compañero opositor te ha dicho que está en esta lista y quieres ver en qué puesto queda.
@@ -798,11 +889,11 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
             <p style={{ padding: 16, fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, background: C.card }}>Sin coincidencias con ese nombre.</p>
           )}
         </div>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "8px 0 16px" }}>
-          {esReal
-            ? `Mostrando ${mostradas.length} de ${visibles.length} filas${visibles.length > LIMITE_FILAS ? ` (límite ${LIMITE_FILAS}; usa el buscador para acotar)` : ""}.`
-            : "Vista de ejemplo con 60 filas. En producción se mostrarían las miles de personas reales de la bolsa, con scroll o paginación."}
-        </p>
+        {!errorDatos && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "8px 0 16px" }}>
+            {`Mostrando ${mostradas.length} de ${visibles.length} filas${visibles.length > LIMITE_FILAS ? ` (límite ${LIMITE_FILAS}; usa el buscador para acotar)` : ""}.`}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -819,7 +910,7 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, r,
   const percentil = Math.round((1 - r.posicion / r.total) * 100);
   const historial = grupoActivo && datos.tieneDatosReales(categoria, grupoId)
     ? datos.historialCorte(categoria, gerencia, ambito || r.ambito || "")
-    : historialCorteEjemplo(categoria, gerencia);
+    : [];
 
   return (
     <div>
@@ -932,29 +1023,24 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, r,
         const info = RIESGO_TXT[riesgo.nivel];
         return (
           <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "8px 18px 8px 18px", padding: 16, marginTop: 12 }}>
-            <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Distancia al último llamamiento</p>
+            <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Distancia al punto mínimo admitido</p>
             <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 2 }}>
-              DATO OFICIAL · último corte conocido: {ult.puntos.toFixed(2)} puntos ({ult.fecha})
+              DATO OFICIAL · punto mínimo admitido conocido: {ult.puntos.toFixed(2)} puntos ({ult.fecha})
             </p>
             <div style={{ height: 8, background: C.paperDeep, borderRadius: 6, marginTop: 12, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: yaLlamado ? C.ok : C.clay, borderRadius: 6 }} />
             </div>
             <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: yaLlamado ? C.ok : C.clay, fontWeight: 700, marginTop: 10 }}>
               {yaLlamado
-                ? `Tu puntuación ya supera el último punto de corte por ${Math.abs(diff)} puntos.`
-                : `Te faltan ${Math.abs(diff)} puntos para alcanzar el último punto de corte.`}
+                ? `Tu puntuación ya supera el punto mínimo admitido por ${Math.abs(diff)} puntos.`
+                : `Te faltan ${Math.abs(diff)} puntos para alcanzar el punto mínimo admitido.`}
             </p>
 
             {hayTendencia ? (
               <>
-                <div style={{ height: 52, marginTop: 14 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={historial}>
-                      <YAxis hide domain={["dataMin - 0.5", "dataMax + 0.5"]} />
-                      <Line type="monotone" dataKey="puntos" stroke={C.gold} strokeWidth={2.5} dot={{ r: 2.5, fill: C.navy }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                <Suspense fallback={<div style={{ height: 52, marginTop: 14 }} />}>
+                  <GraficoHistoricoCorte historial={historial} colors={C} />
+                </Suspense>
                 <p style={{ fontFamily: FONT_MONO, fontSize: 9, color: C.inkSoft, marginTop: 2 }}>
                   Punto de corte por convocatoria, últimas {historial.length} publicaciones
                 </p>
@@ -1057,7 +1143,21 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
   const apariciones = candidato.apariciones;
   const [indice, setIndice] = useState(0);
   const carruselRef = useRef(null);
+  const tabsRef = useRef(null);
   const varias = apariciones.length > 1;
+
+  useEffect(() => {
+    setIndice(0);
+    requestAnimationFrame(() => {
+      carruselRef.current?.scrollTo({ left: 0, behavior: "instant" });
+    });
+  }, [candidato?.dniParcial, candidato?.nombreCompleto]);
+
+  useEffect(() => {
+    if (!varias || !tabsRef.current) return;
+    const btn = tabsRef.current.children[indice];
+    btn?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [indice, varias]);
 
   const pasoSlide = useCallback(() => {
     const el = carruselRef.current;
@@ -1103,6 +1203,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
 
       {varias && (
         <div
+          ref={tabsRef}
           className="carrusel-gerencias-tabs"
           style={{
             display: "flex",
@@ -1136,7 +1237,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
               >
                 <span style={{ display: "block", lineHeight: 1.3 }}>{a.gerencia}</span>
                 <span style={{ fontFamily: FONT_MONO, fontSize: 10, opacity: activa ? 0.85 : 0.65 }}>
-                  {ambitoLegible(a.ambito) || "—"} · #{a.posicion}
+                  {etiquetaAmbitoAparicion(a) || "—"} · #{a.posicion}
                 </span>
               </button>
             );
@@ -1245,14 +1346,36 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
       {varias && (
         <div className="flex flex-col items-center gap-2" style={{ marginTop: 10, paddingBottom: 8 }}>
           <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, margin: 0 }}>
-            {indice + 1} de {apariciones.length} · {etiquetaGerenciaCorta(categoria, apariciones[indice].gerencia, apariciones[indice].ambito)}
+            {indice + 1} de {apariciones.length} · {etiquetaLista(categoria, apariciones[indice].gerencia, apariciones[indice].ambito, apariciones[indice])}
           </p>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              aria-label="Lista anterior"
+              disabled={indice === 0}
+              onClick={() => irAIndice(indice - 1)}
+              className="focus:outline-none focus:ring-2"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: `1.5px solid ${C.line}`,
+                background: indice === 0 ? C.paperDeep : C.card,
+                opacity: indice === 0 ? 0.4 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: indice === 0 ? "default" : "pointer",
+              }}
+            >
+              <ChevronLeft size={18} color={C.navy} />
+            </button>
+            <div className="flex items-center justify-center gap-2">
             {apariciones.map((a, i) => (
               <button
                 key={`dot-${a.gerencia}-${a.ambito || ""}`}
                 type="button"
-                aria-label={etiquetaLista(categoria, a.gerencia, a.ambito)}
+                aria-label={etiquetaLista(categoria, a.gerencia, a.ambito, a)}
                 onClick={() => irAIndice(i)}
                 className="focus:outline-none focus:ring-2"
                 style={{
@@ -1267,6 +1390,28 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
                 }}
               />
             ))}
+            </div>
+            <button
+              type="button"
+              aria-label="Lista siguiente"
+              disabled={indice === apariciones.length - 1}
+              onClick={() => irAIndice(indice + 1)}
+              className="focus:outline-none focus:ring-2"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: `1.5px solid ${C.line}`,
+                background: indice === apariciones.length - 1 ? C.paperDeep : C.card,
+                opacity: indice === apariciones.length - 1 ? 0.4 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: indice === apariciones.length - 1 ? "default" : "pointer",
+              }}
+            >
+              <ChevronRight size={18} color={C.navy} />
+            </button>
           </div>
         </div>
       )}
@@ -1293,7 +1438,9 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad }) {
             const grupo = grupoDeCategoria(s.categoria, gruposSanidad);
             const e = grupo?.activo && datos.tieneDatosReales(s.categoria, grupo.id)
               ? { tipo: "ok", texto: "Datos reales disponibles." }
-              : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
+              : grupo?.activo
+                ? { tipo: "sin_datos", texto: "Sin listado scrapeado para esta categoría." }
+                : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
             return (
               <button
                 key={i}
@@ -1391,6 +1538,23 @@ export default function ListasApp() {
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
   const [herramientasCtx, setHerramientasCtx] = useState({ puntos: null, categoria: "" });
 
+  useEffect(() => {
+    setSeguimientos(leerStorage(LS_SEGUIMIENTOS, []));
+    setRecientes(leerStorage(LS_RECIENTES, []));
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_SEGUIMIENTOS, JSON.stringify(seguimientos));
+    } catch { /* quota / modo privado */ }
+  }, [seguimientos]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_RECIENTES, JSON.stringify(recientes));
+    } catch { /* quota / modo privado */ }
+  }, [recientes]);
+
   const irSimuladorGerencia = (puntos, categoria = herramientasCtx.categoria || categoriaActual) => {
     setHerramientasCtx({ puntos, categoria: categoria || "" });
     setPaso("simulador-gerencia");
@@ -1400,13 +1564,11 @@ export default function ListasApp() {
     const grupo = grupoDeCategoria(categoria, gruposSanidad);
     setCategoriaActual(categoria);
     setGrupoIdActual(grupo?.id || "diplomado");
-    let personas = [];
-    if (grupo?.activo && datos.tieneDatosReales(categoria, grupo.id)) {
-      const res = await datos.buscarPersonas(grupo.id, categoria, consulta);
-      personas = res.personas;
-    } else {
-      personas = buscarPersonasEjemplo(categoria, consulta, GERENCIAS_EJEMPLO);
+    if (!grupo?.activo || !datos.tieneDatosReales(categoria, grupo.id)) {
+      return -1;
     }
+    const res = await datos.buscarPersonas(grupo.id, categoria, consulta);
+    const personas = res.personas;
     if (consulta.trim()) {
       setRecientes((prev) => {
         const sinDuplicado = prev.filter((r) => !(r.categoria === categoria && r.consulta === consulta));
@@ -1567,54 +1729,66 @@ export default function ListasApp() {
         )}
 
         {paso === "simulador-baremo" && (
-          <SimuladorBaremo
-            C={C}
-            Barra={Barra}
-            atras={() => setPaso("inicio")}
-            onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
-          />
+          <Suspense fallback={<CargandoHerramienta />}>
+            <SimuladorBaremo
+              C={C}
+              Barra={Barra}
+              atras={() => setPaso("inicio")}
+              onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
+            />
+          </Suspense>
         )}
 
         {paso === "simulador-gerencia" && (
-          <SimuladorGerencia
-            C={C}
-            Barra={Barra}
-            gruposSanidad={gruposSanidad}
-            grupoDeCategoria={grupoDeCategoria}
-            categoriaInicial={herramientasCtx.categoria || categoriaActual}
-            puntosIniciales={herramientasCtx.puntos}
-            atras={() => setPaso("inicio")}
-          />
+          <Suspense fallback={<CargandoHerramienta />}>
+            <SimuladorGerencia
+              C={C}
+              Barra={Barra}
+              gruposSanidad={gruposSanidad}
+              grupoDeCategoria={grupoDeCategoria}
+              categoriaInicial={herramientasCtx.categoria || categoriaActual}
+              puntosIniciales={herramientasCtx.puntos}
+              atras={() => setPaso("inicio")}
+            />
+          </Suspense>
         )}
 
         {paso === "mapa-oportunidades" && (
-          <MapaOportunidades
-            C={C}
-            Barra={Barra}
-            gruposSanidad={gruposSanidad}
-            grupoDeCategoria={grupoDeCategoria}
-            categoriaInicial={herramientasCtx.categoria || categoriaActual}
-            puntosIniciales={herramientasCtx.puntos}
-            atras={() => setPaso("inicio")}
-          />
+          <Suspense fallback={<CargandoHerramienta />}>
+            <MapaOportunidades
+              C={C}
+              Barra={Barra}
+              gruposSanidad={gruposSanidad}
+              grupoDeCategoria={grupoDeCategoria}
+              categoriaInicial={herramientasCtx.categoria || categoriaActual}
+              puntosIniciales={herramientasCtx.puntos}
+              atras={() => setPaso("inicio")}
+            />
+          </Suspense>
         )}
 
         {paso === "calculadora-nomina" && (
-          <CalculadoraNomina C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+          <Suspense fallback={<CargandoHerramienta />}>
+            <CalculadoraNomina C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+          </Suspense>
         )}
 
         {paso === "guia-llamamiento" && (
-          <GuiaLlamamiento C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+          <Suspense fallback={<CargandoHerramienta />}>
+            <GuiaLlamamiento C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+          </Suspense>
         )}
 
         {paso === "calculadora-meritos" && (
-          <CalculadoraMeritos
-            C={C}
-            Barra={Barra}
-            puntosIniciales={herramientasCtx.puntos ?? candidatoElegido?.apariciones?.[0]?.puntos}
-            atras={() => setPaso("inicio")}
-            onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
-          />
+          <Suspense fallback={<CargandoHerramienta />}>
+            <CalculadoraMeritos
+              C={C}
+              Barra={Barra}
+              puntosIniciales={herramientasCtx.puntos ?? candidatoElegido?.apariciones?.[0]?.puntos}
+              atras={() => setPaso("inicio")}
+              onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
+            />
+          </Suspense>
         )}
 
         <AvisoLegal />

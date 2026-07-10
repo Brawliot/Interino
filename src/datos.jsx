@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { deduplicarApariciones } from "./utils/apariciones.js";
 
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
@@ -131,6 +132,14 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
     return `${grupoId}/${slugArchivo(categoriaScraper)}.json`;
   }
 
+  function rutaIndiceBusqueda(grupoId, categoriaScraper) {
+    return `${grupoId}/${slugArchivo(categoriaScraper)}.busqueda.json`;
+  }
+
+  function esListadoCategoria(archivo) {
+    return archivo.endsWith(".json") && !archivo.endsWith(".busqueda.json");
+  }
+
   function categoriaScraper(categoriaUi) {
     return uiAScraper[categoriaUi] ?? categoriaUi.toUpperCase();
   }
@@ -141,15 +150,33 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
 
   function tieneDatosReales(categoriaUi, grupoId) {
     const cat = categoriaScraper(categoriaUi);
-    return archivosDisponibles.has(rutaRelativa(grupoId, cat));
+    const rel = rutaRelativa(grupoId, cat);
+    return archivosDisponibles.has(rel) && esListadoCategoria(rel);
+  }
+
+  function tieneIndiceBusqueda(categoriaUi, grupoId) {
+    const cat = categoriaScraper(categoriaUi);
+    return archivosDisponibles.has(rutaIndiceBusqueda(grupoId, cat));
   }
 
   function grupoTieneDatos(grupoId) {
     const prefix = `${grupoId}/`;
     for (const archivo of archivosDisponibles) {
-      if (archivo.startsWith(prefix)) return true;
+      if (archivo.startsWith(prefix) && esListadoCategoria(archivo)) return true;
     }
     return false;
+  }
+
+  async function cargarIndiceBusqueda(grupoId, categoriaUi) {
+    const cat = categoriaScraper(categoriaUi);
+    const key = `idx/${grupoId}/${cat}`;
+    if (cache.has(key)) return cache.get(key);
+    const rel = rutaIndiceBusqueda(grupoId, cat);
+    const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    cache.set(key, data);
+    return data;
   }
 
   async function cargarCategoria(grupoId, categoriaUi) {
@@ -201,6 +228,34 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   async function buscarPersonas(grupoId, categoriaUi, consulta) {
     const q = consulta.trim();
     if (!q) return { personas: [], gerencias: [] };
+
+    const indice = tieneIndiceBusqueda(categoriaUi, grupoId)
+      ? await cargarIndiceBusqueda(grupoId, categoriaUi)
+      : null;
+
+    if (indice?.personas) {
+      const gerencias = indice.gerencias || [];
+      const personas = indice.personas
+        .filter((p) =>
+          coincideBusqueda(
+            { apellidos: p.apellidos, nombreCompleto: p.nombreCompleto, dniParcial: p.dniParcial },
+            q
+          )
+        )
+        .map((p) => ({
+          nombreCompleto: p.nombreCompleto,
+          dniParcial: p.dniParcial,
+          apariciones: deduplicarApariciones(
+            (p.apariciones || []).map((a) => ({
+              ...a,
+              nombreCompleto: p.nombreCompleto,
+              dniParcial: p.dniParcial,
+            }))
+          ),
+        }));
+      return { personas, gerencias };
+    }
+
     const snap = await cargarCategoria(grupoId, categoriaUi);
     const gerenciasEnDatos = [...new Set((snap.listados ?? []).map((l) => gerenciaCorta(l.gerencia)))].sort((a, b) =>
       a.localeCompare(b, "es")
@@ -228,7 +283,11 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
         tiposContrato: f.tiposContrato,
       });
     });
-    return { personas: [...porPersona.values()], gerencias: gerenciasEnDatos };
+    const personas = [...porPersona.values()].map((p) => ({
+      ...p,
+      apariciones: deduplicarApariciones(p.apariciones),
+    }));
+    return { personas, gerencias: gerenciasEnDatos };
   }
 
   function historialCorte(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
@@ -258,7 +317,7 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
 
   async function estadoActualizacion(categoriaUi, grupoId, grupoActivo) {
     if (grupoActivo === false) {
-      return { tipo: "sin_activar", texto: "El scraping de este grupo todavía no está activado. Los datos mostrados son de ejemplo." };
+      return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
     }
     if (!tieneDatosReales(categoriaUi, grupoId)) {
       return { tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." };
@@ -318,6 +377,7 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
     categoriaUiDesdeScraper,
     gruposSanidad,
     tieneDatosReales,
+    tieneIndiceBusqueda,
     cargarCategoria,
     gerenciasDeCategoria,
     obtenerListadoCompleto,
