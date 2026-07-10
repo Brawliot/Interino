@@ -76,5 +76,8 @@ pnpm-debug.log*
 
 # Listados scrapeados (grandes); se servirán desde R2 en producción
 data/diplomado/*.json
+data/tecnico/*.json
+data/gestion/*.json
+data/licenciados/*.json
 
 dist/
