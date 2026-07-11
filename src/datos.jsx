@@ -123,6 +123,12 @@ export function construirMapasCategorias(categoriasPorGrupo) {
   return { uiAScraper, scraperAUi, porGrupo };
 }
 
+/** Categorías del inventario SESCAM sin PDF publicado en el portal (no mostrar en UI). */
+const CATEGORIAS_SIN_PDF_PORTAL = new Set([
+  "ENFERMERO/A DE EMERGENCIAS",
+  "ENFERMERO/A INSPECTOR/A DE SERVICIOS SANITARIOS Y PRESTACIONES",
+]);
+
 export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   const { uiAScraper, scraperAUi } = construirMapasCategorias(categoriasPorGrupo);
   const archivosDisponibles = new Set(manifest?.archivos || []);
@@ -356,7 +362,9 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
           gestion: "Personal de Gestión y Servicios",
         }[id] || id,
         activo: grupoTieneDatos(id),
-        categorias: (info.categorias_pdf || []).map(portalAUi),
+        categorias: (info.categorias_pdf || [])
+          .filter((pdf) => !CATEGORIAS_SIN_PDF_PORTAL.has(pdf))
+          .map(portalAUi),
       }))
     : [];
 

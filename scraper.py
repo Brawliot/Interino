@@ -52,7 +52,7 @@ GRUPOS_PORTAL_SLUG = {
     "gestion": "personal-de-gestion-y-servicios",
 }
 
-USER_AGENT = "Mozilla/5.0 (compatible; ListasApp/0.2; +contacto@ejemplo.es)"
+USER_AGENT = "Mozilla/5.0 (compatible; ListasApp/0.2; +fedebotija@gmail.com)"
 REQUEST_HEADERS = {"User-Agent": USER_AGENT, "Cache-Control": "no-cache"}
 PDF_TIMEOUT_SEG = 180
 PDF_REINTENTOS = 3

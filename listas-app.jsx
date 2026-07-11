@@ -128,36 +128,10 @@ const GERENCIAS_EJEMPLO = [
 ];
 
 // ---------------------------------------------------------------
-// GENERACIÓN DE DATOS DE EJEMPLO
+// LÓGICA DE TENDENCIA / CORTE
 // ---------------------------------------------------------------
-
-// listado completo simulado (así se vería el scraper ya montado) — se busca por apellidos, como hace el SESCAM
-const NOMBRES = ["Ana", "Laura", "Carlos", "Elena", "Javier", "Marta", "Alberto", "Cristina", "Pablo", "Lucía", "Diego", "Rocío", "Sergio", "Beatriz", "Manuel"];
-const APELLIDOS = ["García", "Martínez", "López", "Sánchez", "Pérez", "Gómez", "Fernández", "Ruiz", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Navarro", "Torres", "Domínguez"];
-
-const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";
-const TIPOS_CONTRATO = ["Larga TC.", "Larga TP.", "Corta TC.", "Corta TP.", "C.U. TC.", "C.U. TP."];
-
-function generarListadoCompletoEjemplo(categoria, gerencia = "") {
-  const seed = (categoria + "·" + gerencia).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const total = 2100 + (seed % 900);
-  const filas = [];
-  for (let i = 1; i <= 60; i++) {
-    const puntos = (95 - i * 1.55 + ((seed + i) % 5) * 0.3).toFixed(2);
-    const nombre = NOMBRES[(seed + i * 3) % NOMBRES.length];
-    const ap1 = APELLIDOS[(seed + i * 5) % APELLIDOS.length];
-    const ap2 = APELLIDOS[(seed + i * 7 + 3) % APELLIDOS.length];
-    const cifras = String((seed * i * 41) % 9000 + 1000);
-    const dniParcial = `****${cifras}${LETRAS_DNI[(seed + i) % LETRAS_DNI.length]}`;
-    const tiposContrato = {};
-    TIPOS_CONTRATO.forEach((t, idx) => { tiposContrato[t] = ((seed + i + idx) % 3) !== 0; });
-    filas.push({
-      pos: i, nombre, ap1, ap2, nombreCompleto: `${nombre} ${ap1} ${ap2}`,
-      puntos: parseFloat(puntos), total, dniParcial, tiposContrato,
-    });
-  }
-  return filas;
-}
+// Nº mínimo de publicaciones guardadas para atrevernos a estimar tendencia.
+const MIN_HISTORICO_TENDENCIA = 3;
 
 function ambitoCorto(ambito) {
   if (!ambito) return "";
@@ -175,56 +149,6 @@ function etiquetaLista(categoria, gerencia, ambito, aparicion) {
   const base = `${categoria} · ${gerencia}`;
   const ab = aparicion?.ambitosMerged || (ambito ? ambitoLegible(ambito) : "");
   return ab ? `${base} · ${ab}` : base;
-}
-
-// busca coincidencias por apellidos, DNI parcial o ambos — versión de ejemplo (grupos sin scraper)
-function buscarPersonasEjemplo(categoria, consulta, gerencias) {
-  const porPersona = new Map();
-  gerencias.forEach((g) => {
-    generarListadoCompletoEjemplo(categoria, g)
-      .filter((f) => coincideBusqueda(f, consulta))
-      .forEach((f) => {
-        if (!porPersona.has(f.nombreCompleto)) {
-          porPersona.set(f.nombreCompleto, {
-            nombre: f.nombre,
-            ap1: f.ap1,
-            ap2: f.ap2,
-            nombreCompleto: f.nombreCompleto,
-            dniParcial: f.dniParcial,
-            apariciones: [],
-          });
-        }
-        porPersona.get(f.nombreCompleto).apariciones.push({ gerencia: g, ...filaAResultado(f) });
-      });
-  });
-  return [...porPersona.values()];
-}
-
-function filaAResultado(fila) {
-  return {
-    posicion: fila.pos, total: fila.total, puntos: fila.puntos, delante: fila.pos - 1,
-    nombreCompleto: fila.nombreCompleto, dniParcial: fila.dniParcial, tiposContrato: fila.tiposContrato,
-  };
-}
-
-// histórico simulado del punto de corte oficial en las últimas convocatorias (esto sí sería scrapeable de verdad, guardando cada publicación del SESCAM)
-// Nº mínimo de publicaciones guardadas para atrevernos a estimar tendencia.
-// El día del lanzamiento habrá 1 sola: la app debe degradar con honestidad,
-// no inventar una pendiente con un único punto.
-const MIN_HISTORICO_TENDENCIA = 3;
-
-function historialCorteEjemplo(categoria, gerencia = "") {
-  const seed = (categoria + "·" + gerencia).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const fechas = ["oct 2024", "feb 2025", "jun 2025", "oct 2025", "feb 2026", "jun 2026"];
-  const base = (60 + (seed % 30)) / 10 + 2.8;
-  const completo = fechas.map((fecha, i) => ({
-    fecha,
-    puntos: parseFloat((base - i * (0.22 + ((seed + i) % 4) * 0.05)).toFixed(2)),
-  }));
-  // Simulación del "día 1": Logopeda solo tiene una publicación guardada,
-  // para poder ver en el prototipo cómo se comporta la app sin histórico.
-  if (categoria === "Logopeda") return completo.slice(-1);
-  return completo;
 }
 
 // clasifica si la persona está "en zona de riesgo" de ser llamada pronto, según la velocidad real de bajada del corte
@@ -1613,7 +1537,6 @@ export default function ListasApp() {
       style={{ background: C.paper, backgroundImage: `url("${GRAIN}")`, fontFamily: FONT_BODY, color: C.ink }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
         button { cursor: pointer; transition: transform .08s ease, opacity .15s ease; }
         button:not(:disabled):active { transform: scale(.98); }
         select, input { font-family: inherit; border-radius: 14px 5px 14px 5px !important; }
