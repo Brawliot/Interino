@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import { deduplicarApariciones } from "./utils/apariciones.js";
+import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js";
 
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
@@ -42,6 +43,9 @@ export function portalAUi(nombreScraper) {
 
 export function gerenciaCorta(gerenciaCompleta) {
   if (!gerenciaCompleta) return "";
+  if (gerenciaCompleta.includes("Region de Murcia") || gerenciaCompleta.includes("Región de Murcia")) {
+    return "Murcia";
+  }
   if (gerenciaCompleta.includes("Primaria de Toledo")) return "Toledo";
   if (gerenciaCompleta.includes("Especializada de Toledo")) return "Toledo AE";
   const prefijo = "Gerencia de Atencion Integrada de ";
@@ -129,55 +133,52 @@ const CATEGORIAS_SIN_PDF_PORTAL = new Set([
   "ENFERMERO/A INSPECTOR/A DE SERVICIOS SANITARIOS Y PRESTACIONES",
 ]);
 
-export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
-  const { uiAScraper, scraperAUi } = construirMapasCategorias(categoriasPorGrupo);
-  const archivosDisponibles = new Set(manifest?.archivos || []);
+function slugGrupoLabel(label) {
+  return label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function claveCategoria(nombre) {
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function crearCapaBusqueda({
+  ccaaId,
+  gruposSanidad,
+  archivosDisponibles,
+  historico = [],
+  rutaListado,
+  rutaIndice,
+  categoriaScraper,
+  listadosDeSnapshot,
+  organismo,
+}) {
   const cache = new Map();
 
-  function rutaRelativa(grupoId, categoriaScraper) {
-    return `${grupoId}/${slugArchivo(categoriaScraper)}.json`;
-  }
-
-  function rutaIndiceBusqueda(grupoId, categoriaScraper) {
-    return `${grupoId}/${slugArchivo(categoriaScraper)}.busqueda.json`;
-  }
-
-  function esListadoCategoria(archivo) {
-    return archivo.endsWith(".json") && !archivo.endsWith(".busqueda.json");
-  }
-
-  function categoriaScraper(categoriaUi) {
-    return uiAScraper[categoriaUi] ?? categoriaUi.toUpperCase();
-  }
-
-  function categoriaUiDesdeScraper(nombre) {
-    return scraperAUi[nombre] ?? portalAUi(nombre);
-  }
-
   function tieneDatosReales(categoriaUi, grupoId) {
-    const cat = categoriaScraper(categoriaUi);
-    const rel = rutaRelativa(grupoId, cat);
-    return archivosDisponibles.has(rel) && esListadoCategoria(rel);
+    const rel = rutaListado(categoriaUi, grupoId);
+    return rel && archivosDisponibles.has(rel);
   }
 
   function tieneIndiceBusqueda(categoriaUi, grupoId) {
-    const cat = categoriaScraper(categoriaUi);
-    return archivosDisponibles.has(rutaIndiceBusqueda(grupoId, cat));
-  }
-
-  function grupoTieneDatos(grupoId) {
-    const prefix = `${grupoId}/`;
-    for (const archivo of archivosDisponibles) {
-      if (archivo.startsWith(prefix) && esListadoCategoria(archivo)) return true;
-    }
-    return false;
+    const rel = rutaIndice?.(categoriaUi, grupoId);
+    return rel ? archivosDisponibles.has(rel) : false;
   }
 
   async function cargarIndiceBusqueda(grupoId, categoriaUi) {
-    const cat = categoriaScraper(categoriaUi);
-    const key = `idx/${grupoId}/${cat}`;
+    const rel = rutaIndice?.(categoriaUi, grupoId);
+    if (!rel) return null;
+    const key = `idx/${rel}`;
     if (cache.has(key)) return cache.get(key);
-    const rel = rutaIndiceBusqueda(grupoId, cat);
     const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
     if (!res.ok) return null;
     const data = await res.json();
@@ -186,27 +187,14 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   }
 
   async function cargarCategoria(grupoId, categoriaUi) {
-    const cat = categoriaScraper(categoriaUi);
-    const key = `${grupoId}/${cat}`;
+    const rel = rutaListado(categoriaUi, grupoId);
+    const key = rel;
     if (cache.has(key)) return cache.get(key);
-    const rel = rutaRelativa(grupoId, cat);
     const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
     if (!res.ok) throw new Error(`No se pudo cargar ${DATA_CATEGORIAS_BASE_URL}${rel} (${res.status})`);
     const data = await res.json();
     cache.set(key, data);
     return data;
-  }
-
-  function listadosDeSnapshot(snapshot, categoriaUi, gerenciaCortaFiltro = null, ambitoFiltro = "") {
-    const cat = categoriaScraper(categoriaUi);
-    let listados = (snapshot?.listados ?? []).filter((l) => l.categoria === cat);
-    if (gerenciaCortaFiltro) {
-      listados = listados.filter((l) => gerenciaCorta(l.gerencia) === gerenciaCortaFiltro);
-    }
-    if (ambitoFiltro) {
-      listados = listados.filter((l) => l.ambito === ambitoFiltro);
-    }
-    return listados;
   }
 
   function filasDesdeListados(listados) {
@@ -343,30 +331,12 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
     if (dias > 14) {
       return {
         tipo: "desactualizado",
-        texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). El SESCAM puede haber publicado cambios desde entonces.`,
+        texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). ${organismo} puede haber publicado cambios desde entonces.`,
       };
     }
     const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
     return { tipo: "ok", texto: `Snapshot del listado: ${fecha.toLocaleString("es-ES")} (${hace}).` };
   }
-
-  const gruposSanidad = categoriasPorGrupo
-    ? Object.entries(categoriasPorGrupo)
-        .filter(([id]) => id !== "facultativo")
-        .map(([id, info]) => ({
-        id,
-        nombre: {
-          diplomado: "Personal Sanitario Diplomado",
-          licenciados: "Personal Sanitario Licenciado",
-          tecnico: "Personal Sanitario Técnico",
-          gestion: "Personal de Gestión y Servicios",
-        }[id] || id,
-        activo: grupoTieneDatos(id),
-        categorias: (info.categorias_pdf || [])
-          .filter((pdf) => !CATEGORIAS_SIN_PDF_PORTAL.has(pdf))
-          .map(portalAUi),
-      }))
-    : [];
 
   async function gerenciasDeCategoria(grupoId, categoriaUi) {
     try {
@@ -380,9 +350,7 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   }
 
   return {
-    uiAScraper,
-    scraperAUi,
-    categoriaUiDesdeScraper,
+    ccaaId,
     gruposSanidad,
     tieneDatosReales,
     tieneIndiceBusqueda,
@@ -396,27 +364,253 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   };
 }
 
+export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
+  const { uiAScraper, scraperAUi } = construirMapasCategorias(categoriasPorGrupo);
+  const archivosDisponibles = new Set(manifest?.archivos || []);
+
+  function esListadoCategoria(archivo) {
+    return archivo.endsWith(".json") && !archivo.endsWith(".busqueda.json");
+  }
+
+  function categoriaScraper(categoriaUi) {
+    return uiAScraper[categoriaUi] ?? categoriaUi.toUpperCase();
+  }
+
+  function grupoTieneDatos(grupoId) {
+    const prefix = `${grupoId}/`;
+    for (const archivo of archivosDisponibles) {
+      if (archivo.startsWith(prefix) && esListadoCategoria(archivo)) return true;
+    }
+    return false;
+  }
+
+  const gruposSanidad = categoriasPorGrupo
+    ? Object.entries(categoriasPorGrupo)
+        .filter(([id]) => id !== "facultativo")
+        .map(([id, info]) => ({
+          id,
+          nombre: {
+            diplomado: "Personal Sanitario Diplomado",
+            licenciados: "Personal Sanitario Licenciado",
+            tecnico: "Personal Sanitario Técnico",
+            gestion: "Personal de Gestión y Servicios",
+          }[id] || id,
+          activo: grupoTieneDatos(id),
+          categorias: (info.categorias_pdf || [])
+            .filter((pdf) => !CATEGORIAS_SIN_PDF_PORTAL.has(pdf))
+            .map(portalAUi),
+        }))
+    : [];
+
+  const capa = crearCapaBusqueda({
+    ccaaId: "clm",
+    gruposSanidad,
+    archivosDisponibles,
+    historico,
+    organismo: organismoCcaa("clm"),
+    categoriaScraper,
+    rutaListado: (categoriaUi) => {
+      const cat = categoriaScraper(categoriaUi);
+      return `${"diplomado"}/${slugArchivo(cat)}.json`.replace(/^diplomado\//, () => {
+        for (const g of gruposSanidad) {
+          if (g.categorias.includes(categoriaUi)) return `${g.id}/${slugArchivo(cat)}.json`;
+        }
+        return `diplomado/${slugArchivo(cat)}.json`;
+      });
+    },
+    rutaIndice: (categoriaUi) => {
+      const cat = categoriaScraper(categoriaUi);
+      for (const g of gruposSanidad) {
+        if (g.categorias.includes(categoriaUi)) {
+          return `${g.id}/${slugArchivo(cat)}.busqueda.json`;
+        }
+      }
+      return `diplomado/${slugArchivo(cat)}.busqueda.json`;
+    },
+    listadosDeSnapshot: (snapshot, categoriaUi, gerenciaCortaFiltro, ambitoFiltro) => {
+      const cat = categoriaScraper(categoriaUi);
+      let listados = (snapshot?.listados ?? []).filter((l) => l.categoria === cat);
+      if (gerenciaCortaFiltro) {
+        listados = listados.filter((l) => gerenciaCorta(l.gerencia) === gerenciaCortaFiltro);
+      }
+      if (ambitoFiltro) {
+        listados = listados.filter((l) => l.ambito === ambitoFiltro);
+      }
+      return listados;
+    },
+  });
+
+  // Corregir rutas CLM: resolver grupo real por categoría
+  function grupoDeCategoriaUi(categoriaUi) {
+    return gruposSanidad.find((g) => g.categorias.includes(categoriaUi))?.id || "diplomado";
+  }
+
+  return {
+    ...capa,
+    uiAScraper,
+    scraperAUi,
+    categoriaUiDesdeScraper: (nombre) => scraperAUi[nombre] ?? portalAUi(nombre),
+    tieneDatosReales: (categoriaUi, grupoId) => {
+      const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
+      const cat = categoriaScraper(categoriaUi);
+      const rel = `${gid}/${slugArchivo(cat)}.json`;
+      return archivosDisponibles.has(rel);
+    },
+    tieneIndiceBusqueda: (categoriaUi, grupoId) => {
+      const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
+      const cat = categoriaScraper(categoriaUi);
+      return archivosDisponibles.has(`${gid}/${slugArchivo(cat)}.busqueda.json`);
+    },
+    cargarCategoria: async (grupoId, categoriaUi) => {
+      const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
+      const cat = categoriaScraper(categoriaUi);
+      const rel = `${gid}/${slugArchivo(cat)}.json`;
+      const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
+      if (!res.ok) throw new Error(`No se pudo cargar ${DATA_CATEGORIAS_BASE_URL}${rel} (${res.status})`);
+      return res.json();
+    },
+    buscarPersonas: async (grupoId, categoriaUi, consulta) => {
+      const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
+      return capa.buscarPersonas(gid, categoriaUi, consulta);
+    },
+    obtenerListadoCompleto: async (grupoId, categoriaUi, gerencia, ambito) => {
+      const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
+      return capa.obtenerListadoCompleto(gid, categoriaUi, gerencia, ambito);
+    },
+    gerenciasDeCategoria: async (grupoId, categoriaUi) => {
+      const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
+      return capa.gerenciasDeCategoria(gid, categoriaUi);
+    },
+  };
+}
+
+function crearCapaDatosMurcia(manifest, categoriasMurcia) {
+  const archivosDisponibles = new Set(manifest?.archivos || []);
+  const sanidad = (categoriasMurcia || []).filter((c) => esGrupoSanitarioMurcia(c.grupo));
+
+  const porGrupo = new Map();
+  sanidad.forEach((item) => {
+    if (!porGrupo.has(item.grupo)) porGrupo.set(item.grupo, []);
+    porGrupo.get(item.grupo).push(item.categoria);
+  });
+
+  const gruposSanidad = [...porGrupo.entries()]
+    .map(([nombre, cats]) => {
+      const id = slugGrupoLabel(nombre);
+      const ordenadas = [...cats].sort((a, b) => a.localeCompare(b, "es"));
+      const activo = ordenadas.some((c) => archivosDisponibles.has(`murcia/${slugArchivo(c)}.json`));
+      return { id, nombre, activo, categorias: ordenadas };
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+  function categoriaScraper(categoriaUi) {
+    return claveCategoria(categoriaUi);
+  }
+
+  return crearCapaBusqueda({
+    ccaaId: "mur",
+    gruposSanidad,
+    archivosDisponibles,
+    historico: [],
+    organismo: organismoCcaa("mur"),
+    categoriaScraper,
+    rutaListado: (categoriaUi) => `murcia/${slugArchivo(categoriaUi)}.json`,
+    rutaIndice: (categoriaUi) => `murcia/${slugArchivo(categoriaUi)}.busqueda.json`,
+    listadosDeSnapshot: (snapshot, categoriaUi, gerenciaCortaFiltro, ambitoFiltro) => {
+      const cat = categoriaScraper(categoriaUi);
+      let listados = (snapshot?.listados ?? []).filter(
+        (l) => claveCategoria(l.categoria) === cat || claveCategoria(snapshot?.categoria || "") === cat
+      );
+      if (gerenciaCortaFiltro) {
+        listados = listados.filter((l) => gerenciaCorta(l.gerencia) === gerenciaCortaFiltro);
+      }
+      if (ambitoFiltro) {
+        listados = listados.filter((l) => l.ambito === ambitoFiltro);
+      }
+      return listados;
+    },
+  });
+}
+
+function crearCapaDatosMadrid(inventario) {
+  const archivosDisponibles = new Set();
+  const gruposSanidad = (inventario?.grupos || []).map((g) => ({
+    id: g.id,
+    nombre: g.nombre,
+    activo: false,
+    categorias: g.categorias,
+  }));
+
+  return crearCapaBusqueda({
+    ccaaId: "mad",
+    gruposSanidad,
+    archivosDisponibles,
+    historico: [],
+    organismo: organismoCcaa("mad"),
+    categoriaScraper: (categoriaUi) => claveCategoria(categoriaUi),
+    rutaListado: () => null,
+    rutaIndice: () => null,
+    listadosDeSnapshot: () => [],
+  });
+}
+
+/** @deprecated Usar crearCapaDatosClm o datos.paraCcaa() */
+export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
+  return crearCapaDatosClm(historico, manifest, categoriasPorGrupo);
+}
+
 export async function cargarDatos() {
-  const [historicoRes, manifestRes, catsRes] = await Promise.all([
-    fetch(`${DATA_CATEGORIAS_BASE_URL}historico.json`),
-    fetch(`${DATA_CATEGORIAS_BASE_URL}manifest.json`),
-    fetch(`${DATA_CATEGORIAS_BASE_URL}categorias_por_grupo.json`),
+  const base = DATA_CATEGORIAS_BASE_URL;
+  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes] = await Promise.all([
+    fetch(`${base}historico.json`),
+    fetch(`${base}manifest.json`),
+    fetch(`${base}categorias_por_grupo.json`),
+    fetch(`${base}murcia/categorias.json`),
+    fetch(`${base}murcia/manifest.json`),
+    fetch(`${base}madrid/categorias_sanidad.json`),
   ]);
   if (!historicoRes.ok) throw new Error(`No se pudo cargar historico.json (${historicoRes.status})`);
   const historico = await historicoRes.json();
   const manifest = manifestRes.ok ? await manifestRes.json() : { archivos: [] };
   const categoriasPorGrupo = catsRes.ok ? await catsRes.json() : null;
-  return crearCapaDatos(historico, manifest, categoriasPorGrupo);
+  const categoriasMurcia = murCatsRes.ok ? await murCatsRes.json() : [];
+  const manifestMurcia = murManifestRes.ok ? await murManifestRes.json() : { archivos: [] };
+  const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
+
+  const capas = {
+    clm: crearCapaDatosClm(historico, manifest, categoriasPorGrupo),
+    mur: crearCapaDatosMurcia(manifestMurcia, categoriasMurcia),
+    mad: crearCapaDatosMadrid(inventarioMadrid),
+  };
+  const clm = capas.clm;
+
+  return {
+    regiones: CCAA_LIST,
+    paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
+    ...clm,
+  };
 }
 
 const DatosContext = createContext(null);
+const CcaaCapaContext = createContext(null);
 
 export function DatosProvider({ datos, children }) {
   return <DatosContext.Provider value={datos}>{children}</DatosContext.Provider>;
+}
+
+export function CcaaCapaProvider({ capa, children }) {
+  return <CcaaCapaContext.Provider value={capa}>{children}</CcaaCapaContext.Provider>;
 }
 
 export function useDatos() {
   const ctx = useContext(DatosContext);
   if (!ctx) throw new Error("useDatos debe usarse dentro de DatosProvider");
   return ctx;
+}
+
+/** Capa de datos de la CCAA activa (búsqueda/listados). Por defecto CLM. */
+export function useCapaDatos() {
+  const capa = useContext(CcaaCapaContext);
+  const root = useDatos();
+  return capa || root;
 }

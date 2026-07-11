@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map, Banknote, Award } from "lucide-react";
-import { useDatos, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
+import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
+import { CCAA_LIST, sectoresDeCcaa, tituloBolsa, organismoCcaa } from "./src/regiones.js";
 import { etiquetaAmbitoAparicion } from "./src/utils/apariciones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import SelectorSectores from "./src/SelectorSectores.jsx";
@@ -58,33 +59,19 @@ const FONT_BODY = "'Inter', system-ui, sans-serif";
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
 // ---------------------------------------------------------------
-// DATOS DE EJEMPLO — solo Sanidad / Castilla-La Mancha es real
+// DATOS DE EJEMPLO — herramientas del hub usan CLM por defecto
 // ---------------------------------------------------------------
-const CCAA = [
-  { id: "gal", nombre: "Galicia", activo: false },
-  { id: "ast", nombre: "Asturias", activo: false },
-  { id: "cant", nombre: "Cantabria", activo: false },
-  { id: "pv", nombre: "País Vasco", activo: false },
-  { id: "nav", nombre: "Navarra", activo: false },
-  { id: "rioja", nombre: "La Rioja", activo: false },
-  { id: "ar", nombre: "Aragón", activo: false },
-  { id: "cat", nombre: "Cataluña", activo: false },
-  { id: "val", nombre: "Comunitat Valenciana", activo: false },
-  { id: "bal", nombre: "Illes Balears", activo: false },
-  { id: "mad", nombre: "Comunidad de Madrid", activo: false },
-  { id: "cyl", nombre: "Castilla y León", activo: false },
-  { id: "clm", nombre: "Castilla-La Mancha", activo: true },
-  { id: "ext", nombre: "Extremadura", activo: false },
-  { id: "mur", nombre: "Región de Murcia", activo: false },
-  { id: "and", nombre: "Andalucía", activo: false },
-  { id: "can", nombre: "Canarias", activo: false },
-];
+const ICONOS_SECTOR = {
+  sanidad: Stethoscope,
+  educacion: GraduationCap,
+  administracion: Landmark,
+};
 
-const SECTORES = [
-  { id: "sanidad", nombre: "Sanidad", icono: Stethoscope, activo: true, fuente: "SESCAM · Bolsa única SELECTA" },
-  { id: "educacion", nombre: "Educación", icono: GraduationCap, activo: false, fuente: "Próximamente" },
-  { id: "administracion", nombre: "Administración General", icono: Landmark, activo: false, fuente: "Próximamente" },
-];
+const TEXTO_AYUDA_BUSQUEDA = {
+  clm: `Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SESCAM) o por una combinación de ambos. Buscamos en las ${NUM_GERENCIAS} gerencias y en Atención Primaria y Especializada. No te pedimos ni guardamos tu DNI completo.`,
+  mur: "Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SMS) o por una combinación de ambos. No te pedimos ni guardamos tu DNI completo.",
+  mad: "Puedes buscar por apellidos o DNI parcial (como los publica el SERMAS). Los listados de Madrid aún no están scrapeados en esta app.",
+};
 
 const HERRAMIENTAS = [
   { id: "simulador-baremo", titulo: "Simulador de baremo", subtitulo: "¿Cuántos puntos tendrías?", icono: Calculator, activo: true },
@@ -226,26 +213,27 @@ function Subrayado({ width = 168, color, style }) {
 }
 
 function AvisoActualizacion({ categoria, grupoId, grupoActivo }) {
-  const datos = useDatos();
+  const capa = useCapaDatos();
+  const organismo = organismoCcaa(capa.ccaaId);
   const [e, setE] = useState({ tipo: "ok", texto: "Comprobando actualización…" });
 
   useEffect(() => {
     let cancel = false;
-    if (grupoActivo && datos.tieneDatosReales(categoria, grupoId)) {
-      datos.estadoActualizacion(categoria, grupoId, true).then((est) => {
+    if (grupoActivo && capa.tieneDatosReales(categoria, grupoId)) {
+      capa.estadoActualizacion(categoria, grupoId, true).then((est) => {
         if (!cancel) setE(est);
       });
     } else if (grupoActivo) {
       setE({ tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." });
     } else {
-      setE(estadoActualizacionEjemplo(categoria, datos.gruposSanidad));
+      setE(estadoActualizacionEjemplo(categoria, capa.gruposSanidad));
     }
     return () => { cancel = true; };
-  }, [categoria, grupoId, grupoActivo, datos]);
+  }, [categoria, grupoId, grupoActivo, capa]);
   if (e.tipo === "ok") {
     return (
       <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.inkSoft, marginTop: 8, paddingLeft: 2 }}>
-        DATO OFICIAL · listado público SESCAM, orden por puntuación · {e.texto}
+        DATO OFICIAL · listado público {organismo}, orden por puntuación · {e.texto}
       </p>
     );
   }
@@ -265,7 +253,7 @@ function AvisoLegal({ onAbrirPrivacidad }) {
     <div className="flex items-start gap-2 mx-5" style={{ marginTop: 18, padding: "10px 12px", background: C.paperDeep, borderRadius: "6px 14px 6px 14px" }}>
       <ShieldAlert size={13} color={C.inkSoft} style={{ flexShrink: 0, marginTop: 1 }} />
       <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, lineHeight: 1.4 }}>
-        App no oficial, sin afiliación con el SESCAM ni la Junta de Comunidades de Castilla-La Mancha. Los datos proceden de listados públicos y se muestran solo con fines informativos.{" "}
+        App no oficial, sin afiliación con ninguna administración pública. Los datos proceden de listados públicos y se muestran solo con fines informativos.{" "}
         <a
           href="/politica-privacidad.md"
           onClick={(e) => {
@@ -313,11 +301,11 @@ function Barra({ titulo, atras }) {
 // PANTALLA 0 — inicio (hub)
 // ---------------------------------------------------------------
 function TarjetaSeguimientoResumen({ seguimiento, index, onAbrir, gruposSanidad }) {
-  const datos = useDatos();
+  const capa = useCapaDatos();
   const s = seguimiento;
   const r = s.candidato;
   const grupo = grupoDeCategoria(s.categoria, gruposSanidad);
-  const e = grupo?.activo && datos.tieneDatosReales(s.categoria, grupo.id)
+  const e = grupo?.activo && capa.tieneDatosReales(s.categoria, grupo.id)
     ? { tipo: "ok", texto: "Datos reales disponibles." }
     : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
 
@@ -491,7 +479,7 @@ function PantallaCCAA({ onSelect, atras }) {
       </div>
 
       <div className="flex-1 px-1 pb-4 pt-2" style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <MapaEspanaCCAA ccaaList={CCAA} onConfirm={onSelect} colors={C} />
+        <MapaEspanaCCAA ccaaList={CCAA_LIST} onConfirm={onSelect} colors={C} />
       </div>
     </div>
   );
@@ -501,11 +489,15 @@ function PantallaCCAA({ onSelect, atras }) {
 // PANTALLA 2 — elegir sector
 // ---------------------------------------------------------------
 function PantallaSector({ ccaa, onSelect, atras }) {
+  const sectores = sectoresDeCcaa(ccaa.id).map((s) => ({
+    ...s,
+    icono: ICONOS_SECTOR[s.id] || Stethoscope,
+  }));
   return (
     <div className="flex flex-col" style={{ height: "calc(100dvh - 48px)", maxHeight: "100dvh" }}>
       <Barra titulo={ccaa.nombre} atras={atras} />
       <div className="flex-1 px-3 pb-4" style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <SelectorSectores sectores={SECTORES} onConfirm={onSelect} colors={C} />
+        <SelectorSectores sectores={sectores} onConfirm={onSelect} colors={C} />
       </div>
     </div>
   );
@@ -514,8 +506,8 @@ function PantallaSector({ ccaa, onSelect, atras }) {
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanidad }) {
-  const datos = useDatos();
+function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanidad, ccaaId }) {
+  const capa = useCapaDatos();
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
   const grupo = gruposSanidad.find((g) => g.id === grupoId);
   const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
@@ -524,7 +516,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
   const [sinDatosCategoria, setSinDatosCategoria] = useState(false);
   const [gerenciaListado, setGerenciaListado] = useState(GERENCIAS_EJEMPLO[0]);
 
-  const categoriaConDatos = grupo?.activo && datos.tieneDatosReales(categoria, grupoId);
+  const categoriaConDatos = grupo?.activo && capa.tieneDatosReales(categoria, grupoId);
 
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
@@ -537,13 +529,13 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
   useEffect(() => {
     if (!categoria) return;
     if (grupo?.activo) {
-      datos.gerenciasDeCategoria(grupoId, categoria).then((gs) => {
+      capa.gerenciasDeCategoria(grupoId, categoria).then((gs) => {
         if (gs.length) setGerenciaListado(gs[0]);
       });
     } else {
       setGerenciaListado(GERENCIAS_EJEMPLO[0]);
     }
-  }, [grupoId, categoria, grupo?.activo, datos]);
+  }, [grupoId, categoria, grupo?.activo, capa]);
 
   const buscar = async (cat, q) => {
     setSinDatosCategoria(false);
@@ -558,7 +550,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
 
   return (
     <div>
-      <Barra titulo="Sanidad · Bolsa SESCAM" atras={atras} />
+      <Barra titulo={tituloBolsa(ccaaId)} atras={atras} />
 
       <div className="px-5 flex flex-col gap-5 mt-2">
         {recientes.length > 0 && (
@@ -613,7 +605,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
           >
             {grupo.categorias.map((c) => (
               <option key={c} value={c}>
-                {c}{datos.tieneDatosReales(c, grupoId) ? "" : " · sin datos"}
+                {c}{capa.tieneDatosReales(c, grupoId) ? "" : " · sin datos"}
               </option>
             ))}
           </select>
@@ -629,7 +621,7 @@ function PantallaBuscar({ atras, onBuscar, onVerListado, recientes, gruposSanida
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           />
           <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 6 }}>
-            Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SESCAM) o por una combinación de ambos. Buscamos en las {NUM_GERENCIAS} gerencias y en Atención Primaria y Especializada. No te pedimos ni guardamos tu DNI completo.
+            {TEXTO_AYUDA_BUSQUEDA[ccaaId] || TEXTO_AYUDA_BUSQUEDA.clm}
           </p>
         </div>
 
@@ -744,13 +736,13 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir }) {
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
 function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras }) {
-  const datos = useDatos();
+  const capa = useCapaDatos();
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
   const [errorDatos, setErrorDatos] = useState(false);
   const LIMITE_FILAS = 100;
-  const esReal = grupoActivo && datos.tieneDatosReales(categoria, grupoId);
+  const esReal = grupoActivo && capa.tieneDatosReales(categoria, grupoId);
 
   useEffect(() => {
     let cancel = false;
@@ -759,7 +751,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
     const cargar = async () => {
       if (esReal) {
         try {
-          const f = await datos.obtenerListadoCompleto(grupoId, categoria, gerencia, ambito || "");
+          const f = await capa.obtenerListadoCompleto(grupoId, categoria, gerencia, ambito || "");
           if (!cancel) setFilas(f);
         } catch {
           if (!cancel) { setFilas([]); setErrorDatos(true); }
@@ -771,7 +763,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
     };
     cargar();
     return () => { cancel = true; };
-  }, [datos, categoria, gerencia, ambito, grupoId, esReal]);
+  }, [capa, categoria, gerencia, ambito, grupoId, esReal]);
 
   const visibles = filtro ? filas.filter((f) => coincideBusqueda(f, filtro)) : filas;
   const mostradas = visibles.slice(0, LIMITE_FILAS);
@@ -840,11 +832,11 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
 
 // Bloque de detalle de UNA lista (gerencia + ámbito): posición, puntos, contratos, corte y avisos
 function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
-  const datos = useDatos();
+  const capa = useCapaDatos();
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const percentil = Math.round((1 - r.posicion / r.total) * 100);
-  const historial = grupoActivo && datos.tieneDatosReales(categoria, grupoId)
-    ? datos.historialCorte(categoria, gerencia, ambito || r.ambito || "")
+  const historial = grupoActivo && capa.tieneDatosReales(categoria, grupoId)
+    ? capa.historialCorte(categoria, gerencia, ambito || r.ambito || "")
     : [];
 
   return (
@@ -1357,7 +1349,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
 // PANTALLA — Mis seguimientos (varias listas a la vez)
 // ---------------------------------------------------------------
 function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad }) {
-  const datos = useDatos();
+  const capa = useCapaDatos();
   return (
     <div>
       <Barra titulo="Mis seguimientos" atras={atras} />
@@ -1371,7 +1363,7 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad }) {
           {seguimientos.map((s, i) => {
             const r = s.candidato;
             const grupo = grupoDeCategoria(s.categoria, gruposSanidad);
-            const e = grupo?.activo && datos.tieneDatosReales(s.categoria, grupo.id)
+            const e = grupo?.activo && capa.tieneDatosReales(s.categoria, grupo.id)
               ? { tipo: "ok", texto: "Datos reales disponibles." }
               : grupo?.activo
                 ? { tipo: "sin_datos", texto: "Sin listado scrapeado para esta categoría." }
@@ -1455,11 +1447,12 @@ function PantallaInfoLlamamientos({ atras }) {
 // ---------------------------------------------------------------
 export default function ListasApp() {
   const datos = useDatos();
-  const gruposSanidad = datos.gruposSanidad?.length ? datos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
+  const [ccaa, setCcaa] = useState(null);
+  const capaDatos = useMemo(() => datos.paraCcaa(ccaa?.id ?? "clm"), [datos, ccaa?.id]);
+  const gruposSanidad = capaDatos.gruposSanidad?.length ? capaDatos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");
-  const [ccaa, setCcaa] = useState(null);
   const [sector, setSector] = useState(null);
   const [categoriaActual, setCategoriaActual] = useState("");
   const [grupoIdActual, setGrupoIdActual] = useState("diplomado");
@@ -1505,10 +1498,10 @@ export default function ListasApp() {
     const grupo = grupoDeCategoria(categoria, gruposSanidad);
     setCategoriaActual(categoria);
     setGrupoIdActual(grupo?.id || "diplomado");
-    if (!grupo?.activo || !datos.tieneDatosReales(categoria, grupo.id)) {
+    if (!grupo?.activo || !capaDatos.tieneDatosReales(categoria, grupo.id)) {
       return -1;
     }
-    const res = await datos.buscarPersonas(grupo.id, categoria, consulta);
+    const res = await capaDatos.buscarPersonas(grupo.id, categoria, consulta);
     const personas = res.personas;
     if (consulta.trim()) {
       setRecientes((prev) => {
@@ -1549,6 +1542,7 @@ export default function ListasApp() {
   };
 
   return (
+    <CcaaCapaProvider capa={capaDatos}>
     <div
       className="min-h-screen"
       style={{ background: C.paper, backgroundImage: `url("${GRAIN}")`, fontFamily: FONT_BODY, color: C.ink }}
@@ -1598,6 +1592,8 @@ export default function ListasApp() {
 
         {paso === "buscar" && (
           <PantallaBuscar
+            key={ccaa?.id ?? "clm"}
+            ccaaId={ccaa?.id ?? "clm"}
             atras={() => setPaso("sector")}
             onBuscar={iniciarBusqueda}
             onVerListado={(categoria, gerencia) => {
@@ -1742,5 +1738,6 @@ export default function ListasApp() {
         {paso !== "privacidad" && <AvisoLegal onAbrirPrivacidad={abrirPrivacidad} />}
       </div>
     </div>
+    </CcaaCapaProvider>
   );
 }

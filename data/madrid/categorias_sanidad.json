@@ -1,0 +1,67 @@
+{
+  "region": "mad",
+  "fuente": "SERMAS — bolsas Comunidad de Madrid (julio 2026)",
+  "grupos": [
+    {
+      "id": "a1",
+      "nombre": "Grupo A1",
+      "categorias": [
+        "Farmacéutico de Atención Primaria",
+        "Médico de Familia de Atención Primaria",
+        "Médico de Urgencias SUMMA 112",
+        "Pediatra de Atención Primaria",
+        "Odontólogo de Atención Primaria"
+      ]
+    },
+    {
+      "id": "a2",
+      "nombre": "Grupo A2",
+      "categorias": [
+        "Enfermero/a de Atención Primaria y Atención Hospitalaria",
+        "Especialista en Enfermería de Salud Mental",
+        "Especialista en Enfermería del Trabajo",
+        "Especialista en Enfermería Familiar y Comunitaria",
+        "Especialista en Enfermería Geriátrica",
+        "Especialista en Enfermería Pediátrica",
+        "Enfermero/a SUMMA 112",
+        "Fisioterapeuta",
+        "Logopeda",
+        "Matrona",
+        "Nutricionista",
+        "Óptico-Optometrista",
+        "Podólogo",
+        "Técnico Prevención de Riesgos Laborales",
+        "Terapeuta Ocupacional",
+        "Trabajador/a Social"
+      ]
+    },
+    {
+      "id": "c1",
+      "nombre": "Grupo C1",
+      "categorias": [
+        "Técnico Superior en Dietética y Nutrición",
+        "Técnico Superior en Documentación Sanitaria",
+        "Técnico Superior en Imagen para el Diagnóstico y Medicina Nuclear",
+        "Técnico Superior de Anatomía Patológica",
+        "Técnico Superior en Higiene Bucodental",
+        "Técnico Superior en Laboratorio",
+        "Técnico Superior de Radioterapia y Dosimetría"
+      ]
+    },
+    {
+      "id": "c2",
+      "nombre": "Grupo C2",
+      "categorias": [
+        "Grupo Auxiliar de la Función Administrativa",
+        "Técnico Auxiliar de Farmacia",
+        "Técnico en Emergencias Sanitarias SUMMA 112",
+        "Técnico Medio Sanitario en Cuidados Auxiliares de Enfermería"
+      ]
+    },
+    {
+      "id": "e",
+      "nombre": "Grupo E",
+      "categorias": ["Celador"]
+    }
+  ]
+}
