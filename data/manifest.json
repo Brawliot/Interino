@@ -1,5 +1,5 @@
 {
-  "generado": "2026-07-10T20:02:03",
+  "generado": "2026-07-11T10:01:41",
   "archivos": [
     "diplomado/dietista-nutricionista.busqueda.json",
     "diplomado/dietista-nutricionista.json",
@@ -7,27 +7,7 @@
     "diplomado/enfermero-a-especialista-del-trabajo.json",
     "diplomado/enfermero-a-especialista-en-enf-familiar-y-comunitaria.busqueda.json",
     "diplomado/enfermero-a-especialista-en-enf-familiar-y-comunitaria.json",
-    "diplomado/enfermero-a-especialista-en-enf-geriatrica.busqueda.json",
-    "diplomado/enfermero-a-especialista-en-enf-geriatrica.json",
-    "diplomado/enfermero-a-especialista-en-enf-pediatrica.busqueda.json",
-    "diplomado/enfermero-a-especialista-en-enf-pediatrica.json",
-    "diplomado/enfermero-a-especialista-en-salud-mental.busqueda.json",
-    "diplomado/enfermero-a-especialista-en-salud-mental.json",
-    "diplomado/enfermero-a-especialista-obstetricio-ginecologica-matrona.busqueda.json",
-    "diplomado/enfermero-a-especialista-obstetricio-ginecologica-matrona.json",
-    "diplomado/enfermero-a-p-e-a-c.busqueda.json",
-    "diplomado/enfermero-a-p-e-a-c.json",
     "diplomado/enfermero-a.busqueda.json",
-    "diplomado/enfermero-a.json",
-    "diplomado/fisioterapeuta.busqueda.json",
-    "diplomado/fisioterapeuta.json",
-    "diplomado/logopeda.busqueda.json",
-    "diplomado/logopeda.json",
-    "diplomado/optico-a-optometrista.busqueda.json",
-    "diplomado/optico-a-optometrista.json",
-    "diplomado/podologo-a.busqueda.json",
-    "diplomado/podologo-a.json",
-    "diplomado/terapeuta-ocupacional.busqueda.json",
-    "diplomado/terapeuta-ocupacional.json"
+    "diplomado/enfermero-a.json"
   ]
 }
