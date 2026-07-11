@@ -6,6 +6,28 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "data");
+const politicaPath = path.resolve(__dirname, "politica-privacidad.md");
+
+function politicaStaticPlugin() {
+  return {
+    name: "politica-privacidad",
+    configureServer(server) {
+      server.middlewares.use("/politica-privacidad.md", (req, res, next) => {
+        if (!existsSync(politicaPath)) {
+          next();
+          return;
+        }
+        res.setHeader("Content-Type", "text/markdown; charset=utf-8");
+        createReadStream(politicaPath).pipe(res);
+      });
+    },
+    closeBundle() {
+      if (existsSync(politicaPath)) {
+        cpSync(politicaPath, path.resolve(__dirname, "dist/politica-privacidad.md"));
+      }
+    },
+  };
+}
 
 function dataStaticPlugin() {
   return {
@@ -29,5 +51,5 @@ function dataStaticPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), dataStaticPlugin()],
+  plugins: [react(), dataStaticPlugin(), politicaStaticPlugin()],
 });

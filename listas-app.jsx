@@ -4,6 +4,7 @@ import { useDatos, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { etiquetaAmbitoAparicion } from "./src/utils/apariciones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import SelectorSectores from "./src/SelectorSectores.jsx";
+import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 
 const SimuladorBaremo = lazy(() => import("./src/herramientas/SimuladorBaremo.jsx"));
 const SimuladorGerencia = lazy(() => import("./src/herramientas/SimuladorGerencia.jsx"));
@@ -259,12 +260,22 @@ function AvisoActualizacion({ categoria, grupoId, grupoActivo }) {
   );
 }
 
-function AvisoLegal() {
+function AvisoLegal({ onAbrirPrivacidad }) {
   return (
     <div className="flex items-start gap-2 mx-5" style={{ marginTop: 18, padding: "10px 12px", background: C.paperDeep, borderRadius: "6px 14px 6px 14px" }}>
       <ShieldAlert size={13} color={C.inkSoft} style={{ flexShrink: 0, marginTop: 1 }} />
       <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, lineHeight: 1.4 }}>
-        App no oficial, sin afiliación con el SESCAM ni la Junta de Comunidades de Castilla-La Mancha. Los datos proceden de listados públicos y se muestran solo con fines informativos.
+        App no oficial, sin afiliación con el SESCAM ni la Junta de Comunidades de Castilla-La Mancha. Los datos proceden de listados públicos y se muestran solo con fines informativos.{" "}
+        <a
+          href="/politica-privacidad.md"
+          onClick={(e) => {
+            e.preventDefault();
+            onAbrirPrivacidad?.();
+          }}
+          style={{ color: C.navy, fontWeight: 600, textDecoration: "underline" }}
+        >
+          Política de privacidad
+        </a>
       </p>
     </div>
   );
@@ -1447,6 +1458,7 @@ export default function ListasApp() {
   const gruposSanidad = datos.gruposSanidad?.length ? datos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
+  const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");
   const [ccaa, setCcaa] = useState(null);
   const [sector, setSector] = useState(null);
   const [categoriaActual, setCategoriaActual] = useState("");
@@ -1478,6 +1490,11 @@ export default function ListasApp() {
       localStorage.setItem(LS_RECIENTES, JSON.stringify(recientes));
     } catch { /* quota / modo privado */ }
   }, [recientes]);
+
+  const abrirPrivacidad = () => {
+    setPasoPrivacidadOrigen(paso);
+    setPaso("privacidad");
+  };
 
   const irSimuladorGerencia = (puntos, categoria = herramientasCtx.categoria || categoriaActual) => {
     setHerramientasCtx({ puntos, categoria: categoria || "" });
@@ -1714,7 +1731,15 @@ export default function ListasApp() {
           </Suspense>
         )}
 
-        <AvisoLegal />
+        {paso === "privacidad" && (
+          <PantallaPoliticaPrivacidad
+            C={C}
+            Barra={Barra}
+            atras={() => setPaso(pasoPrivacidadOrigen)}
+          />
+        )}
+
+        {paso !== "privacidad" && <AvisoLegal onAbrirPrivacidad={abrirPrivacidad} />}
       </div>
     </div>
   );
