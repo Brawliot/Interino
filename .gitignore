@@ -79,6 +79,8 @@ data/diplomado/*.json
 data/tecnico/*.json
 data/gestion/*.json
 data/licenciados/*.json
+data/murcia/*.json
+!data/murcia/categorias.json
 data/**/*.busqueda.json
 
 dist/

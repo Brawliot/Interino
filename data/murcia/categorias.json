@@ -1,0 +1,596 @@
+[
+  {
+    "grupo": "Grupo A (A1) — Facultativos no sanitarios",
+    "categoria": "Analista de Sistemas",
+    "id_listado": 27124,
+    "id_bolsa": 40
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos no sanitarios",
+    "categoria": "Cuerpo Superior de Administradores",
+    "id_listado": 27126,
+    "id_bolsa": 41
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos no sanitarios",
+    "categoria": "Documentalistas",
+    "id_listado": 27144,
+    "id_bolsa": 42
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos no sanitarios",
+    "categoria": "Físicos",
+    "id_listado": 27150,
+    "id_bolsa": 45
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos no sanitarios",
+    "categoria": "Ingenieros Industriales",
+    "id_listado": 27146,
+    "id_bolsa": 43
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos no sanitarios",
+    "categoria": "Químicos",
+    "id_listado": 27156,
+    "id_bolsa": 49
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Alergología",
+    "id_listado": 26934,
+    "id_bolsa": 1
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Análisis Clínicos",
+    "id_listado": 26968,
+    "id_bolsa": 2
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Anatomía Patológica",
+    "id_listado": 26982,
+    "id_bolsa": 3
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Anestesia",
+    "id_listado": 26984,
+    "id_bolsa": 4
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Angiología Cirugía Vascular",
+    "id_listado": 27020,
+    "id_bolsa": 101
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Aparato Digestivo",
+    "id_listado": 26986,
+    "id_bolsa": 5
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Bioquímica Clínica",
+    "id_listado": 26954,
+    "id_bolsa": 90
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cardiología",
+    "id_listado": 26988,
+    "id_bolsa": 6
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cirugía Cardiovascular",
+    "id_listado": 26990,
+    "id_bolsa": 91
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cirugía General",
+    "id_listado": 26952,
+    "id_bolsa": 7
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cirugía Oral y Maxilofacial",
+    "id_listado": 27006,
+    "id_bolsa": 8
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cirugía Pediátrica",
+    "id_listado": 26992,
+    "id_bolsa": 92
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cirugía Plástica, Estética y Reparadora",
+    "id_listado": 26994,
+    "id_bolsa": 93
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Cirugía Torácica",
+    "id_listado": 26996,
+    "id_bolsa": 94
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Dermatología",
+    "id_listado": 27010,
+    "id_bolsa": 9
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Endocrinología",
+    "id_listado": 26916,
+    "id_bolsa": 10
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Farmacia Hospitalaria",
+    "id_listado": 26936,
+    "id_bolsa": 11
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Geriatría",
+    "id_listado": 26920,
+    "id_bolsa": 12
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Ginecología",
+    "id_listado": 26924,
+    "id_bolsa": 13
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Hematología",
+    "id_listado": 26926,
+    "id_bolsa": 14
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Inmunología",
+    "id_listado": 26998,
+    "id_bolsa": 95
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina de Urgencias de Atención Primaria",
+    "id_listado": 26918,
+    "id_bolsa": 827
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina del Trabajo",
+    "id_listado": 27000,
+    "id_bolsa": 96
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina Deportiva",
+    "id_listado": 26928,
+    "id_bolsa": 15
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina Intensiva",
+    "id_listado": 26940,
+    "id_bolsa": 17
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina Interna",
+    "id_listado": 26930,
+    "id_bolsa": 18
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina Nuclear",
+    "id_listado": 27002,
+    "id_bolsa": 97
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Medicina Preventiva y Salud Pública",
+    "id_listado": 26972,
+    "id_bolsa": 32
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Microbiología y Parasitología",
+    "id_listado": 26932,
+    "id_bolsa": 19
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Nefrología",
+    "id_listado": 27004,
+    "id_bolsa": 98
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Neumología",
+    "id_listado": 26956,
+    "id_bolsa": 20
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Neurocirugía",
+    "id_listado": 26978,
+    "id_bolsa": 36
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Neurofisiología Clínica",
+    "id_listado": 26958,
+    "id_bolsa": 21
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Neurología",
+    "id_listado": 26960,
+    "id_bolsa": 22
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Oftalmología",
+    "id_listado": 26962,
+    "id_bolsa": 23
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Oncología Médica",
+    "id_listado": 26942,
+    "id_bolsa": 24
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Oncología Radioterápica",
+    "id_listado": 27008,
+    "id_bolsa": 99
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Otorrinolaringología",
+    "id_listado": 26964,
+    "id_bolsa": 25
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Pediatría",
+    "id_listado": 26966,
+    "id_bolsa": 26
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Psicología Clínica",
+    "id_listado": 26944,
+    "id_bolsa": 27
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Psiquiatría",
+    "id_listado": 26946,
+    "id_bolsa": 28
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Psiquiatría Infantil",
+    "id_listado": 26922,
+    "id_bolsa": 866
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Radiofísica Hospitalaria",
+    "id_listado": 27016,
+    "id_bolsa": 100
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Radiología",
+    "id_listado": 26948,
+    "id_bolsa": 29
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Rehabilitación",
+    "id_listado": 26970,
+    "id_bolsa": 30
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Reumatología",
+    "id_listado": 26950,
+    "id_bolsa": 31
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Traumatología",
+    "id_listado": 26974,
+    "id_bolsa": 33
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Urgencia Hospitalaria",
+    "id_listado": 26938,
+    "id_bolsa": 16
+  },
+  {
+    "grupo": "Grupo A (A1) — Facultativos sanitarios",
+    "categoria": "Urología",
+    "id_listado": 26976,
+    "id_bolsa": 34
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados no sanitarios",
+    "categoria": "Analista de Aplicaciones",
+    "id_listado": 27158,
+    "id_bolsa": 50
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados no sanitarios",
+    "categoria": "Gestión Administrativa",
+    "id_listado": 27130,
+    "id_bolsa": 51
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados no sanitarios",
+    "categoria": "Ingeniero Técnico Industrial",
+    "id_listado": 27160,
+    "id_bolsa": 52
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados no sanitarios",
+    "categoria": "Técnicos de Prevención de Riesgos Laborales",
+    "id_listado": 27116,
+    "id_bolsa": 85
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados no sanitarios",
+    "categoria": "Trabajador Social",
+    "id_listado": 27162,
+    "id_bolsa": 53
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios especialistas",
+    "categoria": "Enfermería del Trabajo",
+    "id_listado": 27118,
+    "id_bolsa": 265
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios especialistas",
+    "categoria": "Enfermería Familiar y Comunitaria",
+    "id_listado": 27140,
+    "id_bolsa": 727
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios especialistas",
+    "categoria": "Enfermeros Especialistas en Pediatría",
+    "id_listado": 27120,
+    "id_bolsa": 728
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios especialistas",
+    "categoria": "Enfermeros Especialistas en Salud Mental",
+    "id_listado": 27220,
+    "id_bolsa": 81
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios especialistas",
+    "categoria": "Matronas",
+    "id_listado": 27122,
+    "id_bolsa": 39
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios no especialistas",
+    "categoria": "Enfermería",
+    "id_listado": 27142,
+    "id_bolsa": 38
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios no especialistas",
+    "categoria": "Fisioterapeutas",
+    "id_listado": 27164,
+    "id_bolsa": 54
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios no especialistas",
+    "categoria": "Logopeda",
+    "id_listado": 27166,
+    "id_bolsa": 55
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios no especialistas",
+    "categoria": "Nutrición Humana y Dietética",
+    "id_listado": 27202,
+    "id_bolsa": 80
+  },
+  {
+    "grupo": "Grupo B (A2) — Diplomados sanitarios no especialistas",
+    "categoria": "Terapeutas Ocupacionales",
+    "id_listado": 27216,
+    "id_bolsa": 78
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas no sanitarios",
+    "categoria": "Administrativo",
+    "id_listado": 27168,
+    "id_bolsa": 56
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas no sanitarios",
+    "categoria": "Cocinero",
+    "id_listado": 24847,
+    "id_bolsa": 828
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas no sanitarios",
+    "categoria": "Técnicos Especialistas en Informática",
+    "id_listado": 27132,
+    "id_bolsa": 57
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Higienistas Dentales",
+    "id_listado": 27170,
+    "id_bolsa": 58
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Técnicos Especialistas en Anatomía Patológica",
+    "id_listado": 27172,
+    "id_bolsa": 59
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Técnicos Especialistas en Dietética y Nutrición",
+    "id_listado": 27224,
+    "id_bolsa": 83
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Técnicos Especialistas en Documentación Sanitaria",
+    "id_listado": 27226,
+    "id_bolsa": 84
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Técnicos Especialistas en Laboratorio de Diagnóstico Clínico",
+    "id_listado": 27174,
+    "id_bolsa": 60
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Técnicos Especialistas en Radiodiagnóstico",
+    "id_listado": 27176,
+    "id_bolsa": 61
+  },
+  {
+    "grupo": "Grupo C (C1) — Técnicos especialistas sanitarios",
+    "categoria": "Técnicos Especialistas en Radioterapia",
+    "id_listado": 27178,
+    "id_bolsa": 62
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Albañiles",
+    "id_listado": 27134,
+    "id_bolsa": 63
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Auxiliares Administrativos",
+    "id_listado": 27180,
+    "id_bolsa": 64
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Auxiliares de Mantenimiento",
+    "id_listado": 27356,
+    "id_bolsa": 65
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Calefactores",
+    "id_listado": 27196,
+    "id_bolsa": 66
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Carpinteros",
+    "id_listado": 27182,
+    "id_bolsa": 67
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Cocineros",
+    "id_listado": 27198,
+    "id_bolsa": 68
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Conductores",
+    "id_listado": 27184,
+    "id_bolsa": 69
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Electricistas",
+    "id_listado": 27358,
+    "id_bolsa": 70
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Fontaneros",
+    "id_listado": 27186,
+    "id_bolsa": 71
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Mecánicos",
+    "id_listado": 27360,
+    "id_bolsa": 72
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Pintores",
+    "id_listado": 27188,
+    "id_bolsa": 73
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares no sanitarios",
+    "categoria": "Telefonistas / Locutores",
+    "id_listado": 27190,
+    "id_bolsa": 74
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares sanitarios",
+    "categoria": "Auxiliares de Enfermería",
+    "id_listado": 27192,
+    "id_bolsa": 75
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares sanitarios",
+    "categoria": "Auxiliares de Farmacia",
+    "id_listado": 27218,
+    "id_bolsa": 79
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares sanitarios",
+    "categoria": "Emergencias Sanitarias",
+    "id_listado": 7739,
+    "id_bolsa": 466
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares sanitarios",
+    "categoria": "Emergencias Sanitarias/Conductor",
+    "id_listado": 27138,
+    "id_bolsa": 587
+  },
+  {
+    "grupo": "Grupo D (C2) — Técnicos auxiliares sanitarios",
+    "categoria": "Emergencias Sanitarias/Teleoperador",
+    "id_listado": 27136,
+    "id_bolsa": 588
+  },
+  {
+    "grupo": "Grupo E — Personal de servicios",
+    "categoria": "Ayudantes de Servicios, Pinches, Planchadoras, Peones y Lavanderas",
+    "id_listado": 27200,
+    "id_bolsa": 76
+  },
+  {
+    "grupo": "Grupo E — Personal de servicios",
+    "categoria": "Celador / Subalterno",
+    "id_listado": 27194,
+    "id_bolsa": 77
+  }
+]
