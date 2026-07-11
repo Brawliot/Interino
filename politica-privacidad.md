@@ -1,85 +1,55 @@
-# Política de privacidad — [Nombre de la app]
+# Política de privacidad
 
-*Última actualización: [fecha]*
+**Última actualización:** 11 de julio de 2026
 
-## 1. Quiénes somos
+## Quién es el responsable
 
-[Nombre de la app] es un servicio no oficial, sin afiliación con el
-Servicio de Salud de Castilla-La Mancha (SESCAM) ni con la Junta de
-Comunidades de Castilla-La Mancha. Su único objetivo es facilitar la
-consulta de información que estas administraciones ya publican
-públicamente.
+Federico Botija Valcarcel, con correo de contacto fedebotija@gmail.com. Esta aplicación es un proyecto personal, no oficial, sin afiliación con el SESCAM ni con la Junta de Comunidades de Castilla-La Mancha.
 
-Responsable del tratamiento: [tu nombre o el de tu empresa], contacto en
-[email de contacto].
+## Qué datos se tratan y de dónde salen
 
-## 2. Qué datos mostramos, y de dónde salen
+La aplicación muestra información procedente de los **listados públicos de las bolsas de trabajo** que la propia administración publica en sus webs oficiales (nombre y apellidos, puntuación, posición, DNI parcialmente anonimizado tal y como aparece en el listado original, y disponibilidad por tipo de contrato). No añadimos, cruzamos ni enriquecemos estos datos con ninguna otra fuente.
 
-Mostramos información que el SESCAM publica de forma pública en su propia
-web, dentro de los listados oficiales de bolsas de trabajo temporal:
-nombre y apellidos, puntuación de baremo, posición en la lista, y tipo de
-contrato al que se opta. El DNI se muestra únicamente parcialmente
-enmascarado, tal y como lo publica el propio SESCAM — nosotros no lo
-mostramos completo en ningún caso, ni lo pedimos al usuario.
+La aplicación **no solicita ni almacena el DNI completo** de ninguna persona en ningún momento. Las búsquedas se realizan por apellidos, igual que en el listado público original.
 
-No solicitamos el DNI completo, ni ningún otro dato personal, a las
-personas que usan la app para buscar su propia posición.
+## Qué datos se almacenan en tu dispositivo
 
-## 3. Por qué tratamos estos datos (base legal)
+La aplicación utiliza el almacenamiento local de tu navegador (localStorage) para guardar tus búsquedas recientes y seguimientos. Estos datos se guardan **únicamente en tu dispositivo**, no se envían a ningún servidor ni son accesibles para nosotros. Puedes borrarlos en cualquier momento desde los ajustes de tu navegador.
 
-Tratamos estos datos bajo la base de **interés legítimo** (artículo 6.1.f
-del RGPD), entendiendo que la finalidad de esta app —ayudar a las propias
-personas opositoras y candidatas a consultar su situación de forma más
-accesible que en el portal oficial— es compatible con la finalidad
-original de publicación de estos listados por parte de la administración:
-garantizar la transparencia del proceso selectivo (principios de
-igualdad, mérito, capacidad y publicidad).
+Si utilizas un dispositivo compartido, ten en cuenta que otra persona con acceso al navegador podría ver tus búsquedas recientes.
 
-No utilizamos estos datos con fines publicitarios, de perfilado, ni los
-cedemos a terceros.
+## Qué datos NO se recogen
 
-## 4. Cuánto tiempo guardamos los datos
+- No hay registro de usuarios ni cuentas.
+- No se almacenan las búsquedas en ningún servidor.
+- No se usan los datos con fines publicitarios ni se ceden a terceros.
+- No se utilizan cookies propias.
 
-Guardamos una copia de los listados públicos actualizada periódicamente,
-que se sustituye por completo en cada actualización — no conservamos un
-histórico permanente de la información personal de cada persona a lo
-largo del tiempo. Sí conservamos estadísticas agregadas y anónimas (por
-ejemplo, cuántas personas hay admitidas en una categoría en una fecha
-concreta), que no permiten identificar a nadie.
+## Servicios de terceros
 
-## 5. Tus derechos
+La aplicación carga tipografías desde Google Fonts, lo que implica que tu navegador realiza una conexión a servidores de Google al visitar la página. Google puede recibir tu dirección IP y la URL de referencia como consecuencia de esta conexión. Puedes consultar la política de privacidad de Google en https://policies.google.com/privacy.
 
-Si apareces en los listados que mostramos y quieres ejercer tus derechos
-de acceso, rectificación, supresión, oposición o limitación del
-tratamiento, puedes escribirnos a [email de contacto] y atenderemos tu
-solicitud en el plazo legal correspondiente.
+## Base legal y finalidad
 
-También puedes acudir directamente al SESCAM como fuente original del
-dato, o presentar una reclamación ante la Agencia Española de Protección
-de Datos (www.aepd.es) si consideras que tus derechos no han sido
-atendidos.
+Los datos mostrados proceden de fuentes de acceso público, publicadas por la administración en cumplimiento de sus obligaciones de transparencia en los procesos de selección de personal temporal. Esta aplicación los reproduce con la única finalidad de facilitar su consulta a las personas interesadas, sin alterar su contenido.
 
-## 6. Notificaciones
+El tratamiento se realiza al amparo del artículo 6.1.f) del RGPD (interés legítimo del responsable en facilitar el acceso a información pública) en relación con el artículo 9 de la LOPDGDD (tratamiento de datos accesibles al público).
 
-Si activas las notificaciones dentro de la app, se usan exclusivamente
-para avisarte de cambios relacionados con tu propia consulta guardada.
-**Estas notificaciones no sustituyen ni garantizan la comunicación
-oficial del SESCAM** (llamada telefónica, SMS o email) para ofertas de
-trabajo — esa comunicación la realiza el SESCAM directamente, y es tu
-responsabilidad mantener tus datos de contacto actualizados en la
-plataforma oficial (Selecta).
+## Conservación
 
-## 7. Menores de edad
+Se conserva únicamente la copia del último listado publicado por cada categoría profesional (se sobrescribe con cada actualización) y un histórico agregado de puntos de corte que **no contiene datos personales**.
 
-Esta app no está dirigida a menores de edad.
+## Tus derechos
 
-## 8. Cambios en esta política
+Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad escribiendo a fedebotija@gmail.com, indicando tu nombre completo y el motivo de la solicitud.
 
-Podemos actualizar este documento cuando cambie el funcionamiento de la
-app o la normativa aplicable. Avisaremos de cambios relevantes dentro de
-la propia app.
+En particular:
 
-## 9. Contacto
+- Si apareces en los listados y quieres que esta aplicación **deje de mostrar tu entrada**, escribe a fedebotija@gmail.com y la ocultaremos de los resultados en un plazo máximo de **15 días**.
+- Si consideras que el dato original publicado por la administración es incorrecto, debes dirigirte al SESCAM (https://sescam.jccm.es), que es quien genera y mantiene los listados.
 
-Para cualquier duda sobre esta política o sobre el tratamiento de tus
-datos: [email de contacto]
+Asimismo, tienes derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (https://www.aepd.es) si consideras que tus derechos no han sido atendidos.
+
+## Cambios en esta política
+
+Cualquier cambio se publicará en esta misma página con su fecha de actualización.
