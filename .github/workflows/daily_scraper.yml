@@ -7,7 +7,7 @@ on:
 jobs:
   scrape-and-commit:
     runs-on: ubuntu-latest
-    timeout-minutes: 45   # red de seguridad: nunca se queda colgado horas
+    timeout-minutes: 360  # scrape completo solo si vigía detecta cambios
     permissions:
       contents: write    # necesario para hacer push al repo
 
@@ -27,14 +27,38 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Ejecutar scraper
-        run: python scraper.py
+      - name: Vigía — comprobar cambios en portal
+        id: vigia
+        continue-on-error: true
+        run: python vigia.py
 
-      - name: Commit y push de data/ (histórico + snapshot del día)
+      - name: Scrapear grupos con cambios
+        if: steps.vigia.outcome == 'failure'
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          with open("data/vigia_cambios.json", encoding="utf-8") as f:
+              cambios = json.load(f).get("cambios", [])
+          if not cambios:
+              print("Vigía marcó cambio pero no hay grupos en vigia_cambios.json")
+              sys.exit(1)
+          for grupo in cambios:
+              print(f"=== Scrapeando {grupo} ===")
+              subprocess.run(
+                  ["python", "scraper.py", "--grupo", grupo, "--presupuesto", "7200"],
+                  check=True,
+              )
+          PY
+
+      - name: Commit y push de data/ (vigía + listados si hubo scrape)
+        if: steps.vigia.outcome == 'failure'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           mkdir -p data
-          git add data/
+          git add data/vigia_estado.json data/vigia_cambios.json data/
           git diff --staged --quiet || git commit -m "Actualizacion automatica SESCAM - $(date +'%Y-%m-%d')"
           git push
