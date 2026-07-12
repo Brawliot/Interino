@@ -4,7 +4,7 @@ REM Uso: scripts\scrape_gestion.bat
 REM Tiempo estimado: varias noches. Ejecutar de noche.
 
 cd /d "%~dp0\.."
-set LOG=data\scrape_gestion.log
+set LOG=data\_local\logs\scrape_gestion.log
 echo === Inicio %date% %time% === >> "%LOG%"
 
 call :run "ALBANIL"

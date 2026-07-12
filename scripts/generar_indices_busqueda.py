@@ -21,6 +21,8 @@ def main():
             path = os.path.join(dir_grupo, nombre)
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            if not isinstance(data, dict):
+                continue
             listados = data.get("listados") or []
             categoria = data.get("categoria") or nombre.replace(".json", "")
             if not listados:

@@ -4,7 +4,7 @@ REM Uso: scripts\scrape_tecnico.bat
 REM Tiempo estimado: varias horas. Ejecutar de noche.
 
 cd /d "%~dp0\.."
-set LOG=data\scrape_tecnico.log
+set LOG=data\_local\logs\scrape_tecnico.log
 echo === Inicio %date% %time% === >> "%LOG%"
 
 call :run "HIGIENISTA DENTAL"

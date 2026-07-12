@@ -6,7 +6,7 @@ en cada grupo activo. No descarga ni parsea PDFs.
 
 Salida:
   - exit 0: sin cambios
-  - exit 1: al menos un grupo cambió (ver data/vigia_cambios.json)
+  - exit 1: al menos un grupo cambió (ver data/_local/vigia_cambios.json)
 """
 
 from __future__ import annotations
@@ -22,6 +22,8 @@ from html import unescape
 from urllib.parse import unquote
 
 import requests
+
+from scraper import LOCAL_DATA_DIR, local_path
 
 # ---------------------------------------------------------------
 # Configuración (alineada con scraper.py)
@@ -46,9 +48,8 @@ REQUEST_HEADERS = {"User-Agent": USER_AGENT, "Cache-Control": "no-cache"}
 HTTP_TIMEOUT = 12
 MAX_WORKERS = 4
 
-DATA_DIR = "data"
-ESTADO_PATH = os.path.join(DATA_DIR, "vigia_estado.json")
-CAMBIOS_PATH = os.path.join(DATA_DIR, "vigia_cambios.json")
+ESTADO_PATH = local_path("vigia_estado.json")
+CAMBIOS_PATH = local_path("vigia_cambios.json")
 
 CONVOCATORIA_RE = re.compile(
     r"(Vig[eé]sima\s+Convocatoria\s+\d{4})",
@@ -170,7 +171,7 @@ def _cargar_estado() -> dict:
 
 
 def _guardar_estado(grupos: dict) -> None:
-    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
     payload = {
         "generado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         "grupos": grupos,
@@ -180,7 +181,7 @@ def _guardar_estado(grupos: dict) -> None:
 
 
 def _guardar_cambios(cambios: list[str]) -> None:
-    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
     with open(CAMBIOS_PATH, "w", encoding="utf-8") as f:
         json.dump(
             {

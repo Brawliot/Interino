@@ -3,13 +3,6 @@ import { useDatos, ambitoLegible } from "../datos.jsx";
 import { analizarPorGerencias, analizarGerenciaDestino } from "./posicionLista.js";
 import { SelectCampo, CampoNumero, AvisoEstimacion, BotonSecundario, FONT_BODY, FONT_MONO, FONT_DISPLAY } from "./shared.jsx";
 
-const NUM_GERENCIAS = 14;
-
-const GERENCIAS_FALLBACK = [
-  "Albacete", "Alcázar de San Juan", "Almansa", "Ciudad Real", "Cuenca", "Guadalajara",
-  "Hellín", "Puertollano", "Talavera de la Reina", "Toledo", "Toledo AE", "Tomelloso", "Valdepeñas", "Villarrobledo",
-];
-
 export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCategoria, categoriaInicial, puntosIniciales, atras }) {
   const datos = useDatos();
   const categorias = useMemo(() => {
@@ -54,14 +47,14 @@ export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCate
           const gs = await datos.gerenciasDeCategoria(grupoId, categoria);
           if (!cancel) {
             setSnapshot(snap);
-            setGerencias(gs.length ? gs : GERENCIAS_FALLBACK);
-            setGerencia((g) => g || gs[0] || GERENCIAS_FALLBACK[0]);
+            setGerencias(gs);
+            setGerencia((g) => g || gs[0] || "");
           }
         } catch {
-          if (!cancel) { setSnapshot(null); setGerencias(GERENCIAS_FALLBACK); setGerencia(GERENCIAS_FALLBACK[0]); }
+          if (!cancel) { setSnapshot(null); setGerencias([]); setGerencia(""); }
         }
       } else {
-        if (!cancel) { setSnapshot(null); setGerencias(GERENCIAS_FALLBACK); setGerencia(GERENCIAS_FALLBACK[0]); }
+        if (!cancel) { setSnapshot(null); setGerencias([]); setGerencia(""); }
       }
       if (!cancel) setCargando(false);
     };
@@ -115,9 +108,11 @@ export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCate
           </div>
         )}
 
-        <BotonSecundario C={C} onClick={() => setVerTodas(!verTodas)}>
-          {verTodas ? "Ocultar todas las gerencias" : `Ver posición en las ${NUM_GERENCIAS} gerencias`}
-        </BotonSecundario>
+        {gerencias.length > 0 && (
+          <BotonSecundario C={C} onClick={() => setVerTodas(!verTodas)}>
+            {verTodas ? "Ocultar todas las gerencias" : `Ver posición en las ${gerencias.length} gerencias`}
+          </BotonSecundario>
+        )}
 
         {verTodas && todas.length > 0 && (
           <div className="mt-3" style={{ border: `1px solid ${C.line}`, borderRadius: "10px 3px 10px 3px", overflow: "hidden" }}>

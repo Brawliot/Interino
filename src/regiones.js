@@ -61,6 +61,40 @@ export function tituloBolsa(ccaaId) {
   return TITULO_BOLSA[ccaaId] || "Sanidad";
 }
 
+/** Título de búsqueda cuando el usuario eligió varias CCAA. */
+export function tituloBolsaMulti(ccaaIds) {
+  const ids = [...new Set(ccaaIds)].filter(Boolean);
+  if (ids.length <= 1) return tituloBolsa(ids[0] || "clm");
+  const partes = ids.map((id) => (TITULO_BOLSA[id] || "Sanidad").replace(/^Sanidad · /, ""));
+  return `Sanidad · ${partes.join(" + ")}`;
+}
+
+/** Nombres legibles de varias CCAA (p. ej. barra de sector). */
+export function nombresCcaas(ccaaIds) {
+  const porId = Object.fromEntries(CCAA_LIST.map((c) => [c.id, c.nombre]));
+  return [...new Set(ccaaIds)]
+    .filter(Boolean)
+    .map((id) => porId[id] || id);
+}
+
+/** Sectores visibles al combinar varias comunidades (hoy solo sanidad activa). */
+export function sectoresParaCcaas(ccaaIds) {
+  const ids = [...new Set(ccaaIds)].filter(Boolean);
+  if (ids.length <= 1) return sectoresDeCcaa(ids[0] || "clm");
+  const fuentes = ids
+    .map((id) => sectoresDeCcaa(id).find((s) => s.id === "sanidad")?.fuente)
+    .filter(Boolean);
+  const sanidadActiva = ids.every((id) => id === "clm" || id === "mur" || id === "mad");
+  return [
+    {
+      id: "sanidad",
+      nombre: "Sanidad",
+      activo: sanidadActiva,
+      fuente: fuentes.join(" · "),
+    },
+  ];
+}
+
 export function organismoCcaa(ccaaId) {
   return ORGANISMO[ccaaId] || "administración";
 }

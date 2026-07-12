@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.resolve(__dirname, "data");
+const dataDir = path.resolve(__dirname, "data/public");
 const politicaPath = path.resolve(__dirname, "politica-privacidad.md");
 
 function politicaStaticPlugin() {

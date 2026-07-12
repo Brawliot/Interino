@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Continue"
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$log = "data/scrape_diplomado_resto.log"
+$log = "data/_local/logs/scrape_diplomado_resto.log"
 "=== Inicio $(Get-Date -Format o) ===" | Tee-Object -FilePath $log -Append
 
 $categorias = @(

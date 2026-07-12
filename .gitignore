@@ -75,12 +75,15 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Listados scrapeados (grandes); se servirán desde R2 en producción
-data/diplomado/*.json
-data/tecnico/*.json
-data/gestion/*.json
-data/licenciados/*.json
-data/murcia/*.json
-!data/murcia/categorias.json
-data/**/*.busqueda.json
+data/public/diplomado/*.json
+data/public/tecnico/*.json
+data/public/gestion/*.json
+data/public/licenciados/*.json
+data/public/murcia/*.json
+!data/public/murcia/categorias.json
+data/public/**/*.busqueda.json
+
+# Artefactos locales (no subir a R2)
+data/_local/
 
 dist/

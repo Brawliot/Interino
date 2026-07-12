@@ -19,7 +19,7 @@ BASE = (
     "bolsas-constituidas/baremos/"
 )
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ListasApp/0.1)"}
-OUT = Path("data/categorias_por_grupo.json")
+OUT = Path("data/public/categorias_por_grupo.json")
 
 
 def extraer_opciones(html: str) -> list[str]:

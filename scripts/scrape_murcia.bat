@@ -1,10 +1,10 @@
 @echo off
 REM Scrape completo de bolsas SMS (Murcia). Primero genera inventario si no existe.
 REM Uso: scripts\scrape_murcia.bat
-REM Log: data\scrape_murcia.log
+REM Log: data\_local\logs\scrape_murcia.log
 
 cd /d "%~dp0\.."
-set LOG=data\scrape_murcia.log
+set LOG=data\_local\logs\scrape_murcia.log
 echo === Inicio %date% %time% === >> "%LOG%"
 
 if not exist "data\murcia\categorias.json" (

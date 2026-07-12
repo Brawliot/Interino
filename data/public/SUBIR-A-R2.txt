@@ -1,0 +1,2 @@
+Copia TODO el contenido de esta carpeta (data/public/) a la raiz del bucket R2 interino-data.
+No subas la carpeta public ni data/_local/.

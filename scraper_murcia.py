@@ -30,7 +30,7 @@ import requests
 
 BASE_URL = "https://www.murciasalud.es/bolsas.php"
 IDSEC = 39
-DATA_DIR = os.path.join("data", "murcia")
+DATA_DIR = os.path.join("data", "public", "murcia")
 CATEGORIAS_PATH = os.path.join(DATA_DIR, "categorias.json")
 MANIFEST_PATH = os.path.join(DATA_DIR, "manifest.json")
 
@@ -416,7 +416,7 @@ def buscar_categoria(inventario: list[dict], nombre: str) -> dict | None:
 
 def parse_args():
     p = argparse.ArgumentParser(description="Scraper bolsas SMS (Murcia)")
-    p.add_argument("--inventario", action="store_true", help="Genera data/murcia/categorias.json")
+    p.add_argument("--inventario", action="store_true", help="Genera data/public/murcia/categorias.json")
     p.add_argument("--categoria", help='Nombre exacto o parcial, ej. "Logopeda"')
     p.add_argument("--todas", action="store_true", help="Scrapea todas las categorías del inventario")
     p.add_argument("--presupuesto", type=int, default=3600, help="Segundos máximos por categoría")
@@ -446,7 +446,7 @@ def main():
         item = buscar_categoria(inventario, args.categoria)
         if not item:
             print(f"Categoría no encontrada: {args.categoria}")
-            print("Ejecuta --inventario o revisa data/murcia/categorias.json")
+            print("Ejecuta --inventario o revisa data/public/murcia/categorias.json")
             raise SystemExit(1)
         objetivos = [item]
 

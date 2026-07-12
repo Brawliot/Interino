@@ -110,7 +110,7 @@ function PathCCAA({ loc, ccaaId, activo, isHover, isSel, onHover, onTap }) {
 
 export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
   const [hoverId, setHoverId] = useState(null);
-  const [seleccionado, setSeleccionado] = useState(null);
+  const [seleccionados, setSeleccionados] = useState(() => new Set());
 
   const { peninsula, canarias } = useMemo(() => {
     const can = MAPA_ESPANIA.locations.find((l) => l.id === "canary-islands");
@@ -125,32 +125,54 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
 
   const regionActiva = (ccaaId) => ccaaPorId[ccaaId]?.activo === true;
 
-  const etiqueta =
-    (hoverId && (ccaaPorId[hoverId]?.nombre || NOMBRES_CCAA[hoverId])) ||
-    (seleccionado && (ccaaPorId[seleccionado]?.nombre || NOMBRES_CCAA[seleccionado])) ||
-    "Toca tu comunidad autónoma";
+  const nombresSeleccionados = [...seleccionados].map(
+    (id) => ccaaPorId[id]?.nombre || NOMBRES_CCAA[id]
+  );
+
+  const etiqueta = (() => {
+    if (hoverId) return ccaaPorId[hoverId]?.nombre || NOMBRES_CCAA[hoverId];
+    if (seleccionados.size === 1) return nombresSeleccionados[0];
+    if (seleccionados.size > 1) {
+      return `${seleccionados.size} comunidades seleccionadas`;
+    }
+    return "Toca una o varias comunidades";
+  })();
 
   const tapRegion = (ccaaId) => {
     if (!regionActiva(ccaaId)) return;
-    setSeleccionado(ccaaId);
+    setSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(ccaaId)) next.delete(ccaaId);
+      else next.add(ccaaId);
+      return next;
+    });
   };
 
   const confirmar = () => {
-    if (!seleccionado || !regionActiva(seleccionado)) return;
-    const ccaa = ccaaPorId[seleccionado] || {
-      id: seleccionado,
-      nombre: NOMBRES_CCAA[seleccionado],
-      activo: true,
-    };
-    onConfirm(ccaa);
+    if (seleccionados.size === 0) return;
+    const lista = [...seleccionados]
+      .filter(regionActiva)
+      .map(
+        (id) =>
+          ccaaPorId[id] || {
+            id,
+            nombre: NOMBRES_CCAA[id],
+            activo: true,
+          }
+      );
+    if (lista.length) onConfirm(lista);
   };
 
-  const puedeConfirmar = seleccionado && regionActiva(seleccionado);
-  const nombreConfirm = seleccionado ? ccaaPorId[seleccionado]?.nombre || NOMBRES_CCAA[seleccionado] : null;
+  const puedeConfirmar = seleccionados.size > 0 && [...seleccionados].every(regionActiva);
+
+  const textoBoton = (() => {
+    if (!puedeConfirmar) return "Seleccionar comunidad";
+    if (seleccionados.size === 1) return `Continuar con ${nombresSeleccionados[0]}`;
+    return `Continuar con ${seleccionados.size} comunidades`;
+  })();
 
   return (
     <div className="flex flex-col" style={{ width: "100%", height: "100%", minHeight: 0 }}>
-      {/* Altura fija: el texto cambia pero el mapa no se mueve */}
       <p
         style={{
           fontFamily: "'Inter', system-ui, sans-serif",
@@ -171,6 +193,22 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
         {etiqueta}
       </p>
 
+      {seleccionados.size > 1 && (
+        <p
+          style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 11,
+            color: C.inkSoft,
+            textAlign: "center",
+            margin: "4px 8px 0",
+            lineHeight: 1.35,
+            flexShrink: 0,
+          }}
+        >
+          {nombresSeleccionados.join(" · ")}
+        </p>
+      )}
+
       <div style={{ flex: 1, minHeight: 0, width: "100%" }}>
         <svg
           viewBox={VIEWBOX}
@@ -184,7 +222,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
             const ccaaId = SVG_ID_A_CCAA[loc.id];
             if (!ccaaId) return null;
             const activo = regionActiva(ccaaId);
-            const isSel = seleccionado === ccaaId;
+            const isSel = seleccionados.has(ccaaId);
             return (
               <g key={loc.id}>
                 {isSel && (
@@ -211,7 +249,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
             );
           })}
 
-          {!seleccionado &&
+          {seleccionados.size === 0 &&
             peninsula
               .filter((l) => l.id === "castile-la-mancha")
               .map((loc) => (
@@ -229,7 +267,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
 
           {canarias && (
             <g transform={CANARIAS_TRANSFORM}>
-              {seleccionado === "can" && (
+              {seleccionados.has("can") && (
                 <path
                   d={canarias.path}
                   fill="none"
@@ -244,7 +282,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
                 ccaaId="can"
                 activo={regionActiva("can")}
                 isHover={hoverId === "can"}
-                isSel={seleccionado === "can"}
+                isSel={seleccionados.has("can")}
                 onHover={setHoverId}
                 onTap={tapRegion}
               />
@@ -262,13 +300,26 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
         </svg>
       </div>
 
+      <p
+        style={{
+          fontFamily: "'Inter', system-ui, sans-serif",
+          fontSize: 11,
+          color: C.inkSoft,
+          textAlign: "center",
+          margin: "8px 0 0",
+          flexShrink: 0,
+        }}
+      >
+        Vuelve a tocar una región para quitarla de la selección
+      </p>
+
       <button
         type="button"
         onClick={confirmar}
         disabled={!puedeConfirmar}
         className="w-full font-bold focus:outline-none flex-shrink-0"
         style={{
-          marginTop: 12,
+          marginTop: 10,
           background: puedeConfirmar ? C.navy : C.paperDeep,
           color: puedeConfirmar ? "#fff" : C.inkSoft,
           padding: "16px",
@@ -280,7 +331,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
           opacity: puedeConfirmar ? 1 : 0.7,
         }}
       >
-        {puedeConfirmar ? `Seleccionar ${nombreConfirm}` : "Seleccionar comunidad"}
+        {textoBoton}
       </button>
     </div>
   );

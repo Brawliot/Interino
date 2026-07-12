@@ -86,6 +86,7 @@ GERENCIAS = [
     "Gerencia de Atencion Integrada de Cuenca",
     "Gerencia de Atencion Integrada de Guadalajara",
     "Gerencia de Atencion Integrada de Hellin",
+    "Gerencia de Atencion Integrada de Manzanares",
     "Gerencia de Atencion Integrada de Puertollano",
     "Gerencia de Atencion Integrada de Talavera de la Reina",
     "Gerencia de Atencion Integrada de Tomelloso",
@@ -93,15 +94,32 @@ GERENCIAS = [
     "Gerencia de Atencion Integrada de Villarrobledo",
     "Gerencia de Atencion Primaria de Toledo",
     "Gerencia de Atencion Especializada de Toledo",
+    "Gerencia del Hospital Nacional de Paraplejicos",
 ]
 
 AMBITOS = ["Atencion Primaria", "Atencion Especializada"]
 
-DATA_DIR = "data"
-HISTORICO_PATH = os.path.join(DATA_DIR, "historico.json")
-MANIFEST_PATH = os.path.join(DATA_DIR, "manifest.json")
-CATEGORIAS_JSON = os.path.join(DATA_DIR, "categorias_por_grupo.json")
-LATEST_PATH = os.path.join(DATA_DIR, "latest.json")  # legacy; migrar y borrar
+# data/public/ = espejo R2 (copiar su contenido a la raíz del bucket interino-data)
+# data/_local/ = logs, vigía, informes (no subir a R2)
+DATA_ROOT = "data"
+PUBLIC_DATA_DIR = os.path.join(DATA_ROOT, "public")
+LOCAL_DATA_DIR = os.path.join(DATA_ROOT, "_local")
+LOCAL_LOGS_DIR = os.path.join(LOCAL_DATA_DIR, "logs")
+DATA_DIR = PUBLIC_DATA_DIR
+
+
+def public_path(*parts: str) -> str:
+    return os.path.join(PUBLIC_DATA_DIR, *parts)
+
+
+def local_path(*parts: str) -> str:
+    return os.path.join(LOCAL_DATA_DIR, *parts)
+
+
+HISTORICO_PATH = public_path("historico.json")
+MANIFEST_PATH = public_path("manifest.json")
+CATEGORIAS_JSON = public_path("categorias_por_grupo.json")
+LATEST_PATH = public_path("latest.json")  # legacy; migrar y borrar
 
 GRUPOS = {
     "diplomado": CATEGORIAS_SANIDAD_DIPLOMADO,
@@ -124,7 +142,13 @@ def slug_categoria(categoria: str) -> str:
 
 
 def _normalizar_clave(texto: str) -> str:
-    return quitar_acentos(texto).upper().strip()
+    t = quitar_acentos(texto).upper().strip()
+    return re.sub(r"\s+", " ", t)
+
+
+def normalizar_gerencia_guardada(gerencia: str) -> str:
+    """Nombre canónico en JSON: sin tildes, coherente con listados antiguos."""
+    return quitar_acentos(gerencia).strip()
 
 
 def _coincide_etiqueta(opciones: dict[str, str], buscada: str) -> str | None:
@@ -438,7 +462,7 @@ def parsear_pdf(contenido: bytes, categoria: str, gerencia: str, ambito: str) ->
                     orden=orden, apellidos_nombre=nombre, dni_parcial=dni,
                     comprobado_baremo=baremo, grupo_preferente=gp,
                     tipos_contrato=contrato, categoria=categoria,
-                    gerencia=gerencia, ambito=ambito,
+                    gerencia=normalizar_gerencia_guardada(gerencia), ambito=ambito,
                 ))
     return filas
 
@@ -647,6 +671,245 @@ def cargar_categorias_desde_inventario() -> dict[str, list[str]]:
     return out
 
 
+def gerencias_de_categoria(cliente: ClienteFormularioBaremo, sesion: _SesionCategoria,
+                           gerencias_fallback: list[str] | None = None) -> list[str]:
+    """Gerencias del portal tras elegir categoría (p. ej. central URGENCIAS o Coordinación e Inspección)."""
+    del_portal = list(cliente._opciones_select(sesion.html, "gerencia").keys())
+    if del_portal:
+        return del_portal
+    return list(gerencias_fallback or GERENCIAS)
+
+
+def clave_listado(gerencia: str, ambito: str) -> tuple[str, str]:
+    return (_normalizar_clave(gerencia), ambito)
+
+
+def claves_listados(listados: list[dict]) -> set[tuple[str, str]]:
+    return {clave_listado(l["gerencia"], l["ambito"]) for l in listados}
+
+
+def pares_portal_faltantes(cliente: ClienteFormularioBaremo, sesion: _SesionCategoria,
+                           existentes: list[dict]) -> list[tuple[str, str]]:
+    """Pares (gerencia, ámbito) del portal sin listado guardado."""
+    claves = claves_listados(existentes)
+    faltan: list[tuple[str, str]] = []
+    for gerencia in gerencias_de_categoria(cliente, sesion):
+        for ambito in AMBITOS:
+            if clave_listado(gerencia, ambito) not in claves:
+                faltan.append((gerencia, ambito))
+    return faltan
+
+
+def gerencias_portal_faltantes(cliente: ClienteFormularioBaremo, sesion: _SesionCategoria,
+                               existentes: list[dict]) -> list[str]:
+    """Gerencias del portal con al menos un ámbito sin listado guardado."""
+    vistos: dict[str, None] = {}
+    for gerencia, _ in pares_portal_faltantes(cliente, sesion, existentes):
+        vistos[gerencia] = None
+    return list(vistos.keys())
+
+
+def scrapear_listados_pares(
+    categoria: str,
+    grupo: str,
+    pares_objetivo: list[tuple[str, str]],
+    sesion: _SesionCategoria | None = None,
+    html_estado: str | None = None,
+    pausa: float = 1.5,
+) -> tuple[list[dict], _SesionCategoria, str]:
+    """Descarga listados solo para los pares gerencia+ámbito indicados."""
+    from collections import defaultdict
+
+    cliente = ClienteFormularioBaremo(grupo)
+    if sesion is None:
+        sesion = cliente.iniciar_categoria(categoria)
+    if html_estado is None:
+        html_estado = sesion.html
+
+    por_gerencia: dict[str, set[str]] = defaultdict(set)
+    for gerencia, ambito in pares_objetivo:
+        por_gerencia[gerencia].add(ambito)
+
+    nuevos: list[dict] = []
+    for gerencia, ambitos_necesarios in por_gerencia.items():
+        sesion.html = html_estado
+        try:
+            pdfs, html_tras = cliente.pdfs_por_gerencia(sesion, gerencia)
+        except (requests.exceptions.RequestException, ValueError) as e:
+            print(f"ERROR  {categoria} · {gerencia} -> {e}")
+            continue
+
+        gerencia_norm = normalizar_gerencia_guardada(gerencia)
+        if not pdfs:
+            for ambito in sorted(ambitos_necesarios):
+                estado = "sin_gerencia" if not cliente._id_gerencia_en_html(html_estado, gerencia) else "sin_pdf"
+                _log_listado(categoria, gerencia_norm, ambito, estado, None)
+            continue
+
+        urls_descargadas: set[str] = set()
+        for ambito in sorted(ambitos_necesarios):
+            url = pdfs.get(ambito)
+            if not url:
+                _log_listado(categoria, gerencia_norm, ambito, "sin_pdf", None)
+                continue
+            if url in urls_descargadas:
+                continue
+
+            contenido, estado = descargar_pdf(url)
+            if estado != "ok":
+                _log_listado(categoria, gerencia_norm, ambito, estado, url)
+                continue
+
+            filas = parsear_pdf(contenido, categoria, gerencia_norm, ambito)
+            if filas:
+                nuevos.append({
+                    "categoria": categoria,
+                    "gerencia": gerencia_norm,
+                    "ambito": ambito,
+                    "filas": [asdict(f) for f in filas],
+                })
+            urls_descargadas.add(url)
+            _log_listado(categoria, gerencia_norm, ambito, "ok", url, len(filas))
+            time.sleep(pausa)
+
+        try:
+            html_estado = cliente.renovar_tras_post(html_tras, sesion.cat_id)
+        except (requests.exceptions.RequestException, ValueError) as e:
+            print(f"AVISO  Renovacion de sesion tras {gerencia}: {e}")
+            sesion = cliente.iniciar_categoria(categoria)
+            html_estado = sesion.html
+
+    return nuevos, sesion, html_estado
+
+
+def scrapear_listados_gerencias(
+    categoria: str,
+    grupo: str,
+    gerencias_objetivo: list[str],
+    sesion: _SesionCategoria | None = None,
+    html_estado: str | None = None,
+    pausa: float = 1.5,
+) -> tuple[list[dict], _SesionCategoria, str]:
+    """Descarga todos los ámbitos faltantes por gerencia (compatibilidad)."""
+    pares = [(g, a) for g in gerencias_objetivo for a in AMBITOS]
+    return scrapear_listados_pares(
+        categoria, grupo, pares, sesion=sesion, html_estado=html_estado, pausa=pausa
+    )
+
+
+def normalizar_gerencias_en_listados(listados: list[dict]) -> list[dict]:
+    """Unifica nombres de gerencia en bloques y filas (sin borrar datos)."""
+    for bloque in listados:
+        g = normalizar_gerencia_guardada(bloque.get("gerencia", ""))
+        bloque["gerencia"] = g
+        for fila in bloque.get("filas") or []:
+            fila["gerencia"] = g
+    return listados
+
+
+def fusionar_listados(existentes: list[dict], nuevos: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Añade listados nuevos sin sobrescribir gerencia+ámbito ya presentes."""
+    claves = claves_listados(existentes)
+    anadidos = []
+    for bloque in nuevos:
+        k = clave_listado(bloque["gerencia"], bloque["ambito"])
+        if k in claves:
+            continue
+        anadidos.append(bloque)
+        claves.add(k)
+    return existentes + anadidos, anadidos
+
+
+def completar_gerencias_categoria(grupo: str, categoria: str, pausa: float = 1.5) -> dict:
+    """
+    Añade al JSON existente las gerencias/ámbitos que faltan según el portal.
+    No re-descarga listados ya guardados.
+    """
+    path = path_categoria_json(grupo, categoria)
+    if not os.path.exists(path):
+        return {"categoria": categoria, "grupo": grupo, "error": "sin_json", "personas_anadidas": 0}
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    existentes = data.get("listados") or []
+
+    cliente = ClienteFormularioBaremo(grupo)
+    try:
+        sesion = cliente.iniciar_categoria(categoria)
+    except (requests.exceptions.RequestException, ValueError) as e:
+        return {"categoria": categoria, "grupo": grupo, "error": str(e), "personas_anadidas": 0}
+
+    existentes = normalizar_gerencias_en_listados(existentes)
+    pares = pares_portal_faltantes(cliente, sesion, existentes)
+    if not pares:
+        return {
+            "categoria": categoria, "grupo": grupo, "gerencias_anadidas": 0,
+            "listados_anadidos": 0, "personas_anadidas": 0,
+        }
+
+    print(f"Completar {grupo}/{categoria}: {len(pares)} par(es) gerencia+ambito pendientes")
+    nuevos, _, _ = scrapear_listados_pares(
+        categoria, grupo, pares, sesion=sesion, html_estado=sesion.html, pausa=pausa
+    )
+    merged, anadidos = fusionar_listados(existentes, nuevos)
+    if not anadidos and existentes != (data.get("listados") or []):
+        data["listados"] = merged
+        data["generado"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        guardar_indice_busqueda(grupo, categoria, merged)
+        return {
+            "categoria": categoria, "grupo": grupo, "gerencias_anadidas": 0,
+            "listados_anadidos": 0, "personas_anadidas": 0, "nota": "solo_normalizacion",
+        }
+    if not anadidos:
+        return {
+            "categoria": categoria, "grupo": grupo, "gerencias_anadidas": 0,
+            "listados_anadidos": 0, "personas_anadidas": 0,
+        }
+
+    data["listados"] = merged
+    data["generado"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    personas = sum(len(l["filas"]) for l in anadidos)
+    print(f"Actualizado {path} -> +{len(anadidos)} listas, +{personas} personas")
+    guardar_indice_busqueda(grupo, categoria, merged)
+    hoy = datetime.now().strftime("%Y-%m-%d")
+    actualizar_historico(resumir_listados(anadidos, hoy))
+    return {
+        "categoria": categoria,
+        "grupo": grupo,
+        "gerencias_anadidas": len({l["gerencia"] for l in anadidos}),
+        "listados_anadidos": len(anadidos),
+        "personas_anadidas": personas,
+        "gerencias": sorted({l["gerencia"] for l in anadidos}),
+    }
+
+
+def completar_gerencias_grupo(grupo: str, categorias: list[str] | None = None,
+                              pausa: float = 1.5) -> list[dict]:
+    """Completa gerencias faltantes en todas las categorías del grupo con JSON."""
+    dir_grupo = os.path.join(DATA_DIR, grupo)
+    if not os.path.isdir(dir_grupo):
+        return []
+    if categorias is None:
+        categorias = []
+        for nombre in sorted(os.listdir(dir_grupo)):
+            if not nombre.endswith(".json") or nombre.endswith(".busqueda.json"):
+                continue
+            with open(os.path.join(dir_grupo, nombre), "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data.get("categoria"):
+                categorias.append(data["categoria"])
+
+    resultados = []
+    for categoria in categorias:
+        resultados.append(completar_gerencias_categoria(grupo, categoria, pausa=pausa))
+    actualizar_manifest()
+    return resultados
+
+
 def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GERENCIAS,
                        ambitos=AMBITOS, pausa=1.5, presupuesto_segundos=None) -> list[dict]:
     """Scrapea una sola categoría reutilizando sesión del formulario (1 GET+POST cat)."""
@@ -660,7 +923,8 @@ def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GEREN
         return listados
 
     html_estado = sesion.html
-    for gerencia in gerencias:
+    gerencias_cat = gerencias_de_categoria(cliente, sesion, gerencias)
+    for gerencia in gerencias_cat:
         if presupuesto_segundos and time.time() - inicio > presupuesto_segundos:
             print(f"\nPresupuesto agotado ({presupuesto_segundos}s) en {categoria}.")
             return listados
@@ -678,6 +942,7 @@ def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GEREN
                 _log_listado(categoria, gerencia, ambito, estado, None)
             continue
 
+        urls_descargadas: set[str] = set()
         for ambito in ambitos:
             if presupuesto_segundos and time.time() - inicio > presupuesto_segundos:
                 return listados
@@ -685,6 +950,8 @@ def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GEREN
             if not url:
                 _log_listado(categoria, gerencia, ambito, "sin_pdf", None)
                 continue
+            if url in urls_descargadas:
+                continue  # listado central: AP y AE apuntan al mismo PDF
 
             contenido, estado = descargar_pdf(url)
             if estado != "ok":
@@ -697,6 +964,7 @@ def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GEREN
                     "categoria": categoria, "gerencia": gerencia, "ambito": ambito,
                     "filas": [asdict(f) for f in filas],
                 })
+            urls_descargadas.add(url)
             _log_listado(categoria, gerencia, ambito, "ok", url, len(filas))
             time.sleep(pausa)
 
@@ -730,6 +998,10 @@ def guardar_categoria_json(grupo: str, categoria: str, listados: list[dict]) -> 
     return path
 
 
+# JSON de metadatos/inventario en data/{region}/ — no son snapshots de listados.
+_JSON_INVENTARIO = frozenset({"categorias.json", "categorias_sanidad.json", "manifest.json"})
+
+
 def leer_todos_listados_data() -> list[dict]:
     """Recorre data/{grupo}/*.json y devuelve todos los listados (para histórico)."""
     todos = []
@@ -742,11 +1014,15 @@ def leer_todos_listados_data() -> list[dict]:
         for nombre in os.listdir(dir_grupo):
             if not nombre.endswith(".json") or nombre.endswith(".busqueda.json"):
                 continue
+            if nombre in _JSON_INVENTARIO:
+                continue
             with open(os.path.join(dir_grupo, nombre), "r", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
                 except json.JSONDecodeError:
                     continue
+            if not isinstance(data, dict):
+                continue
             todos.extend(data.get("listados", []))
     return todos
 
@@ -782,7 +1058,7 @@ def migrar_latest_json():
     for categoria, listados in por_categoria.items():
         guardar_categoria_json("diplomado", categoria, listados)
     os.remove(LATEST_PATH)
-    print(f"Migrado latest.json -> {len(por_categoria)} categorías en data/diplomado/")
+    print(f"Migrado latest.json -> {len(por_categoria)} categorías en data/public/diplomado/")
 
 
 def resumir_listados(listados: list[dict], fecha: str) -> list[dict]:
@@ -868,6 +1144,8 @@ def parse_args():
     p.add_argument("--migrar-latest", action="store_true", help="Migrar data/latest.json y borrarlo")
     p.add_argument("--presupuesto", type=int, default=35 * 60,
                    help="Segundos máximos por ejecución (default 2100)")
+    p.add_argument("--completar-gerencias", action="store_true",
+                   help="Solo añade gerencias/ámbitos faltantes al JSON existente (no re-scrapea todo)")
     return p.parse_args()
 
 
@@ -878,6 +1156,16 @@ if __name__ == "__main__":
     if args.migrar_latest:
         migrar_latest_json()
         actualizar_manifest()
+        raise SystemExit(0)
+
+    if args.completar_gerencias:
+        if args.categoria:
+            res = [completar_gerencias_categoria(args.grupo, args.categoria)]
+        else:
+            res = completar_gerencias_grupo(args.grupo)
+        total_p = sum(r.get("personas_anadidas", 0) for r in res)
+        total_l = sum(r.get("listados_anadidos", 0) for r in res)
+        print(f"Completar gerencias: +{total_l} listados, +{total_p} personas en {len(res)} categorías")
         raise SystemExit(0)
 
     inventario = cargar_categorias_desde_inventario()

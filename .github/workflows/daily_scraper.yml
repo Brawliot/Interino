@@ -40,7 +40,7 @@ jobs:
           import subprocess
           import sys
 
-          with open("data/vigia_cambios.json", encoding="utf-8") as f:
+          with open("data/_local/vigia_cambios.json", encoding="utf-8") as f:
               cambios = json.load(f).get("cambios", [])
           if not cambios:
               print("Vigía marcó cambio pero no hay grupos en vigia_cambios.json")
@@ -58,7 +58,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p data
-          git add data/vigia_estado.json data/vigia_cambios.json data/
+          mkdir -p data/public data/_local
+          git add data/public/ data/_local/vigia_estado.json data/_local/vigia_cambios.json
           git diff --staged --quiet || git commit -m "Actualizacion automatica SESCAM - $(date +'%Y-%m-%d')"
           git push

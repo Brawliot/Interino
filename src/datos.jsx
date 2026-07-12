@@ -4,7 +4,7 @@ import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js"
 
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
- * Desarrollo: /data/  |  Producción (R2): VITE_DATA_CATEGORIAS_URL=https://…
+ * Desarrollo: /data/ → data/public/  |  Producción (R2): VITE_DATA_CATEGORIAS_URL=https://…
  */
 export const DATA_CATEGORIAS_BASE_URL = (
   import.meta.env.VITE_DATA_CATEGORIAS_URL || "/data/"
@@ -46,11 +46,35 @@ export function gerenciaCorta(gerenciaCompleta) {
   if (gerenciaCompleta.includes("Region de Murcia") || gerenciaCompleta.includes("Región de Murcia")) {
     return "Murcia";
   }
-  if (gerenciaCompleta.includes("Primaria de Toledo")) return "Toledo";
-  if (gerenciaCompleta.includes("Especializada de Toledo")) return "Toledo AE";
+  if (
+    gerenciaCompleta.includes("Parapléjicos") ||
+    gerenciaCompleta.includes("Paraplejicos") ||
+    gerenciaCompleta.includes("Hospital Nacional de Parap")
+  ) {
+    return "H. Parapléjicos";
+  }
+  if (
+    gerenciaCompleta.includes("Especializada de Toledo") ||
+    gerenciaCompleta.includes("Atencion Especializada de Toledo")
+  ) {
+    return "Toledo AE";
+  }
+  if (
+    gerenciaCompleta.includes("Primaria de Toledo") ||
+    gerenciaCompleta.includes("Atencion Primaria de Toledo")
+  ) {
+    return "Toledo AP";
+  }
   const prefijo = "Gerencia de Atencion Integrada de ";
   if (gerenciaCompleta.startsWith(prefijo)) return gerenciaCompleta.slice(prefijo.length);
   return gerenciaCompleta;
+}
+
+/** Gerencias únicas (nombres cortos) a partir de un snapshot scrapeado. */
+export function gerenciasUnicasDeSnapshot(snapshot) {
+  return [...new Set((snapshot?.listados ?? []).map((l) => gerenciaCorta(l.gerencia)))].sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
 }
 
 export function ambitoLegible(ambito) {
@@ -129,8 +153,7 @@ export function construirMapasCategorias(categoriasPorGrupo) {
 
 /** Categorías del inventario SESCAM sin PDF publicado en el portal (no mostrar en UI). */
 const CATEGORIAS_SIN_PDF_PORTAL = new Set([
-  "ENFERMERO/A DE EMERGENCIAS",
-  "ENFERMERO/A INSPECTOR/A DE SERVICIOS SANITARIOS Y PRESTACIONES",
+  // vacío: emergencias e inspector usan gerencia central (scraper lee gerencias del portal)
 ]);
 
 function slugGrupoLabel(label) {
@@ -559,6 +582,153 @@ export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   return crearCapaDatosClm(historico, manifest, categoriasPorGrupo);
 }
 
+function resolverGrupoMulti(gruposSanidad, capas, grupoIdOrComposite) {
+  if (!grupoIdOrComposite) return null;
+  if (String(grupoIdOrComposite).includes("::")) {
+    const [ccaaId, grupoId] = String(grupoIdOrComposite).split("::");
+    return {
+      capa: capas.find((c) => c.ccaaId === ccaaId),
+      grupoId,
+      ccaaId,
+    };
+  }
+  const g = gruposSanidad.find(
+    (x) => x.id === grupoIdOrComposite || x.grupoId === grupoIdOrComposite
+  );
+  if (g) {
+    return {
+      capa: capas.find((c) => c.ccaaId === g.ccaaId),
+      grupoId: g.grupoId,
+      ccaaId: g.ccaaId,
+    };
+  }
+  return { capa: capas[0], grupoId: grupoIdOrComposite, ccaaId: capas[0]?.ccaaId };
+}
+
+/** Fusiona varias capas regionales para búsqueda en una o varias CCAA. */
+export function crearCapaDatosMulti(capas, ccaaIds) {
+  const ccaaPorId = Object.fromEntries(CCAA_LIST.map((c) => [c.id, c]));
+  const multi = ccaaIds.length > 1;
+
+  const gruposSanidad = [];
+  for (const capa of capas) {
+    for (const g of capa.gruposSanidad || []) {
+      const ccaaNombre = ccaaPorId[capa.ccaaId]?.nombre || capa.ccaaId;
+      gruposSanidad.push({
+        ...g,
+        ccaaId: capa.ccaaId,
+        ccaaNombre,
+        grupoId: g.id,
+        id: multi ? `${capa.ccaaId}::${g.id}` : g.id,
+        nombre: multi ? `${ccaaNombre} · ${g.nombre}` : g.nombre,
+      });
+    }
+  }
+
+  const resolver = (grupoIdOrComposite) =>
+    resolverGrupoMulti(gruposSanidad, capas, grupoIdOrComposite);
+
+  const capaMulti = {
+    ccaaIds,
+    ccaaId: ccaaIds[0],
+    multi,
+    capas,
+    gruposSanidad,
+
+    tieneDatosReales(categoriaUi, grupoIdOrComposite) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa) return false;
+      return r.capa.tieneDatosReales(categoriaUi, r.grupoId);
+    },
+
+    tieneIndiceBusqueda(categoriaUi, grupoIdOrComposite) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa?.tieneIndiceBusqueda) return false;
+      return r.capa.tieneIndiceBusqueda(categoriaUi, r.grupoId);
+    },
+
+    async buscarPersonas(grupoIdOrComposite, categoriaUi, consulta) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa) return { personas: [], gerencias: [] };
+      const res = await r.capa.buscarPersonas(r.grupoId, categoriaUi, consulta);
+      const ccaaNombre = ccaaPorId[r.ccaaId]?.nombre;
+      return {
+        ...res,
+        personas: res.personas.map((p) => ({
+          ...p,
+          ccaaId: r.ccaaId,
+          ccaaNombre,
+          grupoId: r.grupoId,
+          categoria: categoriaUi,
+          apariciones: p.apariciones.map((a) => ({
+            ...a,
+            ccaaId: r.ccaaId,
+            ccaaNombre,
+            grupoId: r.grupoId,
+            categoria: categoriaUi,
+          })),
+        })),
+      };
+    },
+
+    historialCorte(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "", grupoIdOrComposite) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa?.historialCorte) return [];
+      return r.capa.historialCorte(categoriaUi, gerenciaCortaFiltro, ambitoFiltro);
+    },
+
+    async estadoActualizacion(categoriaUi, grupoIdOrComposite, grupoActivo) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa) return { tipo: "sin_datos", texto: "Sin datos." };
+      return r.capa.estadoActualizacion(categoriaUi, r.grupoId, grupoActivo);
+    },
+
+    async gerenciasDeCategoria(grupoIdOrComposite, categoriaUi) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa) return [];
+      return r.capa.gerenciasDeCategoria(r.grupoId, categoriaUi);
+    },
+
+    async cargarCategoria(grupoIdOrComposite, categoriaUi) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa?.cargarCategoria) throw new Error("Sin datos");
+      return r.capa.cargarCategoria(r.grupoId, categoriaUi);
+    },
+
+    async obtenerListadoCompleto(grupoIdOrComposite, categoriaUi, gerencia, ambito) {
+      const r = resolver(grupoIdOrComposite);
+      if (!r?.capa) return [];
+      return r.capa.obtenerListadoCompleto(r.grupoId, categoriaUi, gerencia, ambito);
+    },
+
+    async buscarGlobal(consulta) {
+      const q = consulta.trim();
+      if (!q) return { personas: [], gerencias: [] };
+
+      const porPersona = new Map();
+      for (const g of gruposSanidad) {
+        if (!g.activo) continue;
+        for (const cat of g.categorias) {
+          if (!capaMulti.tieneDatosReales(cat, g.id)) continue;
+          const res = await capaMulti.buscarPersonas(g.id, cat, q);
+          for (const p of res.personas) {
+            const clave = p.dniParcial || p.nombreCompleto;
+            const prev = porPersona.get(clave);
+            if (prev) {
+              prev.apariciones = deduplicarApariciones([...prev.apariciones, ...p.apariciones]);
+            } else {
+              porPersona.set(clave, { ...p });
+            }
+          }
+        }
+      }
+      return { personas: [...porPersona.values()], gerencias: [] };
+    },
+  };
+
+  return capaMulti;
+}
+
 export async function cargarDatos() {
   const base = DATA_CATEGORIAS_BASE_URL;
   const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes] = await Promise.all([
@@ -577,6 +747,17 @@ export async function cargarDatos() {
   const manifestMurcia = murManifestRes.ok ? await murManifestRes.json() : { archivos: [] };
   const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
 
+  let numGerenciasClm = null;
+  try {
+    const enfRes = await fetch(`${base}diplomado/enfermero-a.json`);
+    if (enfRes.ok) {
+      const snap = await enfRes.json();
+      numGerenciasClm = gerenciasUnicasDeSnapshot(snap).length;
+    }
+  } catch {
+    numGerenciasClm = null;
+  }
+
   const capas = {
     clm: crearCapaDatosClm(historico, manifest, categoriasPorGrupo),
     mur: crearCapaDatosMurcia(manifestMurcia, categoriasMurcia),
@@ -586,7 +767,14 @@ export async function cargarDatos() {
 
   return {
     regiones: CCAA_LIST,
+    numGerenciasClm,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
+    paraCcaas: (ccaaIds) => {
+      const ids = [...new Set(ccaaIds)].filter((id) => capas[id]);
+      if (ids.length === 0) return capas.clm;
+      if (ids.length === 1) return capas[ids[0]];
+      return crearCapaDatosMulti(ids.map((id) => capas[id]), ids);
+    },
     ...clm,
   };
 }

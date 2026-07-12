@@ -4,7 +4,7 @@ REM Uso: scripts\scrape_licenciados.bat
 REM Tiempo estimado: muchas noches. Ejecutar de noche.
 
 cd /d "%~dp0\.."
-set LOG=data\scrape_licenciados.log
+set LOG=data\_local\logs\scrape_licenciados.log
 echo === Inicio %date% %time% === >> "%LOG%"
 
 call :run "FARMACEUTICO/A DE ATENCION PRIMARIA"

@@ -59,7 +59,7 @@ def main():
         estado = "OK" if detalle["ok"] else detalle["estado"].upper()
         print(f"{grupo}: {estado} ({detalle['filas']} filas) — {cat}")
 
-    path = Path("data/verificacion_grupos_pdf.json")
+    path = Path("data/_local/verificacion_grupos_pdf.json")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nGuardado {path}")

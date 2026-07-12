@@ -4,7 +4,7 @@ REM Uso: scripts\scrape_diplomado_faltantes.bat
 REM Tiempo estimado: varias horas. Ejecutar de noche.
 
 cd /d "%~dp0\.."
-set LOG=data\scrape_diplomado_faltantes.log
+set LOG=data\_local\logs\scrape_diplomado_faltantes.log
 echo === Inicio %date% %time% === >> "%LOG%"
 
 call :run "ENFERMERO/A DE EMERGENCIAS"
