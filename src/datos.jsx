@@ -695,12 +695,31 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
     const q = consulta.trim();
     if (!q) return { personas: [], gerencias: [] };
     const meta = metaDe(categoriaUi, grupoId);
-    if (!meta || !archivosDisponibles.has(meta.relIdx)) {
+    if (!meta || !archivosDisponibles.has(meta.rel)) {
       return { personas: [], gerencias: [] };
     }
-    const [indice, snap] = await Promise.all([cargarJson(meta.relIdx), cargarCategoria(grupoId, categoriaUi)]);
-    const total = snap.personas?.length || indice.personas?.length || 0;
-    const personas = (indice.personas || [])
+
+    const snap = await cargarCategoria(grupoId, categoriaUi);
+    const total = snap.personas?.length || 0;
+
+    let candidatos = [];
+    try {
+      const indice = await cargarJson(meta.relIdx);
+      candidatos = indice.personas || [];
+    } catch {
+      candidatos = (snap.personas || []).map((p) => ({
+        nombreCompleto: formatearNombre(p.apellidos_nombre),
+        dniParcial: p.dni_parcial,
+        apellidos: p.apellidos_nombre.split(",")[0].replace(/\n/g, " ").trim(),
+        orden: p.orden,
+        bolsa_orden: p.bolsa_orden,
+        provincias: p.provincias || [],
+        tipo_bolsa: p.tipo_bolsa,
+        idiomas: p.idiomas,
+      }));
+    }
+
+    const personas = candidatos
       .filter((p) =>
         coincideBusqueda(
           { apellidos: p.apellidos, nombreCompleto: p.nombreCompleto, dniParcial: p.dniParcial },
