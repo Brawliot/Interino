@@ -1,8 +1,26 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { cpSync, existsSync, createReadStream, statSync } from "fs";
+import { cpSync, existsSync, createReadStream, readdirSync, statSync, writeFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+
+/** Manifest solo con JSON que existen en disco (mismo criterio que scraper.actualizar_manifest). */
+function regenerarManifestEnDir(publicDir) {
+  const archivos = [];
+  if (!existsSync(publicDir)) return;
+  for (const grupo of readdirSync(publicDir).sort()) {
+    const dirGrupo = path.join(publicDir, grupo);
+    if (!statSync(dirGrupo).isDirectory()) continue;
+    for (const nombre of readdirSync(dirGrupo).sort()) {
+      if (nombre.endsWith(".json")) archivos.push(`${grupo}/${nombre}`);
+    }
+  }
+  const manifest = {
+    generado: new Date().toISOString().slice(0, 19),
+    archivos,
+  };
+  writeFileSync(path.join(publicDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf-8");
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "data/public");
@@ -33,6 +51,7 @@ function dataStaticPlugin() {
   return {
     name: "data-static",
     configureServer(server) {
+      regenerarManifestEnDir(dataDir);
       server.middlewares.use("/data", (req, res, next) => {
         const rel = decodeURIComponent((req.url || "/").replace(/^\//, ""));
         const file = path.join(dataDir, rel);
@@ -45,7 +64,9 @@ function dataStaticPlugin() {
       });
     },
     closeBundle() {
-      cpSync(dataDir, path.resolve(__dirname, "dist/data"), { recursive: true });
+      const distData = path.resolve(__dirname, "dist/data");
+      cpSync(dataDir, distData, { recursive: true });
+      regenerarManifestEnDir(distData);
     },
   };
 }

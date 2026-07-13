@@ -147,9 +147,19 @@ function ambitoResumenFila(aparicionesGrupo) {
   return "";
 }
 
-function construirFilasResumen(apariciones) {
+function normalizarAparicion(a) {
+  return {
+    ...a,
+    posicion: Number(a?.posicion ?? a?.pos ?? 0) || 0,
+    puntos: Number(a?.puntos ?? 0) || 0,
+    total: Number(a?.total ?? 0) || 0,
+  };
+}
+
+function construirFilasResumen(apariciones = []) {
   const map = new Map();
-  apariciones.forEach((a, idx) => {
+  apariciones.forEach((raw, idx) => {
+    const a = normalizarAparicion(raw);
     const key = `${a.ccaaId || ""}\0${a.gerencia}\0${a.posicion}\0${a.puntos}`;
     if (!map.has(key)) {
       map.set(key, {
@@ -175,7 +185,23 @@ function construirFilasResumen(apariciones) {
         key: `${row.gerencia}-${row.posicion}-${row.puntos}-${ambitoLabel}`,
       };
     })
-    .sort((a, b) => a.posicion - b.posicion || a.gerencia.localeCompare(b.gerencia, "es"));
+    .sort((a, b) => a.posicion - b.posicion || (a.gerencia || "").localeCompare(b.gerencia || "", "es"));
+}
+
+function grupoIdParaCapa(capa, aparicion, grupoIdFallback) {
+  const gid = aparicion?.grupoId || grupoIdFallback;
+  if (capa?.multi && aparicion?.ccaaId && gid && !String(gid).includes("::")) {
+    return `${aparicion.ccaaId}::${gid}`;
+  }
+  return gid;
+}
+
+function tituloCategoriaResultado(categoria, apariciones) {
+  if (categoria) return categoria;
+  const cats = [...new Set((apariciones || []).map((a) => a.categoria).filter(Boolean))];
+  if (cats.length === 1) return cats[0];
+  if (cats.length > 1) return "Varias categorías";
+  return "";
 }
 
 function aparicionParaDetalle(fila) {
@@ -262,16 +288,22 @@ function Subrayado({ width = 168, color, style }) {
   );
 }
 
-function AvisoActualizacion({ categoria, grupoId, grupoActivo }) {
+function AvisoActualizacion({ categoria, grupoId, grupoActivo, tieneResultado = false }) {
   const capa = useCapaDatos();
   const organismo = organismoCcaa(capa.ccaaId);
   const [e, setE] = useState({ tipo: "ok", texto: "Comprobando actualización…" });
 
   useEffect(() => {
     let cancel = false;
-    if (grupoActivo && capa.tieneDatosReales(categoria, grupoId)) {
+    const hayDatos = capa.tieneDatosReales(categoria, grupoId);
+    if (grupoActivo && (tieneResultado || hayDatos)) {
       capa.estadoActualizacion(categoria, grupoId, true).then((est) => {
-        if (!cancel) setE(est);
+        if (cancel) return;
+        if (tieneResultado && est.tipo === "sin_datos") {
+          setE({ tipo: "ok", texto: "Posición calculada con listados scrapeados." });
+        } else {
+          setE(est);
+        }
       });
     } else if (grupoActivo) {
       setE({ tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." });
@@ -279,7 +311,7 @@ function AvisoActualizacion({ categoria, grupoId, grupoActivo }) {
       setE(estadoActualizacionEjemplo(categoria, capa.gruposSanidad));
     }
     return () => { cancel = true; };
-  }, [categoria, grupoId, grupoActivo, capa]);
+  }, [categoria, grupoId, grupoActivo, capa, tieneResultado]);
   if (e.tipo === "ok") {
     return (
       <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.inkSoft, marginTop: 8, paddingLeft: 2 }}>
@@ -969,7 +1001,10 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
   const organismo = organismoCcaa(regionId);
   const portalNombre = regionId === "clm" ? "Selecta" : organismo;
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
-  const percentil = Math.round((1 - r.posicion / r.total) * 100);
+  const posicion = Number(r?.posicion ?? r?.pos ?? 0) || 0;
+  const total = Number(r?.total ?? 0) || 0;
+  const puntos = Number(r?.puntos ?? 0) || 0;
+  const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
   const historial = grupoActivo && capa.tieneDatosReales(categoria, grupoId)
     ? capa.historialCorte(categoria, gerencia, ambito || r.ambito || "", grupoId)
     : [];
@@ -1011,13 +1046,13 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
             lineHeight: 1, marginTop: 14, transform: "rotate(-1.2deg)", display: "inline-block",
           }}
         >
-          #{r.posicion}
+          #{posicion}
         </p>
         <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
-          de {r.total.toLocaleString("es-ES")} personas en la bolsa · por delante del {percentil}%
+          de {total.toLocaleString("es-ES")} personas en la bolsa · por delante del {percentil}%
         </p>
       </div>
-      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} />
+      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
 
       <div className="grid grid-cols-2 gap-3 mt-4">
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16 }}>
@@ -1027,7 +1062,7 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16 }}>
           <TrendingUp size={16} color={C.ok} />
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: C.navy, marginTop: 6 }}>{r.puntos.toFixed(1)}</p>
+          <p style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: C.navy, marginTop: 6 }}>{puntos.toFixed(1)}</p>
           <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft }}>puntos de baremo</p>
         </div>
       </div>
@@ -1070,9 +1105,9 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
         }
         const hayTendencia = historial.length >= MIN_HISTORICO_TENDENCIA;
         const ult = historial[historial.length - 1];
-        const diff = (r.puntos - ult.puntos).toFixed(2);
-        const yaLlamado = r.puntos >= ult.puntos;
-        const riesgo = zonaRiesgo(r.puntos, historial);
+        const diff = (puntos - ult.puntos).toFixed(2);
+        const yaLlamado = puntos >= ult.puntos;
+        const riesgo = zonaRiesgo(puntos, historial);
         const rango = Math.max(Math.abs(diff) * 2, 1);
         const pct = Math.min(100, Math.max(0, 50 + (diff / rango) * 50));
         const RIESGO_TXT = {
@@ -1198,11 +1233,13 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
 
 // Contenedor: tabla resumen de gerencias + detalle al tocar una fila.
 function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos }) {
-  const apariciones = candidato.apariciones;
+  const capa = useCapaDatos();
+  const apariciones = candidato?.apariciones ?? [];
   const [detalleFila, setDetalleFila] = useState(null);
   const [bulkSeguido, setBulkSeguido] = useState(false);
 
   const filas = useMemo(() => construirFilasResumen(apariciones), [apariciones]);
+  const categoriaMostrada = useMemo(() => tituloCategoriaResultado(categoria, apariciones), [categoria, apariciones]);
   const mejorPosicion = filas.length ? Math.min(...filas.map((f) => f.posicion)) : 0;
   const numGerencias = filas.length;
 
@@ -1236,8 +1273,8 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
 
   if (detalleFila) {
     const a = aparicionParaDetalle(detalleFila);
-    const catAparicion = a.categoria || categoria;
-    const grupoAparicion = a.grupoId || grupoId;
+    const catAparicion = a.categoria || categoriaMostrada || categoria;
+    const grupoAparicion = grupoIdParaCapa(capa, a, grupoId);
     const grupoActivoAparicion = grupoActivo ?? true;
     return (
       <div>
@@ -1282,11 +1319,17 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
           )}
         </p>
         <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.navy, fontWeight: 600, marginBottom: 16 }}>
-          {categoria}
+          {categoriaMostrada || "Resultado"}
           {numGerencias > 0 && (
             <span style={{ color: C.inkSoft, fontWeight: 500 }}> · {numGerencias} gerencia{numGerencias !== 1 ? "s" : ""}</span>
           )}
         </p>
+
+        {filas.length === 0 && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.clay, marginBottom: 16, lineHeight: 1.45 }}>
+            No hay posiciones que mostrar para esta búsqueda. Vuelve atrás e inténtalo de nuevo.
+          </p>
+        )}
 
         <div
           style={{
@@ -1379,7 +1422,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {fila.puntos.toFixed(2)}
+                  {Number(fila.puntos).toFixed(2)}
                 </span>
                 <ChevronRight size={16} color={C.inkSoft} style={{ flexShrink: 0 }} />
               </button>
@@ -1417,7 +1460,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
           )}
           <button
             type="button"
-            onClick={() => onVerListado("", "", categoria, grupoId)}
+            onClick={() => onVerListado("", "", categoriaMostrada || categoria, grupoIdParaCapa(capa, apariciones[0], grupoId))}
             className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
             style={{
               background: "transparent",
@@ -1599,25 +1642,29 @@ export default function ListasApp() {
     if (!grupo?.activo || !capaDatos.tieneDatosReales(categoria, grupo.id)) {
       return -1;
     }
-    const res = await capaDatos.buscarPersonas(grupo.id, categoria, consulta);
-    const personas = res.personas;
-    if (consulta.trim()) {
-      setRecientes((prev) => {
-        const sinDuplicado = prev.filter(
-          (r) => !(r.categoria === categoria && r.consulta === consulta && !r.global)
-        );
-        return [{ categoria, consulta, ccaaId: grupo.ccaaId, global: false }, ...sinDuplicado].slice(0, 4);
-      });
+    try {
+      const res = await capaDatos.buscarPersonas(grupo.id, categoria, consulta);
+      const personas = res.personas;
+      if (consulta.trim()) {
+        setRecientes((prev) => {
+          const sinDuplicado = prev.filter(
+            (r) => !(r.categoria === categoria && r.consulta === consulta && !r.global)
+          );
+          return [{ categoria, consulta, ccaaId: grupo.ccaaId, global: false }, ...sinDuplicado].slice(0, 4);
+        });
+      }
+      if (personas.length === 0) return 0;
+      if (personas.length > 1) {
+        setCandidatos(personas);
+        setPaso("confirmar");
+      } else {
+        setCandidatoElegido(personas[0]);
+        setPaso("resultado");
+      }
+      return personas.length;
+    } catch {
+      return -1;
     }
-    if (personas.length === 0) return 0;
-    if (personas.length > 1) {
-      setCandidatos(personas);
-      setPaso("confirmar");
-    } else {
-      setCandidatoElegido(personas[0]);
-      setPaso("resultado");
-    }
-    return personas.length;
   };
 
   const iniciarBusquedaGlobal = async (consulta) => {
@@ -1795,8 +1842,12 @@ export default function ListasApp() {
         {paso === "resultado" && candidatoElegido && (
           <PantallaResultado
             categoria={categoriaActual || candidatoElegido.apariciones?.[0]?.categoria || ""}
-            grupoId={grupoIdActual}
-            grupoActivo={grupoDeCategoria(categoriaActual || candidatoElegido.apariciones?.[0]?.categoria, gruposSanidad, candidatoElegido.apariciones?.[0]?.ccaaId)?.activo}
+            grupoId={grupoIdParaCapa(capaDatos, candidatoElegido.apariciones?.[0], grupoIdActual)}
+            grupoActivo={grupoDeCategoria(
+              categoriaActual || candidatoElegido.apariciones?.[0]?.categoria,
+              gruposSanidad,
+              candidatoElegido.apariciones?.[0]?.ccaaId
+            )?.activo}
             candidato={candidatoElegido}
             atras={() => setPaso("buscar")}
             estaGuardado={(gerencia, ambito, nombre, cat, ccaaId) => estaGuardado(gerencia, ambito, nombre, cat, ccaaId)}

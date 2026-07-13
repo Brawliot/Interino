@@ -83,6 +83,9 @@ data/public/murcia/*.json
 !data/public/murcia/categorias.json
 data/public/**/*.busqueda.json
 
+# Manifest: se genera en build/dev según JSON presentes en disco (no commitear listado de R2)
+data/public/manifest.json
+
 # Artefactos locales (no subir a R2)
 data/_local/
 

@@ -744,7 +744,13 @@ export async function cargarDatos() {
   const manifest = manifestRes.ok ? await manifestRes.json() : { archivos: [] };
   const categoriasPorGrupo = catsRes.ok ? await catsRes.json() : null;
   const categoriasMurcia = murCatsRes.ok ? await murCatsRes.json() : [];
-  const manifestMurcia = murManifestRes.ok ? await murManifestRes.json() : { archivos: [] };
+  let manifestMurcia = murManifestRes.ok ? await murManifestRes.json() : { archivos: [] };
+  if (!manifestMurcia.archivos?.length && manifest.archivos?.length) {
+    manifestMurcia = {
+      ...manifestMurcia,
+      archivos: manifest.archivos.filter((a) => a.startsWith("murcia/")),
+    };
+  }
   const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
 
   let numGerenciasClm = null;
