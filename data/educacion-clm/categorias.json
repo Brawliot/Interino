@@ -1,0 +1,172 @@
+{
+  "ccaaId": "clm",
+  "sector": "educacion",
+  "fuente": {
+    "portal": "Educación Castilla-La Mancha",
+    "pagina_bolsas": "https://educacion.castillalamancha.es/profesorado/bolsas-de-trabajo",
+    "evidencia_cuerpos": "https://educacion.castillalamancha.es/profesorado/bolsas-de-trabajo/adjudicacion-del-dia-30042026-para-los-cuerpos-de-maestros-y-ensenanzas-medias",
+    "tipo_pdf": "Aspirantes disponibles para sustituciones"
+  },
+  "cuerpos": [
+    {
+      "codigo": "0597",
+      "nombre": "Maestros",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200597%2020260410.pdf",
+      "especialidades": [
+        "031 EDUCACION INFANTIL",
+        "032 LENGUA EXTRANJERA: INGLES",
+        "033 LENGUA EXTRANJERA: FRANCES",
+        "034 EDUCACION FISICA",
+        "035 MUSICA",
+        "036 PEDAGOGIA TERAPEUTICA",
+        "037 AUDICION Y LENGUAJE",
+        "038 EDUCACION PRIMARIA",
+        "070 CIENCIAS SOCIALES",
+        "071 MATEMATICAS Y CIENCIAS DE LA NATURALEZA"
+      ]
+    },
+    {
+      "codigo": "0590",
+      "nombre": "Profesores de Enseñanza Secundaria",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-05/Aspirantes%20disponibles%200590%2020260508.pdf",
+      "especialidades": [
+        "001 FILOSOFIA",
+        "002 GRIEGO",
+        "003 LATIN",
+        "004 LENGUA CASTELLANA Y LITERATURA",
+        "005 GEOGRAFIA E HISTORIA",
+        "006 MATEMATICAS",
+        "007 FISICA Y QUIMICA",
+        "008 BIOLOGIA Y GEOLOGIA",
+        "009 DIBUJO",
+        "010 FRANCES",
+        "011 INGLES",
+        "012 ALEMAN",
+        "013 ITALIANO",
+        "016 MUSICA",
+        "017 EDUCACION FISICA",
+        "018 ORIENTACION EDUCATIVA",
+        "019 TECNOLOGIA",
+        "061 ECONOMIA",
+        "101 ADMINISTRACION DE EMPRESAS",
+        "103 ASESORIA Y PROCESOS DE IMAGEN PERSONAL",
+        "104 CONSTRUCCIONES CIVILES Y EDIFICACION",
+        "105 FORMACION Y ORIENTACION LABORAL",
+        "106 HOSTELERIA Y TURISMO",
+        "107 INFORMATICA",
+        "108 INTERVENCION SOCIOCOMUNITARIA",
+        "110 ORGANIZACION Y GESTION COMERCIAL",
+        "111 ORGANIZACION Y PROCESOS DE MANTENIMIENTO DE VEHICULOS",
+        "112 ORGANIZACION Y PROYECTOS DE FABRICACION MECANICA",
+        "113 ORGANIZACION Y PROYECTOS DE SISTEMAS ENERGETICOS",
+        "117 PROCESOS DIAGNOSTICOS CLINICOS Y PRODUCTOS ORTOPROTESICOS",
+        "118 PROCESOS SANITARIOS",
+        "119 PROCESOS Y MEDIOS DE COMUNICACION",
+        "123 PROCESOS Y PRODUCTOS EN MADERA Y MUEBLE",
+        "125 SISTEMAS ELECTROTECNICOS Y AUTOMATICOS",
+        "206 INSTALACIONES ELECTROTECNICAS",
+        "219 PROCEDIMIENTOS DE DIAGNOSTICO CLINICO Y ORTOPROTESICO",
+        "220 PROCEDIMIENTOS SANITARIOS Y ASISTENCIALES",
+        "221 PROCESOS COMERCIALES",
+        "222 PROCESOS DE GESTION ADMINISTRATIVA",
+        "225 SERVICIOS A LA COMUNIDAD",
+        "227 SISTEMAS Y APLICACIONES INFORMATICAS"
+      ]
+    },
+    {
+      "codigo": "0591",
+      "nombre": "PROFESORES TECNICOS DE FORMACION PROFESIONAL",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200591%2020260430.pdf",
+      "especialidades": [
+        "202 EQUIPOS ELECTRONICOS",
+        "203 ESTETICA",
+        "207 INSTALACIONES Y EQUIPOS DE CRIA Y CULTIVO",
+        "208 LABORATORIO",
+        "212 OFICINA DE PROYECTOS DE CONSTRUCCION",
+        "216 OPERACIONES DE PRODUCCION AGRARIA",
+        "217 PATRONAJE Y CONFECCION",
+        "226 SERVICIOS DE RESTAURACION",
+        "229 TECNICAS Y PROCEDIMIENTOS DE IMAGEN Y SONIDO"
+      ]
+    },
+    {
+      "codigo": "0592",
+      "nombre": "PROFESORES DE ESCUELAS OFICIALES DE IDIOMAS",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200592%2020260430.pdf",
+      "especialidades": [
+        "006 ESPAÑOL PARA EXTRANJEROS",
+        "011 INGLES"
+      ]
+    },
+    {
+      "codigo": "0593",
+      "nombre": "CATEDRATICOS DE MUSICA Y ARTES ESCENICAS",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200593%2020260430.pdf",
+      "especialidades": [
+        "035 GUITARRA",
+        "100 TECNOLOGIA MUSICAL"
+      ]
+    },
+    {
+      "codigo": "0594",
+      "nombre": "PROFESORES DE MUSICA Y ARTES ESCENICAS",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200594%2020260430.pdf",
+      "especialidades": [
+        "403 CANTO",
+        "404 CLARINETE",
+        "406 CONTRABAJO",
+        "407 CORO",
+        "408 FAGOT",
+        "415 GUITARRA FLAMENCA",
+        "416 HISTORIA DE LA MÚSICA",
+        "419 OBOE",
+        "422 PERCUSIÓN",
+        "424 SAXOFÓN",
+        "426 TROMBÓN",
+        "427 TROMPA",
+        "428 TROMPETA",
+        "429 TUBA",
+        "433 VIOLIN",
+        "436 DANZA CLÁSICA",
+        "437 DANZA CONTEMPORÁNEA",
+        "443 DANZA APLICADA AL ARTE DRAMÁTICO"
+      ]
+    },
+    {
+      "codigo": "0595",
+      "nombre": "PROFESORES DE ARTES PLASTICAS Y DISEÑO",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200595%2020260430.pdf",
+      "especialidades": [
+        "507 DIBUJO ARTISTICO Y COLOR",
+        "512 DISEÑO GRAFICO",
+        "515 FOTOGRAFIA",
+        "516 HISTORIA DEL ARTE",
+        "521 MEDIOS AUDIOVISUALES",
+        "522 MEDIOS INFORMATICOS",
+        "523 ORGANIZACION INDUSTRIAL Y LEGISLACION"
+      ]
+    },
+    {
+      "codigo": "0596",
+      "nombre": "MAESTROS DE TALLER DE ARTES PLASTICAS DISEÑO",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200596%2020260430.pdf",
+      "especialidades": [
+        "608 FOTOGRAFIA Y PROCESOS DE REPRODUCCION",
+        "612 TALLA EN PIEDRA Y MADERA",
+        "613 TECNICAS CERAMICAS",
+        "614 TECNICAS DE GRABADO Y ESTAMPACION"
+      ]
+    },
+    {
+      "codigo": "0598",
+      "nombre": "PROFESORES ESPECIALISTAS EN SECTORES SINGULARES DE FORMACION PROFESIONAL",
+      "ejemplo_pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-04/Aspirantes%20disponibles%200598%2020260430.pdf",
+      "especialidades": [
+        "001 COCINA Y PASTELERIA",
+        "004 MANTENIMIENTO DE VEHICULOS",
+        "007 PELUQUERIA"
+      ]
+    }
+  ]
+}
+

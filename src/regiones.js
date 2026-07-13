@@ -38,8 +38,9 @@ const TITULO_BOLSA = {
   mad: "Sanidad · Bolsa SERMAS",
 };
 
-/** Solo sanidad activa en CLM, Murcia y Madrid. */
-export function sectoresDeCcaa(ccaaId) {
+/** Solo sanidad activa en CLM, Murcia y Madrid. Educación CLM si hay manifest scrapeado. */
+export function sectoresDeCcaa(ccaaId, opciones = {}) {
+  const { educacionActiva = false } = opciones;
   const fuente = FUENTE_SANIDAD[ccaaId] || "Próximamente";
   const sanidad = {
     id: "sanidad",
@@ -50,7 +51,14 @@ export function sectoresDeCcaa(ccaaId) {
   if (ccaaId === "clm") {
     return [
       sanidad,
-      { id: "educacion", nombre: "Educación", activo: false, fuente: "Próximamente" },
+      {
+        id: "educacion",
+        nombre: "Educación",
+        activo: educacionActiva,
+        fuente: educacionActiva
+          ? "Educación CLM · Bolsas de sustitución"
+          : "Próximamente",
+      },
       { id: "administracion", nombre: "Administración General", activo: false, fuente: "Próximamente" },
     ];
   }
@@ -77,12 +85,12 @@ export function nombresCcaas(ccaaIds) {
     .map((id) => porId[id] || id);
 }
 
-/** Sectores visibles al combinar varias comunidades (hoy solo sanidad activa). */
-export function sectoresParaCcaas(ccaaIds) {
+/** Sectores visibles al combinar varias comunidades. */
+export function sectoresParaCcaas(ccaaIds, opciones = {}) {
   const ids = [...new Set(ccaaIds)].filter(Boolean);
-  if (ids.length <= 1) return sectoresDeCcaa(ids[0] || "clm");
+  if (ids.length <= 1) return sectoresDeCcaa(ids[0] || "clm", opciones);
   const fuentes = ids
-    .map((id) => sectoresDeCcaa(id).find((s) => s.id === "sanidad")?.fuente)
+    .map((id) => sectoresDeCcaa(id, opciones).find((s) => s.id === "sanidad")?.fuente)
     .filter(Boolean);
   const sanidadActiva = ids.every((id) => id === "clm" || id === "mur" || id === "mad");
   return [

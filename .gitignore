@@ -86,6 +86,20 @@ data/public/**/*.busqueda.json
 # Manifest: se genera en build/dev según JSON presentes en disco (no commitear listado de R2)
 data/public/manifest.json
 
+# Educación CLM — listados por especialidad (grandes)
+data/educacion-clm/maestros/*.json
+data/educacion-clm/secundaria/*.json
+data/educacion-clm/tecnicos-fp/*.json
+data/educacion-clm/eoii/*.json
+data/educacion-clm/catedraticos-musica/*.json
+data/educacion-clm/profesores-musica/*.json
+data/educacion-clm/artes-plasticas/*.json
+data/educacion-clm/maestros-taller/*.json
+data/educacion-clm/fp-singulares/*.json
+data/educacion-clm/**/*.busqueda.json
+data/educacion-clm/manifest.json
+!data/educacion-clm/categorias.json
+
 # Artefactos locales (no subir a R2)
 data/_local/
 

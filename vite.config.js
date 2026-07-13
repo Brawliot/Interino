@@ -24,7 +24,21 @@ function regenerarManifestEnDir(publicDir) {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "data/public");
+const educacionDir = path.resolve(__dirname, "data/educacion-clm");
 const politicaPath = path.resolve(__dirname, "politica-privacidad.md");
+
+function servirJsonEstatico(server, urlPrefix, rootDir) {
+  server.middlewares.use(urlPrefix, (req, res, next) => {
+    const rel = decodeURIComponent((req.url || "/").replace(/^\//, ""));
+    const file = path.join(rootDir, rel);
+    if (!file.startsWith(rootDir) || !existsSync(file) || !statSync(file).isFile()) {
+      next();
+      return;
+    }
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    createReadStream(file).pipe(res);
+  });
+}
 
 function politicaStaticPlugin() {
   return {
@@ -52,21 +66,18 @@ function dataStaticPlugin() {
     name: "data-static",
     configureServer(server) {
       regenerarManifestEnDir(dataDir);
-      server.middlewares.use("/data", (req, res, next) => {
-        const rel = decodeURIComponent((req.url || "/").replace(/^\//, ""));
-        const file = path.join(dataDir, rel);
-        if (!file.startsWith(dataDir) || !existsSync(file) || !statSync(file).isFile()) {
-          next();
-          return;
-        }
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        createReadStream(file).pipe(res);
-      });
+      servirJsonEstatico(server, "/data", dataDir);
+      if (existsSync(educacionDir)) {
+        servirJsonEstatico(server, "/data/educacion-clm", educacionDir);
+      }
     },
     closeBundle() {
       const distData = path.resolve(__dirname, "dist/data");
       cpSync(dataDir, distData, { recursive: true });
       regenerarManifestEnDir(distData);
+      if (existsSync(educacionDir)) {
+        cpSync(educacionDir, path.resolve(distData, "educacion-clm"), { recursive: true });
+      }
     },
   };
 }

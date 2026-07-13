@@ -2,8 +2,10 @@ import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
+import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION } from "./src/educacion-clm.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
+import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
 import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 
 const SimuladorBaremo = lazy(() => import("./src/herramientas/SimuladorBaremo.jsx"));
@@ -17,6 +19,7 @@ const GraficoHistoricoCorte = lazy(() => import("./src/components/GraficoHistori
 const LS_SEGUIMIENTOS = "interino_seguimientos_v1";
 const LS_RECIENTES = "interino_recientes_v1";
 const LS_LAST_CCAA = "interino_last_ccaa_v1";
+const LS_BIENVENIDA = "interino_bienvenida_v1";
 
 function leerStorage(key, fallback) {
   try {
@@ -44,6 +47,20 @@ function guardarUltimaCcaaId(id) {
 
 function ccaaPorId(id) {
   return CCAA_LIST.find((c) => c.id === id) || CCAA_LIST.find((c) => c.id === "clm");
+}
+
+function bienvenidaVista() {
+  try {
+    return localStorage.getItem(LS_BIENVENIDA) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function marcarBienvenidaVista() {
+  try {
+    localStorage.setItem(LS_BIENVENIDA, "1");
+  } catch { /* quota / modo privado */ }
 }
 
 // ---------------------------------------------------------------
@@ -91,7 +108,10 @@ const TEXTO_AYUDA_BUSQUEDA_BASE = {
   multi: "Puedes buscar por apellidos o DNI parcial en todas tus comunidades seleccionadas, o elegir grupo y categoría concretos por región. No te pedimos ni guardamos tu DNI completo.",
 };
 
-function textoAyudaBusqueda(ccaaId, numGerencias) {
+function textoAyudaBusqueda(ccaaId, numGerencias, modoEducacion) {
+  if (modoEducacion) {
+    return "Puedes buscar por apellidos o DNI parcial (como los publica Educación CLM). Cada persona tiene una posición en la bolsa de su especialidad y las provincias donde acepta sustituciones. No te pedimos ni guardamos tu DNI completo.";
+  }
   if (ccaaId === "mur") return TEXTO_AYUDA_BUSQUEDA_BASE.mur;
   if (ccaaId === "mad") return TEXTO_AYUDA_BUSQUEDA_BASE.mad;
   const gerenciasTxt = numGerencias ? `las ${numGerencias} gerencias` : "las gerencias";
@@ -469,8 +489,23 @@ function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
 }
 
 function PantallaHome({ onConfirmCcaas, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
+  const [mostrarBienvenida, setMostrarBienvenida] = useState(() => !bienvenidaVista());
+
+  const cerrarBienvenida = () => {
+    marcarBienvenidaVista();
+    setMostrarBienvenida(false);
+  };
+
   return (
     <>
+      {mostrarBienvenida && (
+        <OverlayBienvenida
+          C={C}
+          GRAIN={GRAIN}
+          FONT_BODY={FONT_BODY}
+          onEmpezar={cerrarBienvenida}
+        />
+      )}
       <div
         style={{
           height: "100dvh",
@@ -595,8 +630,8 @@ function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
   );
 }
 
-function SelectorSectorInline({ ccaas, sectorId, onSectorChange }) {
-  const sectores = sectoresParaCcaas(ccaas.map((c) => c.id)).map((s) => ({
+function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva }) {
+  const sectores = sectoresParaCcaas(ccaas.map((c) => c.id), { educacionActiva }).map((s) => ({
     ...s,
     icono: ICONOS_SECTOR[s.id] || Stethoscope,
   }));
@@ -649,16 +684,14 @@ function SelectorSectorInline({ ccaas, sectorId, onSectorChange }) {
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas }) {
+function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, modoEducacion }) {
   const datos = useDatos();
   const capa = useCapaDatos();
   const multi = ccaas.length > 1;
   const ccaaIds = ccaas.map((c) => c.id);
-  const sectores = sectoresParaCcaas(ccaaIds);
-  const [sectorId, setSectorId] = useState(
-    sectores.find((s) => s.activo)?.id || "sanidad"
-  );
-  const sectorActivo = sectores.find((s) => s.id === sectorId)?.activo;
+  const sectores = sectoresParaCcaas(ccaaIds, { educacionActiva });
+  const sectorActivo = sectores.find((s) => s.id === sectorId);
+  const sectorDisponible = sectorActivo?.activo;
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
   const grupo = gruposSanidad.find((g) => g.id === grupoId);
   const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
@@ -666,13 +699,12 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const [sinResultados, setSinResultados] = useState(false);
   const [sinResultadosGlobal, setSinResultadosGlobal] = useState(false);
   const [sinDatosCategoria, setSinDatosCategoria] = useState(false);
-  const [gerenciaListado, setGerenciaListado] = useState("");
 
-  const categoriaConDatos = sectorActivo && grupo?.activo && capa.tieneDatosReales(categoria, grupoId);
+  const categoriaConDatos = sectorDisponible && grupo?.activo && capa.tieneDatosReales(categoria, grupoId);
   const tituloBarra = multi ? ccaas.map((c) => c.nombre).join(" · ") : (ccaas[0]?.nombre || "Castilla-La Mancha");
   const textoAyuda = multi
     ? TEXTO_AYUDA_BUSQUEDA_BASE.multi
-    : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm);
+    : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm, modoEducacion);
 
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
@@ -684,15 +716,14 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   };
 
   useEffect(() => {
-    if (!categoria) return;
-    if (grupo?.activo) {
-      capa.gerenciasDeCategoria(grupoId, categoria).then((gs) => {
-        if (gs.length) setGerenciaListado(gs[0]);
-      });
-    } else {
-      setGerenciaListado("");
-    }
-  }, [grupoId, categoria, grupo?.activo, capa]);
+    const g = gruposSanidad[0];
+    if (!g) return;
+    setGrupoId(g.id);
+    setCategoria(g.categorias[0] || "");
+    setSinResultados(false);
+    setSinResultadosGlobal(false);
+    setSinDatosCategoria(false);
+  }, [sectorId, gruposSanidad]);
 
   const buscar = async (cat, q) => {
     setSinDatosCategoria(false);
@@ -744,8 +775,9 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
         <SelectorSectorInline
           ccaas={ccaas}
           sectorId={sectorId}
+          educacionActiva={educacionActiva}
           onSectorChange={(s) => {
-            setSectorId(s.id);
+            onSectorChange?.(s);
             setSinResultados(false);
             setSinResultadosGlobal(false);
             setSinDatosCategoria(false);
@@ -753,7 +785,9 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
         />
 
         <div>
-          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Grupo profesional</label>
+          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
+            {modoEducacion ? "Cuerpo docente" : "Grupo profesional"}
+          </label>
           <select
             value={grupoId}
             onChange={(e) => cambiarGrupo(e.target.value)}
@@ -769,7 +803,9 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
         </div>
 
         <div>
-          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Categoría</label>
+          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
+            {modoEducacion ? "Especialidad" : "Categoría"}
+          </label>
           <select
             value={categoria}
             onChange={(e) => { setCategoria(e.target.value); setSinResultados(false); setSinResultadosGlobal(false); setSinDatosCategoria(false); }}
@@ -798,7 +834,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           </p>
         </div>
 
-        {!sectorActivo && (
+        {!sectorDisponible && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <Lock size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
@@ -807,7 +843,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           </div>
         )}
 
-        {!categoriaConDatos && sectorActivo && (
+        {!categoriaConDatos && sectorDisponible && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
@@ -895,7 +931,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No encontramos coincidencias para «{consulta.trim()}» en ninguna gerencia de {categoria}. Comprueba cómo lo has escrito, o puede que aún no estés incluido en esta bolsa.
+              No encontramos coincidencias para «{consulta.trim()}»{modoEducacion ? ` en la especialidad ${categoria}` : ` en ninguna gerencia de ${categoria}`}. Comprueba cómo lo has escrito, o puede que aún no estés incluido en esta bolsa.
             </p>
           </div>
         )}
@@ -910,7 +946,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
         )}
 
         <button
-          onClick={() => onVerListado(categoria, gerenciaListado)}
+          onClick={() => onVerListado(categoria, modoEducacion ? "" : undefined)}
           disabled={!categoriaConDatos}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
           style={{
@@ -975,14 +1011,16 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
 // ---------------------------------------------------------------
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
-function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras }) {
+function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion }) {
   const capa = useCapaDatos();
+  const esEducacion = modoEducacion || capa.sector === "educacion";
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
   const [errorDatos, setErrorDatos] = useState(false);
   const LIMITE_FILAS = 100;
   const esReal = grupoActivo && capa.tieneDatosReales(categoria, grupoId);
+  const tituloListado = esEducacion ? categoria : etiquetaLista(categoria, gerencia, ambito);
 
   useEffect(() => {
     let cancel = false;
@@ -1010,7 +1048,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
 
   return (
     <div>
-      <Barra titulo={etiquetaLista(categoria, gerencia, ambito)} atras={atras} />
+      <Barra titulo={tituloListado} atras={atras} />
       <div className="px-5">
         <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} />
 
@@ -1028,7 +1066,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
           <div className="flex items-start gap-2 mt-3" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No hay listado scrapeado para esta categoría. No mostramos datos inventados.
+              No hay listado scrapeado para esta {esEducacion ? "especialidad" : "categoría"}. No mostramos datos inventados.
             </p>
           </div>
         )}
@@ -1040,7 +1078,11 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
           <div className="flex" style={{ background: C.navy, padding: "9px 14px" }}>
             <span style={{ flex: "0 0 40px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>POS.</span>
             <span style={{ flex: 1, fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>NOMBRE Y APELLIDOS</span>
-            <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
+            {esEducacion ? (
+              <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, textAlign: "right" }}>PROV.</span>
+            ) : (
+              <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
+            )}
           </div>
           {mostradas.map((f, idx) => (
             <div key={`${f.pos}-${f.nombreCompleto}-${f.ambito || ""}-${idx}`} className="flex items-center" style={{ padding: "10px 14px", borderTop: `1px solid ${C.line}`, background: C.card }}>
@@ -1048,8 +1090,19 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
               <span style={{ flex: 1, fontFamily: FONT_BODY, fontSize: 13, color: C.ink }}>
                 {f.nombreCompleto}
                 {f.ambito && <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: C.inkSoft }}> · {f.ambito}</span>}
+                {esEducacion && f.tipo_bolsa && (
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: C.inkSoft }}> · {tipoBolsaLegible(f.tipo_bolsa)}</span>
+                )}
               </span>
-              <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: C.inkSoft }}>{f.puntos.toFixed(2)}</span>
+              {esEducacion ? (
+                <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, textAlign: "right" }}>
+                  {(f.provincias || [])
+                    .map((c) => PROVINCIAS_CLM.find((p) => p.codigo === c)?.abrev || c)
+                    .join(" ")}
+                </span>
+              ) : (
+                <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: C.inkSoft }}>{f.puntos?.toFixed?.(2) ?? "—"}</span>
+              )}
             </div>
           ))}
           {mostradas.length === 0 && (
@@ -1069,6 +1122,177 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
 // ---------------------------------------------------------------
 // PANTALLA 4 — resultado: tabla resumen + detalle por gerencia
 // ---------------------------------------------------------------
+
+// Bloque de detalle educación CLM: posición en bolsa + provincias
+function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+  const capa = useCapaDatos();
+  const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
+  const posicion = Number(r?.bolsa_orden ?? r?.posicion ?? r?.pos ?? 0) || 0;
+  const total = Number(r?.total ?? 0) || 0;
+  const ordenLista = Number(r?.orden_lista ?? 0) || 0;
+  const provincias = new Set(r?.provincias || []);
+  const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
+  const idiomas = r?.idiomas || {};
+  const idiomasActivos = Object.entries(idiomas).filter(([, v]) => v).map(([k]) => k);
+
+  return (
+    <div>
+      <div
+        style={{
+          background: C.navy,
+          backgroundImage: `radial-gradient(ellipse at 20% -10%, ${C.gold}22, transparent 55%), url("${GRAIN}")`,
+          padding: "28px 22px 24px",
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "26px 8px 26px 8px",
+        }}
+      >
+        <Sello>{categoria}</Sello>
+        <p
+          style={{
+            fontFamily: FONT_DISPLAY, fontSize: 60, fontWeight: 700, color: "#fff",
+            lineHeight: 1, marginTop: 14, transform: "rotate(-1.2deg)", display: "inline-block",
+          }}
+        >
+          #{posicion}
+        </p>
+        <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
+          {total > 0
+            ? `de ${total.toLocaleString("es-ES")} personas en la bolsa · por delante del ${percentil}%`
+            : "Posición en la bolsa de sustituciones"}
+        </p>
+        {r?.tipo_bolsa && (
+          <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6 }}>
+            {tipoBolsaLegible(r.tipo_bolsa)}
+            {ordenLista > 0 ? ` · orden en listado ${ordenLista}` : ""}
+          </p>
+        )}
+      </div>
+      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
+
+      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
+        <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Provincias donde acepta sustituciones</p>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {PROVINCIAS_CLM.map((prov) => {
+            const activa = provincias.has(prov.codigo);
+            return (
+              <span
+                key={prov.codigo}
+                title={prov.nombre}
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 12,
+                  padding: "6px 12px",
+                  borderRadius: 20,
+                  background: activa ? C.okBg : C.paperDeep,
+                  color: activa ? C.ok : C.inkSoft,
+                  fontWeight: activa ? 700 : 400,
+                  border: `1px solid ${activa ? C.ok : C.line}`,
+                  textDecoration: activa ? "none" : "line-through",
+                }}
+              >
+                {prov.abrev}
+              </span>
+            );
+          })}
+        </div>
+        <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, marginTop: 10 }}>
+          AB = Albacete · CR = Ciudad Real · CU = Cuenca · GU = Guadalajara · TO = Toledo
+        </p>
+      </div>
+
+      {idiomasActivos.length > 0 && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16, marginTop: 12 }}>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Idiomas acreditados</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {idiomasActivos.map((id) => (
+              <span
+                key={id}
+                style={{
+                  fontFamily: FONT_MONO, fontSize: 11, padding: "4px 10px", borderRadius: 20,
+                  background: C.okBg, color: C.ok, fontWeight: 700,
+                }}
+              >
+                {id.charAt(0).toUpperCase() + id.slice(1)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-start gap-2" style={{ background: C.paperDeep, borderRadius: "8px 18px 8px 18px", padding: 14, marginTop: 12 }}>
+        <Smartphone size={15} color={C.inkSoft} style={{ flexShrink: 0, marginTop: 1 }} />
+        <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4 }}>
+          <strong style={{ color: C.ink }}>Revisa tus datos en Educación CLM.</strong> Los llamamientos para sustituciones dependen de que tus datos de contacto estén actualizados en el portal oficial.
+        </p>
+      </div>
+
+      {notifEstado === "inicial" && (
+        <button
+          onClick={() => setNotifEstado("pidiendo")}
+          className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-4"
+          style={{ background: C.gold, color: "#fff", padding: "14px", fontFamily: FONT_BODY, fontSize: 14, borderRadius: "16px 5px 16px 5px" }}
+        >
+          <Bell size={16} /> Seguir esta especialidad
+        </button>
+      )}
+
+      {notifEstado === "pidiendo" && (
+        <div style={{ background: C.card, border: `1.5px solid ${C.navy}`, borderRadius: "10px 20px 10px 20px", padding: 16, marginTop: 16 }}>
+          <div className="flex items-center gap-3">
+            <Smartphone size={20} color={C.navy} />
+            <div>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>Permitir notificaciones</p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 2 }}>
+                Te avisaremos cuando cambie tu posición en {categoria}. <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial de Educación CLM</strong>.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => setNotifEstado("inicial")}
+              className="flex-1 font-bold focus:outline-none"
+              style={{ background: "transparent", color: C.inkSoft, padding: "10px", fontFamily: FONT_BODY, fontSize: 13, border: `1px solid ${C.line}`, borderRadius: 10 }}
+            >
+              Ahora no
+            </button>
+            <button
+              onClick={() => { setNotifEstado("activo"); onGuardar(); }}
+              className="flex-1 font-bold focus:outline-none"
+              style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
+            >
+              Permitir
+            </button>
+          </div>
+        </div>
+      )}
+
+      {notifEstado === "activo" && (
+        <div className="flex items-center gap-2 justify-center mt-4" style={{ background: C.paperDeep, borderRadius: "16px 5px 16px 5px", padding: "13px" }}>
+          <BellRing size={16} color={C.ok} />
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>Siguiendo {categoria} — te avisaremos</p>
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={onVerListado}
+          className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
+          style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 14px 5px 14px" }}
+        >
+          <ListIcon size={14} /> Ver listado
+        </button>
+        <button
+          onClick={onInfoLlamamientos}
+          className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
+          style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "14px 5px 14px 5px" }}
+        >
+          <Info size={14} /> Cómo llaman
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Bloque de detalle de UNA lista (gerencia + ámbito): posición, puntos, contratos, corte y avisos
 function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
@@ -1308,16 +1532,61 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
 }
 
 // Contenedor: tabla resumen de gerencias + detalle al tocar una fila.
-function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, modoEducacion }) {
   const capa = useCapaDatos();
   const apariciones = candidato?.apariciones ?? [];
+  const esEducacion = modoEducacion || apariciones[0]?.sector === "educacion";
   const [detalleFila, setDetalleFila] = useState(null);
   const [bulkSeguido, setBulkSeguido] = useState(false);
 
   const filas = useMemo(() => construirFilasResumen(apariciones), [apariciones]);
   const categoriaMostrada = useMemo(() => tituloCategoriaResultado(categoria, apariciones), [categoria, apariciones]);
-  const mejorPosicion = filas.length ? Math.min(...filas.map((f) => f.posicion)) : 0;
   const numGerencias = filas.length;
+
+  useEffect(() => {
+    setDetalleFila(null);
+    setBulkSeguido(false);
+  }, [candidato?.dniParcial, candidato?.nombreCompleto]);
+
+  if (esEducacion && apariciones.length > 0) {
+    const a = aparicionParaDetalle(apariciones[0]);
+    const catAparicion = a.categoria || categoriaMostrada || categoria;
+    const grupoAparicion = grupoIdParaCapa(capa, a, grupoId);
+    return (
+      <div>
+        <Barra titulo="Resultado" atras={atras} />
+        <div className="px-5 pb-6">
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, marginBottom: 12 }}>
+            Mostrando a <strong style={{ color: C.navy }}>{candidato.nombreCompleto}</strong>
+            {candidato.dniParcial && (
+              <span style={{ fontFamily: FONT_MONO, fontSize: 11.5 }}> · DNI {candidato.dniParcial}</span>
+            )}
+          </p>
+          <TarjetaEducacion
+            categoria={catAparicion}
+            grupoId={grupoAparicion}
+            grupoActivo={grupoActivo ?? true}
+            r={a}
+            guardado={estaGuardado(GERENCIA_EDUCACION, "", candidato.nombreCompleto, catAparicion, a.ccaaId || "clm")}
+            onGuardar={() =>
+              onGuardar(
+                GERENCIA_EDUCACION,
+                "",
+                { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial },
+                catAparicion,
+                grupoAparicion,
+                a.ccaaId || "clm"
+              )
+            }
+            onVerListado={() => onVerListado("", "", catAparicion, grupoAparicion)}
+            onInfoLlamamientos={onInfoLlamamientos}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const mejorPosicion = filas.length ? Math.min(...filas.map((f) => f.posicion)) : 0;
 
   useEffect(() => {
     setDetalleFila(null);
@@ -1659,12 +1928,18 @@ function PantallaInfoLlamamientos({ atras }) {
 export default function ListasApp() {
   const datos = useDatos();
   const [ccaas, setCcaas] = useState([]);
+  const [sectorId, setSectorId] = useState("sanidad");
   const capaDatos = useMemo(() => {
     const ids = ccaas.map((c) => c.id);
+    const ccaaPrincipal = ids[0] || "clm";
+    if (sectorId === "educacion") {
+      return datos.paraSector?.(ccaaPrincipal, "educacion") || datos.educacionClm || datos.paraCcaa("clm");
+    }
     if (ids.length === 0) return datos.paraCcaa("clm");
     return datos.paraCcaas(ids);
-  }, [datos, ccaas]);
+  }, [datos, ccaas, sectorId]);
   const gruposSanidad = capaDatos.gruposSanidad?.length ? capaDatos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
+  const modoEducacion = sectorId === "educacion" || capaDatos.sector === "educacion";
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");
@@ -1708,6 +1983,7 @@ export default function ListasApp() {
   const irABuscarConCcaas = (lista) => {
     if (!lista?.length) return;
     setCcaas(lista);
+    setSectorId("sanidad");
     setSector({ id: "sanidad", nombre: "Sanidad", activo: true });
     guardarUltimaCcaaId(lista[0].id);
     setPaso("buscar");
@@ -1826,6 +2102,9 @@ export default function ListasApp() {
   };
 
   const abrirSeguimiento = (s) => {
+    if (s.gerencia === GERENCIA_EDUCACION) {
+      setSectorId("educacion");
+    }
     setCategoriaActual(s.categoria);
     const grupo = grupoDeCategoria(s.categoria, gruposSanidad, s.ccaaId);
     setGrupoIdActual(s.grupoId || grupo?.id || "diplomado");
@@ -1883,22 +2162,26 @@ export default function ListasApp() {
 
         {paso === "buscar" && (
           <PantallaBuscar
-            key={ccaas.map((c) => c.id).join("+") || "clm"}
+            key={`${ccaas.map((c) => c.id).join("+") || "clm"}-${sectorId}`}
             ccaas={ccaas.length ? ccaas : [ccaaPorId("clm")]}
             atras={() => setPaso("inicio")}
             onBuscar={iniciarBusqueda}
-            onBuscarGlobal={capaDatos.multi ? iniciarBusquedaGlobal : undefined}
+            onBuscarGlobal={!modoEducacion && capaDatos.multi ? iniciarBusquedaGlobal : undefined}
             onVerListado={(categoria, gerencia) => {
               const g = grupoDeCategoria(categoria, gruposSanidad);
               setListadoCategoria(categoria);
-              setListadoGerencia(gerencia);
+              setListadoGerencia(gerencia || "");
               setListadoAmbito("");
-              setListadoGrupoId(g?.id || "diplomado");
+              setListadoGrupoId(g?.id || (modoEducacion ? "maestros" : "diplomado"));
               setPantallaPrevia("buscar");
               setPaso("listado");
             }}
             recientes={recientes}
             gruposSanidad={gruposSanidad}
+            sectorId={sectorId}
+            educacionActiva={datos.educacionActiva}
+            modoEducacion={modoEducacion}
+            onSectorChange={(s) => setSectorId(s.id)}
           />
         )}
 
@@ -1927,6 +2210,7 @@ export default function ListasApp() {
               candidatoElegido.apariciones?.[0]?.ccaaId
             )?.activo}
             candidato={candidatoElegido}
+            modoEducacion={modoEducacion}
             atras={() => setPaso("buscar")}
             estaGuardado={(gerencia, ambito, nombre, cat, ccaaId) => estaGuardado(gerencia, ambito, nombre, cat, ccaaId)}
             onGuardar={guardarSeguimiento}
@@ -1953,6 +2237,7 @@ export default function ListasApp() {
             ambito={listadoAmbito}
             grupoId={listadoGrupoId}
             grupoActivo={(gruposSanidad.find((g) => g.id === listadoGrupoId) || grupoDeCategoria(listadoCategoria, gruposSanidad))?.activo}
+            modoEducacion={modoEducacion}
             atras={() => setPaso(pantallaPrevia)}
           />
         )}

@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import { deduplicarApariciones } from "./utils/apariciones.js";
 import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js";
+import { CUERPO_SLUG, GERENCIA_EDUCACION } from "./educacion-clm.js";
 
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
@@ -8,6 +9,10 @@ import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js"
  */
 export const DATA_CATEGORIAS_BASE_URL = (
   import.meta.env.VITE_DATA_CATEGORIAS_URL || "/data/"
+).replace(/\/?$/, "/");
+
+export const DATA_EDUCACION_BASE_URL = (
+  import.meta.env.VITE_DATA_EDUCACION_URL || "/data/educacion-clm/"
 ).replace(/\/?$/, "/");
 
 /** Nombre PDF → slug de archivo (debe coincidir con scraper.slug_archivo). */
@@ -573,6 +578,203 @@ function crearCapaDatosMadrid(inventario) {
   });
 }
 
+function nombreCuerpoUi(nombre) {
+  if (!nombre) return nombre;
+  return portalAUi(nombre.replace(/^PROFESORES\s+/i, "Profesores "));
+}
+
+function filaEducacionAApp(fila, total) {
+  const nombreCompleto = formatearNombre(fila.apellidos_nombre);
+  const apellidos = fila.apellidos_nombre.split(",")[0].replace(/\n/g, " ").trim();
+  return {
+    pos: fila.bolsa_orden,
+    nombreCompleto,
+    apellidos,
+    puntos: null,
+    total,
+    dniParcial: fila.dni_parcial,
+    tipo_bolsa: fila.tipo_bolsa,
+    orden_lista: fila.orden,
+    provincias: fila.provincias || [],
+    idiomas: fila.idiomas,
+  };
+}
+
+export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
+  const archivosDisponibles = new Set(manifest?.archivos || []);
+  const cache = new Map();
+  const metaPorCategoria = new Map();
+
+  function slugEspecialidad(codigo, nombre) {
+    return slugArchivo(`${codigo}-${nombre}`);
+  }
+
+  const gruposSanidad = [];
+  for (const cuerpo of categoriasDoc?.cuerpos || []) {
+    const grupoId = CUERPO_SLUG[cuerpo.codigo];
+    if (!grupoId) continue;
+    const categorias = [];
+    for (const esp of cuerpo.especialidades || []) {
+      const m = esp.match(/^(\d{3})\s+(.+)$/);
+      if (!m) continue;
+      const [, codigo, nombreRaw] = m;
+      const rel = `${grupoId}/${slugEspecialidad(codigo, nombreRaw)}.json`;
+      if (!archivosDisponibles.has(rel)) continue;
+      const categoriaUi = portalAUi(nombreRaw);
+      categorias.push(categoriaUi);
+      metaPorCategoria.set(`${grupoId}\0${categoriaUi}`, {
+        grupoId,
+        categoriaUi,
+        rel,
+        relIdx: rel.replace(/\.json$/, ".busqueda.json"),
+        codigo,
+        nombre: nombreRaw,
+      });
+    }
+    if (categorias.length) {
+      gruposSanidad.push({
+        id: grupoId,
+        nombre: nombreCuerpoUi(cuerpo.nombre),
+        activo: true,
+        categorias: [...new Set(categorias)].sort((a, b) => a.localeCompare(b, "es")),
+      });
+    }
+  }
+
+  function metaDe(categoriaUi, grupoId) {
+    if (grupoId) {
+      const directa = metaPorCategoria.get(`${grupoId}\0${categoriaUi}`);
+      if (directa) return directa;
+    }
+    for (const g of gruposSanidad) {
+      if (g.categorias.includes(categoriaUi)) {
+        return metaPorCategoria.get(`${g.id}\0${categoriaUi}`);
+      }
+    }
+    return null;
+  }
+
+  function tieneDatosReales(categoriaUi, grupoId) {
+    const meta = metaDe(categoriaUi, grupoId);
+    return meta ? archivosDisponibles.has(meta.rel) : false;
+  }
+
+  async function cargarJson(rel) {
+    if (!rel) throw new Error("Sin ruta");
+    if (cache.has(rel)) return cache.get(rel);
+    const res = await fetch(`${DATA_EDUCACION_BASE_URL}${rel}`);
+    if (!res.ok) throw new Error(`No se pudo cargar ${DATA_EDUCACION_BASE_URL}${rel} (${res.status})`);
+    const data = await res.json();
+    cache.set(rel, data);
+    return data;
+  }
+
+  async function cargarCategoria(grupoId, categoriaUi) {
+    const meta = metaDe(categoriaUi, grupoId);
+    if (!meta) throw new Error("Categoría sin datos");
+    return cargarJson(meta.rel);
+  }
+
+  async function gerenciasDeCategoria() {
+    return [];
+  }
+
+  async function obtenerListadoCompleto(grupoId, categoriaUi) {
+    const snap = await cargarCategoria(grupoId, categoriaUi);
+    const total = snap.personas?.length || 0;
+    return (snap.personas || [])
+      .map((f) => filaEducacionAApp(f, total))
+      .sort((a, b) => a.pos - b.pos);
+  }
+
+  async function buscarPersonas(grupoId, categoriaUi, consulta) {
+    const q = consulta.trim();
+    if (!q) return { personas: [], gerencias: [] };
+    const meta = metaDe(categoriaUi, grupoId);
+    if (!meta || !archivosDisponibles.has(meta.relIdx)) {
+      return { personas: [], gerencias: [] };
+    }
+    const [indice, snap] = await Promise.all([cargarJson(meta.relIdx), cargarCategoria(grupoId, categoriaUi)]);
+    const total = snap.personas?.length || indice.personas?.length || 0;
+    const personas = (indice.personas || [])
+      .filter((p) =>
+        coincideBusqueda(
+          { apellidos: p.apellidos, nombreCompleto: p.nombreCompleto, dniParcial: p.dniParcial },
+          q
+        )
+      )
+      .map((p) => ({
+        nombreCompleto: p.nombreCompleto,
+        dniParcial: p.dniParcial,
+        categoria: categoriaUi,
+        grupoId: meta.grupoId,
+        apariciones: [
+          {
+            sector: "educacion",
+            categoria: categoriaUi,
+            grupoId: meta.grupoId,
+            ccaaId: "clm",
+            gerencia: GERENCIA_EDUCACION,
+            ambito: "",
+            posicion: p.bolsa_orden,
+            bolsa_orden: p.bolsa_orden,
+            orden_lista: p.orden,
+            total,
+            delante: Math.max(0, p.bolsa_orden - 1),
+            tipo_bolsa: p.tipo_bolsa,
+            provincias: p.provincias || [],
+            idiomas: p.idiomas,
+          },
+        ],
+      }));
+    return { personas, gerencias: [] };
+  }
+
+  async function estadoActualizacion(categoriaUi, grupoId, grupoActivo) {
+    if (grupoActivo === false) {
+      return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
+    }
+    if (!tieneDatosReales(categoriaUi, grupoId)) {
+      return { tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta especialidad." };
+    }
+    let generado = null;
+    try {
+      const snap = await cargarCategoria(grupoId, categoriaUi);
+      generado = snap.generado;
+    } catch {
+      return { tipo: "sin_datos", texto: "No se pudo cargar el listado de esta especialidad." };
+    }
+    if (!generado) {
+      return { tipo: "desactualizado", texto: "No consta cuándo se actualizó el listado por última vez." };
+    }
+    const fecha = new Date(generado);
+    const dias = Math.floor((Date.now() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+    if (dias > 14) {
+      return {
+        tipo: "desactualizado",
+        texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). Educación CLM puede haber publicado cambios desde entonces.`,
+      };
+    }
+    const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
+    return { tipo: "ok", texto: `Snapshot del listado: ${fecha.toLocaleString("es-ES")} (${hace}).` };
+  }
+
+  return {
+    ccaaId: "clm",
+    sector: "educacion",
+    gruposSanidad,
+    archivosDisponibles,
+    tieneDatosReales,
+    tieneIndiceBusqueda: tieneDatosReales,
+    cargarCategoria,
+    gerenciasDeCategoria,
+    obtenerListadoCompleto,
+    buscarPersonas,
+    historialCorte: () => [],
+    estadoActualizacion,
+  };
+}
+
 /** @deprecated Usar crearCapaDatosClm o datos.paraCcaa() */
 export function crearCapaDatos(historico, manifest, categoriasPorGrupo) {
   return crearCapaDatosClm(historico, manifest, categoriasPorGrupo);
@@ -727,14 +929,18 @@ export function crearCapaDatosMulti(capas, ccaaIds) {
 
 export async function cargarDatos() {
   const base = DATA_CATEGORIAS_BASE_URL;
-  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes] = await Promise.all([
-    fetch(`${base}historico.json`),
-    fetch(`${base}manifest.json`),
-    fetch(`${base}categorias_por_grupo.json`),
-    fetch(`${base}murcia/categorias.json`),
-    fetch(`${base}murcia/manifest.json`),
-    fetch(`${base}madrid/categorias_sanidad.json`),
-  ]);
+  const eduBase = DATA_EDUCACION_BASE_URL;
+  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes] =
+    await Promise.all([
+      fetch(`${base}historico.json`),
+      fetch(`${base}manifest.json`),
+      fetch(`${base}categorias_por_grupo.json`),
+      fetch(`${base}murcia/categorias.json`),
+      fetch(`${base}murcia/manifest.json`),
+      fetch(`${base}madrid/categorias_sanidad.json`),
+      fetch(`${eduBase}manifest.json`),
+      fetch(`${eduBase}categorias.json`),
+    ]);
   if (!historicoRes.ok) throw new Error(`No se pudo cargar historico.json (${historicoRes.status})`);
   const historico = await historicoRes.json();
   const manifest = manifestRes.ok ? await manifestRes.json() : { archivos: [] };
@@ -748,6 +954,16 @@ export async function cargarDatos() {
     };
   }
   const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
+  const manifestEducacion = eduManifestRes.ok ? await eduManifestRes.json() : { archivos: [] };
+  const categoriasEducacion = eduCatsRes.ok ? await eduCatsRes.json() : null;
+  const educacionActiva =
+    (manifestEducacion.archivos || []).some(
+      (a) => a.endsWith(".json") && !a.endsWith(".busqueda.json")
+    ) && Boolean(categoriasEducacion);
+  const educacionClm =
+    educacionActiva && categoriasEducacion
+      ? crearCapaDatosEducacionClm(manifestEducacion, categoriasEducacion)
+      : null;
 
   let numGerenciasClm = null;
   try {
@@ -770,7 +986,13 @@ export async function cargarDatos() {
   return {
     regiones: CCAA_LIST,
     numGerenciasClm,
+    educacionActiva,
+    educacionClm,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
+    paraSector: (ccaaId, sectorId) => {
+      if (sectorId === "educacion" && ccaaId === "clm" && educacionClm) return educacionClm;
+      return capas[ccaaId] || capas.clm;
+    },
     paraCcaas: (ccaaIds) => {
       const ids = [...new Set(ccaaIds)].filter((id) => capas[id]);
       if (ids.length === 0) return capas.clm;
