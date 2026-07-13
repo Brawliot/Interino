@@ -211,6 +211,57 @@ function normalizarAparicion(a) {
   };
 }
 
+function clavePersonaListado(f) {
+  return f.dniParcial || f.nombreCompleto;
+}
+
+/** Convierte fila(s) del listado completo al objeto candidato de PantallaResultado. */
+function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, grupoId, ccaaId, esEducacion, tipoListado }) {
+  const clave = clavePersonaListado(filaClickada);
+  const filasPersona = (todasLasFilas || []).filter((f) => clavePersonaListado(f) === clave);
+  const apariciones = (filasPersona.length ? filasPersona : [filaClickada]).map((f) => {
+    if (esEducacion) {
+      return {
+        sector: "educacion",
+        categoria,
+        grupoId,
+        ccaaId,
+        gerencia: GERENCIA_EDUCACION,
+        ambito: "",
+        posicion: f.pos,
+        bolsa_orden: f.pos,
+        orden_lista: f.orden_lista,
+        total: f.total,
+        delante: Math.max(0, f.pos - 1),
+        tipo_bolsa: f.tipo_bolsa,
+        bolsa_codigo: f.bolsa_codigo,
+        acceso: f.acceso,
+        tipoListado: f.tipoListado || tipoListado,
+        provincias: f.provincias || [],
+        idiomas: f.idiomas,
+      };
+    }
+    return {
+      categoria,
+      grupoId,
+      ccaaId,
+      gerencia: f.gerencia,
+      gerenciaCompleta: f.gerenciaCompleta,
+      ambito: f.ambito,
+      posicion: f.pos,
+      total: f.total,
+      puntos: f.puntos,
+      delante: Math.max(0, f.pos - 1),
+      tiposContrato: f.tiposContrato,
+    };
+  });
+  return {
+    nombreCompleto: filaClickada.nombreCompleto,
+    dniParcial: filaClickada.dniParcial,
+    apariciones,
+  };
+}
+
 function construirFilasResumen(apariciones = []) {
   const map = new Map();
   apariciones.forEach((raw, idx) => {
@@ -1096,7 +1147,7 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
 // ---------------------------------------------------------------
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
-function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion, modoListadoEducacion }) {
+function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion, modoListadoEducacion, onAbrirPersona }) {
   const capa = useCapaDatos();
   const esEducacion = modoEducacion || capa.sector === "educacion";
   const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(capa.tipoListado));
@@ -1157,7 +1208,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
           </div>
         )}
         <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "6px 0 4px" }}>
-          Útil si un compañero opositor te ha dicho que está en esta lista y quieres ver en qué puesto queda.
+          Útil si un compañero opositor te ha dicho que está en esta lista y quieres ver en qué puesto queda. Toca una fila para ver su perfil.
         </p>
 
         <div className="mt-2" style={{ border: `1px solid ${C.line}`, borderRadius: "10px 3px 10px 3px", overflow: "hidden" }}>
@@ -1173,9 +1224,24 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
             ) : (
               <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
             )}
+            {onAbrirPersona && <span style={{ flex: "0 0 18px" }} aria-hidden="true" />}
           </div>
           {mostradas.map((f, idx) => (
-            <div key={`${f.pos}-${f.nombreCompleto}-${f.ambito || ""}-${idx}`} className="flex items-center" style={{ padding: "10px 14px", borderTop: `1px solid ${C.line}`, background: C.card }}>
+            <button
+              key={`${f.pos}-${f.nombreCompleto}-${f.ambito || ""}-${idx}`}
+              type="button"
+              onClick={() => onAbrirPersona?.(f, filas)}
+              disabled={!onAbrirPersona}
+              className="w-full flex items-center text-left focus:outline-none focus:ring-2"
+              style={{
+                padding: "10px 14px",
+                borderTop: `1px solid ${C.line}`,
+                background: C.card,
+                border: "none",
+                cursor: onAbrirPersona ? "pointer" : "default",
+                transition: "background .12s ease",
+              }}
+            >
               <span style={{ flex: "0 0 40px", fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 14, color: C.navy }}>{f.pos}</span>
               <span style={{ flex: 1, fontFamily: FONT_BODY, fontSize: 13, color: C.ink }}>
                 {f.nombreCompleto}
@@ -1199,7 +1265,10 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
               ) : (
                 <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: C.inkSoft }}>{f.puntos?.toFixed?.(2) ?? "—"}</span>
               )}
-            </div>
+              {onAbrirPersona && (
+                <ChevronRight size={16} color={C.inkSoft} style={{ flex: "0 0 18px", marginLeft: 4 }} />
+              )}
+            </button>
           ))}
           {mostradas.length === 0 && (
             <p style={{ padding: 16, fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, background: C.card }}>Sin coincidencias con ese nombre.</p>
@@ -2164,6 +2233,7 @@ export default function ListasApp() {
         });
       }
       if (personas.length === 0) return 0;
+      setPantallaPrevia("buscar");
       if (personas.length > 1) {
         setCandidatos(personas);
         setPaso("confirmar");
@@ -2190,6 +2260,7 @@ export default function ListasApp() {
       });
     }
     if (personas.length === 0) return 0;
+    setPantallaPrevia("buscar");
     const primera = personas[0];
     setGrupoIdActual(primera.grupoId || primera.apariciones?.[0]?.grupoId || grupoIdActual);
     setCategoriaActual(primera.categoria || primera.apariciones?.[0]?.categoria || "");
@@ -2339,6 +2410,7 @@ export default function ListasApp() {
               setCandidatoElegido(persona);
               setGrupoIdActual(persona.grupoId || persona.apariciones?.[0]?.grupoId || grupoIdActual);
               setCategoriaActual(persona.categoria || persona.apariciones?.[0]?.categoria || categoriaActual);
+              setPantallaPrevia("buscar");
               setPaso("resultado");
             }}
           />
@@ -2356,7 +2428,7 @@ export default function ListasApp() {
             candidato={candidatoElegido}
             modoEducacion={modoEducacion}
             modoListadoEducacion={listadoEducacionModo}
-            atras={() => setPaso("buscar")}
+            atras={() => setPaso(pantallaPrevia || "buscar")}
             estaGuardado={(gerencia, ambito, nombre, cat, ccaaId) => estaGuardado(gerencia, ambito, nombre, cat, ccaaId)}
             onGuardar={guardarSeguimiento}
             onVerListado={(gerencia, ambito, cat, gid) => {
@@ -2385,6 +2457,23 @@ export default function ListasApp() {
             modoEducacion={modoEducacion}
             modoListadoEducacion={listadoEducacionModo}
             atras={() => setPaso(pantallaPrevia)}
+            onAbrirPersona={(fila, todasLasFilas) => {
+              const esEducacionListado = modoEducacion || capaDatos.sector === "educacion";
+              setCategoriaActual(listadoCategoria);
+              setGrupoIdActual(listadoGrupoId);
+              setBusquedaGlobal(false);
+              setCandidatoElegido(
+                candidatoDesdeFilasListado(fila, todasLasFilas, {
+                  categoria: listadoCategoria,
+                  grupoId: listadoGrupoId,
+                  ccaaId: capaDatos.ccaaId || "clm",
+                  esEducacion: esEducacionListado,
+                  tipoListado: capaDatos.tipoListado,
+                })
+              );
+              setPantallaPrevia("listado");
+              setPaso("resultado");
+            }}
           />
         )}
 
