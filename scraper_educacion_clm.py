@@ -3,7 +3,7 @@
 Scraper de listados de interinos docentes — Educación CLM.
 
 Descarga PDFs «Aspirantes disponibles {CUERPO} {FECHA}.pdf», parsea especialidades
-y guarda JSON por especialidad en data/educacion-clm/{cuerpo}/.
+y guarda JSON por especialidad en data/educacion/{cuerpo}/.
 
 Uso:
   python scraper_educacion_clm.py --cuerpo 0597 --presupuesto 3600
@@ -29,7 +29,7 @@ import pdfplumber
 import requests
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data" / "educacion-clm"
+DATA_DIR = ROOT / "data" / "educacion"
 CATEGORIAS_PATH = DATA_DIR / "categorias.json"
 MANIFEST_PATH = DATA_DIR / "manifest.json"
 LOCAL_TMP = ROOT / "data" / "_local" / "educacion_tmp"
@@ -349,7 +349,7 @@ def actualizar_manifest(archivos: list[str]) -> None:
 
     payload = {
         "generado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-        "sector": "educacion-clm",
+        "sector": "educacion",
         "archivos": sorted(existentes),
     }
     MANIFEST_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

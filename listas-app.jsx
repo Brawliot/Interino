@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
-import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION } from "./src/educacion-clm.js";
+import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION } from "./src/educacion.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";

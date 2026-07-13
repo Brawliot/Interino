@@ -24,7 +24,7 @@ function regenerarManifestEnDir(publicDir) {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "data/public");
-const educacionDir = path.resolve(__dirname, "data/educacion-clm");
+const educacionDir = path.resolve(__dirname, "data/educacion");
 const politicaPath = path.resolve(__dirname, "politica-privacidad.md");
 
 function servirJsonEstatico(server, urlPrefix, rootDir) {
@@ -68,7 +68,7 @@ function dataStaticPlugin() {
       regenerarManifestEnDir(dataDir);
       servirJsonEstatico(server, "/data", dataDir);
       if (existsSync(educacionDir)) {
-        servirJsonEstatico(server, "/data/educacion-clm", educacionDir);
+        servirJsonEstatico(server, "/data/educacion", educacionDir);
       }
     },
     closeBundle() {
@@ -76,7 +76,7 @@ function dataStaticPlugin() {
       cpSync(dataDir, distData, { recursive: true });
       regenerarManifestEnDir(distData);
       if (existsSync(educacionDir)) {
-        cpSync(educacionDir, path.resolve(distData, "educacion-clm"), { recursive: true });
+        cpSync(educacionDir, path.resolve(distData, "educacion"), { recursive: true });
       }
     },
   };

@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import { deduplicarApariciones } from "./utils/apariciones.js";
 import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js";
-import { CUERPO_SLUG, GERENCIA_EDUCACION } from "./educacion-clm.js";
+import { CUERPO_SLUG, GERENCIA_EDUCACION } from "./educacion.js";
 
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
@@ -11,9 +11,13 @@ export const DATA_CATEGORIAS_BASE_URL = (
   import.meta.env.VITE_DATA_CATEGORIAS_URL || "/data/"
 ).replace(/\/?$/, "/");
 
-export const DATA_EDUCACION_BASE_URL = (
-  import.meta.env.VITE_DATA_EDUCACION_URL || "/data/educacion-clm/"
-).replace(/\/?$/, "/");
+export const DATA_EDUCACION_BASE_URL = (() => {
+  const explicit = import.meta.env.VITE_DATA_EDUCACION_URL;
+  if (explicit) return explicit.replace(/\/?$/, "/");
+  const sanidad = import.meta.env.VITE_DATA_CATEGORIAS_URL;
+  if (sanidad) return `${sanidad.replace(/\/?$/, "/")}educacion/`;
+  return "/data/educacion/";
+})();
 
 /** Nombre PDF → slug de archivo (debe coincidir con scraper.slug_archivo). */
 export function slugArchivo(categoriaScraper) {
