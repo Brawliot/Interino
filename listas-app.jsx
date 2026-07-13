@@ -748,8 +748,9 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const sectorActivo = sectores.find((s) => s.id === sectorId);
   const sectorDisponible = sectorActivo?.activo;
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
-  const grupo = gruposSanidad.find((g) => g.id === grupoId);
-  const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
+  const grupo = gruposSanidad.find((g) => g.id === grupoId) || gruposSanidad[0];
+  const categoriasGrupo = grupo?.categorias || [];
+  const [categoria, setCategoria] = useState(categoriasGrupo[0] || "");
   const [consulta, setConsulta] = useState("");
   const [sinResultados, setSinResultados] = useState(false);
   const [sinResultadosGlobal, setSinResultadosGlobal] = useState(false);
@@ -764,7 +765,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
     setGrupoId(id);
-    setCategoria(g?.categorias[0] || "");
+    setCategoria(g?.categorias?.[0] || "");
     setSinResultados(false);
     setSinResultadosGlobal(false);
     setSinDatosCategoria(false);
@@ -772,9 +773,13 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
 
   useEffect(() => {
     const g = gruposSanidad[0];
-    if (!g) return;
+    if (!g) {
+      setGrupoId("");
+      setCategoria("");
+      return;
+    }
     setGrupoId(g.id);
-    setCategoria(g.categorias[0] || "");
+    setCategoria(g.categorias?.[0] || "");
     setSinResultados(false);
     setSinResultadosGlobal(false);
     setSinDatosCategoria(false);
@@ -848,6 +853,16 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           />
         )}
 
+        {modoEducacion && !gruposSanidad.length && (
+          <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+            <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
+              No hay listados de educación cargados para este modo. En producción, sube las carpetas <strong>educacion/</strong> y/o <strong>educacion-bolsa/</strong> a R2.
+            </p>
+          </div>
+        )}
+
+        {gruposSanidad.length > 0 && (
         <div>
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
             {modoEducacion ? "Cuerpo docente" : "Grupo profesional"}
@@ -865,7 +880,9 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             ))}
           </select>
         </div>
+        )}
 
+        {gruposSanidad.length > 0 && (
         <div>
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
             {modoEducacion ? "Especialidad" : "Categoría"}
@@ -876,14 +893,16 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           >
-            {grupo.categorias.map((c) => (
+            {categoriasGrupo.map((c) => (
               <option key={c} value={c}>
                 {c}{capa.tieneDatosReales(c, grupoId) ? "" : " · sin datos"}
               </option>
             ))}
           </select>
         </div>
+        )}
 
+        {gruposSanidad.length > 0 && (
         <div>
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Apellidos o DNI parcial</label>
           <input
@@ -897,6 +916,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             {textoAyuda}
           </p>
         </div>
+        )}
 
         {!sectorDisponible && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
@@ -2042,8 +2062,13 @@ export default function ListasApp() {
     if (ids.length === 0) return datos.paraCcaa("clm");
     return datos.paraCcaas(ids);
   }, [datos, ccaas, sectorId, listadoEducacionModo]);
-  const gruposSanidad = capaDatos.gruposSanidad?.length ? capaDatos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
   const modoEducacion = sectorId === "educacion" || capaDatos.sector === "educacion";
+  const gruposSanidad = useMemo(() => {
+    const g = capaDatos.gruposSanidad;
+    if (g?.length) return g;
+    if (modoEducacion) return [];
+    return GRUPOS_SANIDAD_FALLBACK;
+  }, [capaDatos, modoEducacion]);
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");

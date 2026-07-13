@@ -983,6 +983,37 @@ export function crearCapaDatosMulti(capas, ccaaIds) {
   return capaMulti;
 }
 
+function crearCapaEducacionVacia() {
+  return {
+    ccaaId: "clm",
+    sector: "educacion",
+    tipoListado: "disponibles",
+    gruposSanidad: [],
+    archivosDisponibles: new Set(),
+    tieneDatosReales: () => false,
+    tieneIndiceBusqueda: () => false,
+    async buscarPersonas() {
+      return { personas: [], gerencias: [] };
+    },
+    async obtenerListadoCompleto() {
+      return [];
+    },
+    async gerenciasDeCategoria() {
+      return [];
+    },
+    async cargarCategoria() {
+      throw new Error("Sin datos de educación");
+    },
+    historialCorte: () => [],
+    async estadoActualizacion() {
+      return {
+        tipo: "sin_datos",
+        texto: "Aún no hay listados de educación en el servidor. Comprueba que educacion/ y educacion-bolsa/ estén subidos a R2.",
+      };
+    },
+  };
+}
+
 export async function cargarDatos() {
   const base = DATA_CATEGORIAS_BASE_URL;
   const eduBase = DATA_EDUCACION_BASE_URL;
@@ -1069,7 +1100,7 @@ export async function cargarDatos() {
         const modo = opciones.modoListadoEducacion;
         if (modo === "disponibles" && educacionDisponiblesClm) return educacionDisponiblesClm;
         if (modo === "bolsa" && educacionBolsaClm) return educacionBolsaClm;
-        return educacionBolsaClm || educacionDisponiblesClm || capas.clm;
+        return educacionBolsaClm || educacionDisponiblesClm || crearCapaEducacionVacia();
       }
       return capas[ccaaId] || capas.clm;
     },
