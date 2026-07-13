@@ -596,20 +596,29 @@ function nombreCuerpoUi(nombre) {
   return portalAUi(nombre.replace(/^PROFESORES\s+/i, "Profesores "));
 }
 
+function posicionEducacion(fila, tipoListado = "disponibles") {
+  if (tipoListado === "bolsa_ordinaria") {
+    return Number(fila?.bolsa_orden ?? fila?.orden ?? 0) || 0;
+  }
+  return Number(fila?.orden ?? fila?.bolsa_orden ?? 0) || 0;
+}
+
 function filaEducacionAApp(fila, total, tipoListado = "disponibles") {
   const nombreCompleto = formatearNombre(fila.apellidos_nombre);
   const apellidos = fila.apellidos_nombre.split(",")[0].replace(/\n/g, " ").trim();
+  const pos = posicionEducacion(fila, tipoListado);
   return {
-    pos: fila.bolsa_orden,
+    pos,
     nombreCompleto,
     apellidos,
     puntos: null,
     total,
     dniParcial: fila.dni_parcial,
     tipo_bolsa: fila.tipo_bolsa,
-    bolsa_codigo: fila.bolsa_codigo,
+    bolsa_codigo: fila.bolsa_codigo ?? fila.tipo_bolsa_codigo,
     acceso: fila.acceso,
     orden_lista: fila.orden,
+    bolsa_orden: fila.bolsa_orden,
     provincias: fila.provincias || [],
     idiomas: fila.idiomas,
     tipoListado,
@@ -740,7 +749,9 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
           q
         )
       )
-      .map((p) => ({
+      .map((p) => {
+        const pos = posicionEducacion(p, tipoListado);
+        return {
         nombreCompleto: p.nombreCompleto,
         dniParcial: p.dniParcial,
         categoria: categoriaUi,
@@ -753,11 +764,11 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
             ccaaId: "clm",
             gerencia: GERENCIA_EDUCACION,
             ambito: "",
-            posicion: p.bolsa_orden,
+            posicion: pos,
             bolsa_orden: p.bolsa_orden,
             orden_lista: p.orden,
             total,
-            delante: Math.max(0, p.bolsa_orden - 1),
+            delante: Math.max(0, pos - 1),
             tipo_bolsa: p.tipo_bolsa,
             bolsa_codigo: p.bolsa_codigo,
             acceso: p.acceso,
@@ -766,7 +777,8 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
             idiomas: p.idiomas,
           },
         ],
-      }));
+      };
+      });
     return { personas, gerencias: [] };
   }
 

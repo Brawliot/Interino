@@ -220,6 +220,7 @@ function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, gr
   const clave = clavePersonaListado(filaClickada);
   const filasPersona = (todasLasFilas || []).filter((f) => clavePersonaListado(f) === clave);
   const apariciones = (filasPersona.length ? filasPersona : [filaClickada]).map((f) => {
+    const pos = f.pos ?? (esEducacion && f.tipoListado === "bolsa_ordinaria" ? f.bolsa_orden : f.orden_lista ?? f.bolsa_orden);
     if (esEducacion) {
       return {
         sector: "educacion",
@@ -228,11 +229,11 @@ function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, gr
         ccaaId,
         gerencia: GERENCIA_EDUCACION,
         ambito: "",
-        posicion: f.pos,
-        bolsa_orden: f.pos,
+        posicion: pos,
+        bolsa_orden: f.bolsa_orden,
         orden_lista: f.orden_lista,
         total: f.total,
-        delante: Math.max(0, f.pos - 1),
+        delante: Math.max(0, pos - 1),
         tipo_bolsa: f.tipo_bolsa,
         bolsa_codigo: f.bolsa_codigo,
         acceso: f.acceso,
@@ -397,7 +398,7 @@ function Subrayado({ width = 168, color, style }) {
 
 function AvisoActualizacion({ categoria, grupoId, grupoActivo, tieneResultado = false }) {
   const capa = useCapaDatos();
-  const organismo = organismoCcaa(capa.ccaaId);
+  const organismo = capa.sector === "educacion" ? GERENCIA_EDUCACION : organismoCcaa(capa.ccaaId);
   const [e, setE] = useState({ tipo: "ok", texto: "Comprobando actualización…" });
 
   useEffect(() => {
@@ -1293,9 +1294,10 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
   const capa = useCapaDatos();
   const bolsaCompleta = esBolsaCompleta ?? esBolsaOrdinaria(r?.tipoListado ?? capa.tipoListado);
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
-  const posicion = Number(r?.bolsa_orden ?? r?.posicion ?? r?.pos ?? 0) || 0;
+  const posicion = Number(r?.posicion ?? r?.pos ?? r?.bolsa_orden ?? 0) || 0;
   const total = Number(r?.total ?? 0) || 0;
   const ordenLista = Number(r?.orden_lista ?? 0) || 0;
+  const bolsaGeneral = Number(r?.bolsa_orden ?? 0) || 0;
   const provincias = new Set(r?.provincias || []);
   const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
   const idiomas = r?.idiomas || {};
