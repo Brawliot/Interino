@@ -1336,7 +1336,12 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
         {r?.tipo_bolsa && (
           <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6 }}>
             {tipoBolsaLegible(r.tipo_bolsa)}
-            {ordenLista > 0 ? ` · orden en listado ${ordenLista}` : ""}
+            {!bolsaCompleta && bolsaGeneral > 0 && bolsaGeneral !== posicion
+              ? ` · posición en bolsa general #${bolsaGeneral}`
+              : ""}
+            {bolsaCompleta && ordenLista > 0 && ordenLista !== posicion
+              ? ` · orden en listado ${ordenLista}`
+              : ""}
           </p>
         )}
       </div>
