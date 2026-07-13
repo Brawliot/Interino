@@ -434,12 +434,8 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
     categoriaScraper,
     rutaListado: (categoriaUi) => {
       const cat = categoriaScraper(categoriaUi);
-      return `${"diplomado"}/${slugArchivo(cat)}.json`.replace(/^diplomado\//, () => {
-        for (const g of gruposSanidad) {
-          if (g.categorias.includes(categoriaUi)) return `${g.id}/${slugArchivo(cat)}.json`;
-        }
-        return `diplomado/${slugArchivo(cat)}.json`;
-      });
+      const gid = gruposSanidad.find((g) => g.categorias.includes(categoriaUi))?.id || "diplomado";
+      return `${gid}/${slugArchivo(cat)}.json`;
     },
     rutaIndice: (categoriaUi) => {
       const cat = categoriaScraper(categoriaUi);

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map, Banknote, Award } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, tituloBolsa, tituloBolsaMulti, organismoCcaa } from "./src/regiones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
@@ -81,7 +81,7 @@ function textoAyudaBusqueda(ccaaId, numGerencias) {
 const HERRAMIENTAS = [
   { id: "simulador-baremo", titulo: "Simulador de baremo", subtitulo: "¿Cuántos puntos tendrías?", icono: Calculator, activo: true },
   { id: "simulador-gerencia", titulo: "Simulador de gerencia", subtitulo: "Tu posición en otra gerencia", icono: ArrowLeftRight, activo: true },
-  { id: "mapa-oportunidades", titulo: "Mapa de oportunidades", subtitulo: "Dónde tienes más opciones", icono: Map, activo: true },
+  { id: "mapa-oportunidades", titulo: "Mapa de oportunidades", subtitulo: "Dónde tienes más opciones", icono: MapIcon, activo: true },
   { id: "calculadora-nomina", titulo: "Calculadora de nómina", subtitulo: "¿Cuánto cobrarías?", icono: Banknote, activo: true },
   { id: "guia-llamamiento", titulo: "Guía del llamamiento", subtitulo: "Te han llamado, ¿ahora qué?", icono: PhoneCall, activo: true },
   { id: "calculadora-meritos", titulo: "Calculadora de méritos", subtitulo: "¿Cuánto sube tu baremo?", icono: Award, activo: true },
