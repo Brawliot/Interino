@@ -157,10 +157,10 @@ const GRUPOS_SANIDAD_FALLBACK = [
 
 const grupoDeCategoria = (categoria, grupos, ccaaId) => {
   if (ccaaId) {
-    const porRegion = grupos.find((g) => g.ccaaId === ccaaId && g.categorias.includes(categoria));
+    const porRegion = grupos.find((g) => g.ccaaId === ccaaId && g.categorias?.includes(categoria));
     if (porRegion) return porRegion;
   }
-  return grupos.find((g) => g.categorias.includes(categoria));
+  return grupos.find((g) => g.categorias?.includes(categoria));
 };
 
 // ---------------------------------------------------------------
@@ -260,7 +260,8 @@ function tituloCategoriaResultado(categoria, apariciones) {
 }
 
 function aparicionParaDetalle(fila) {
-  const items = fila.apariciones;
+  const items = fila?.apariciones;
+  if (!items?.length) return normalizarAparicion(fila);
   if (items.length === 1) return items[0];
   const base = { ...items[0] };
   const ab = ambitoResumenFila(items);
@@ -1078,7 +1079,7 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
             <div>
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>{c.nombreCompleto}</p>
               <p style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: C.inkSoft }}>
-                En {c.apariciones.length} lista{c.apariciones.length > 1 ? "s" : ""} · mejor posición #{Math.min(...c.apariciones.map((a) => a.posicion))} · DNI {c.dniParcial}
+                En {(c.apariciones || []).length} lista{(c.apariciones || []).length > 1 ? "s" : ""} · mejor posición #{(c.apariciones || []).length ? Math.min(...c.apariciones.map((a) => a.posicion)) : "—"} · DNI {c.dniParcial}
               </p>
             </div>
           </button>
@@ -1666,7 +1667,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
   }, [candidato?.dniParcial, candidato?.nombreCompleto]);
 
   if (esEducacion && apariciones.length > 0) {
-    const a = aparicionParaDetalle(apariciones[0]);
+    const a = normalizarAparicion(apariciones[0]);
     const catAparicion = a.categoria || categoriaMostrada || categoria;
     const grupoAparicion = grupoIdParaCapa(capa, a, grupoId);
     return (
@@ -1705,11 +1706,6 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
   }
 
   const mejorPosicion = filas.length ? Math.min(...filas.map((f) => f.posicion)) : 0;
-
-  useEffect(() => {
-    setDetalleFila(null);
-    setBulkSeguido(false);
-  }, [candidato?.dniParcial, candidato?.nombreCompleto]);
 
   const todasGuardadas = apariciones.every((a) => {
     const cat = a.categoria || categoria;
@@ -2080,7 +2076,7 @@ export default function ListasApp() {
   const [candidatoElegido, setCandidatoElegido] = useState(null);
   const [seguimientos, setSeguimientos] = useState([]);
   const [recientes, setRecientes] = useState([]);
-  const [listadoCategoria, setListadoCategoria] = useState(gruposSanidad[0]?.categorias[0] || "");
+  const [listadoCategoria, setListadoCategoria] = useState(gruposSanidad[0]?.categorias?.[0] || "");
   const [listadoGerencia, setListadoGerencia] = useState("");
   const [listadoAmbito, setListadoAmbito] = useState("");
   const [listadoGrupoId, setListadoGrupoId] = useState("diplomado");
@@ -2153,7 +2149,7 @@ export default function ListasApp() {
     setBusquedaGlobal(false);
     setCategoriaActual(categoria);
     setGrupoIdActual(grupo?.id || "diplomado");
-    if (!grupo?.activo || !capaDatos.tieneDatosReales(categoria, grupo.id)) {
+    if (!grupo?.activo || !grupo?.id || !capaDatos.tieneDatosReales(categoria, grupo.id)) {
       return -1;
     }
     try {
