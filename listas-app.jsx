@@ -1,9 +1,8 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
-import { CCAA_LIST, sectoresParaCcaas, tituloBolsa, tituloBolsaMulti, organismoCcaa } from "./src/regiones.js";
+import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
-import SelectorSectores from "./src/SelectorSectores.jsx";
 import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 
 const SimuladorBaremo = lazy(() => import("./src/herramientas/SimuladorBaremo.jsx"));
@@ -16,6 +15,7 @@ const GraficoHistoricoCorte = lazy(() => import("./src/components/GraficoHistori
 
 const LS_SEGUIMIENTOS = "interino_seguimientos_v1";
 const LS_RECIENTES = "interino_recientes_v1";
+const LS_LAST_CCAA = "interino_last_ccaa_v1";
 
 function leerStorage(key, fallback) {
   try {
@@ -24,6 +24,25 @@ function leerStorage(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function leerUltimaCcaaId() {
+  try {
+    const raw = localStorage.getItem(LS_LAST_CCAA);
+    return raw && CCAA_LIST.some((c) => c.id === raw) ? raw : "clm";
+  } catch {
+    return "clm";
+  }
+}
+
+function guardarUltimaCcaaId(id) {
+  try {
+    localStorage.setItem(LS_LAST_CCAA, id);
+  } catch { /* quota / modo privado */ }
+}
+
+function ccaaPorId(id) {
+  return CCAA_LIST.find((c) => c.id === id) || CCAA_LIST.find((c) => c.id === "clm");
 }
 
 // ---------------------------------------------------------------
@@ -380,89 +399,137 @@ function Barra({ titulo, atras }) {
 }
 
 // ---------------------------------------------------------------
-// PANTALLA 0 — inicio (hub)
+// HOME — mapa como hero + barra inferior
 // ---------------------------------------------------------------
-function TarjetaSeguimientoResumen({ seguimiento, index, onAbrir, gruposSanidad }) {
-  const capa = useCapaDatos();
-  const s = seguimiento;
-  const r = s.candidato;
-  const grupo = grupoDeCategoria(s.categoria, gruposSanidad, s.ccaaId);
-  const organismo = organismoCcaa(s.ccaaId || capa.ccaaId);
-  const e = grupo?.activo && capa.tieneDatosReales(s.categoria, grupo.id)
-    ? { tipo: "ok", texto: "Datos reales disponibles." }
-    : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
+function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
+  const items = [
+    { id: "buscar", label: "Buscar", icon: Search, onClick: onBuscar },
+    { id: "seguimientos", label: "Seguimientos", icon: Pin, onClick: onSeguimientos, badge: numSeguimientos },
+    { id: "mas", label: "Más", icon: Settings, onClick: onMas },
+  ];
 
   return (
-    <button
-      type="button"
-      onClick={() => onAbrir(s)}
-      className="text-left focus:outline-none focus:ring-2 w-full"
+    <nav
       style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 56,
         background: C.card,
-        border: `1.5px solid ${C.line}`,
-        borderRadius: index % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
-        padding: "16px 18px",
+        borderTop: `1px solid ${C.line}`,
+        zIndex: 50,
       }}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>
-            {etiquetaLista(s.categoria, s.gerencia, s.ambito, { ccaaNombre: CCAA_LIST.find((c) => c.id === s.ccaaId)?.nombre })}
-          </p>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft }}>{r.nombreCompleto}</p>
-        </div>
-        {e.tipo !== "ok" && <AlertTriangle size={14} color={C.clay} />}
+      <div className="max-w-md mx-auto h-full flex items-stretch">
+        {items.map((item) => {
+          const Icono = item.icon;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onClick}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 focus:outline-none relative"
+              style={{ background: "transparent", border: "none", padding: "6px 0" }}
+            >
+              <div className="relative">
+                <Icono size={16} color={C.inkSoft} strokeWidth={2.2} />
+                {item.badge > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -5,
+                      right: -8,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 999,
+                      background: C.navy,
+                      color: "#fff",
+                      fontFamily: FONT_BODY,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 4px",
+                    }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontFamily: FONT_BODY, fontSize: 10, fontWeight: 600, color: C.inkSoft }}>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
-      <p style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: C.navy, marginTop: 4 }}>#{r.posicion}</p>
-      <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft }}>{r.puntos.toFixed(2)} puntos · {organismo}</p>
-    </button>
+    </nav>
   );
 }
 
-function PantallaInicio({ onConsultar, onHerramienta, seguimientos, onAbrirSeguimiento, onVerSeguimientos, gruposSanidad }) {
+function PantallaHome({ onSelectCcaa, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
   return (
-    <div className="pb-4">
-      <div className="px-5 pt-8 pb-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ width: 44, height: 44, background: C.navy, color: C.goldSoft, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 20 }}
-          >
-            L
-          </div>
-          <div>
-            <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 600, color: C.navy, lineHeight: 1.1, margin: 0 }}>
-              {NOMBRE_APP}
-            </h1>
-            <div style={{ marginTop: 8 }}>
-              <Sello>Expediente oficial</Sello>
-            </div>
-          </div>
+    <>
+      <div
+        style={{
+          height: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          paddingBottom: 56,
+        }}
+      >
+        <header style={{ flex: "0 0 auto", padding: "16px 20px 6px", position: "relative" }}>
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 600, color: C.navy, margin: 0, lineHeight: 1.2 }}>
+            {NOMBRE_APP}
+          </h1>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, margin: "4px 0 0" }}>
+            Tu posición en la bolsa
+          </p>
+          {numSeguimientos > 0 && (
+            <button
+              type="button"
+              onClick={onSeguimientos}
+              aria-label={`${numSeguimientos} seguimientos`}
+              className="focus:outline-none"
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 20,
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+                background: C.navy,
+                color: "#fff",
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                fontWeight: 700,
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {numSeguimientos}
+            </button>
+          )}
+        </header>
+
+        <div style={{ flex: 1, minHeight: 0, padding: "0 4px 4px", display: "flex", flexDirection: "column" }}>
+          <MapaEspanaCCAA modo="hero" onSelect={onSelectCcaa} ccaaList={CCAA_LIST} colors={C} />
         </div>
       </div>
+      <BarraInferior onBuscar={onBuscar} onSeguimientos={onSeguimientos} onMas={onMas} numSeguimientos={numSeguimientos} />
+    </>
+  );
+}
 
+function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
+  return (
+    <div className="pb-8">
+      <Barra titulo="Más" atras={atras} />
       <div className="px-5">
-        <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, marginBottom: 10 }}>
-          Consulta tu posición
-        </p>
-        <button
-          type="button"
-          onClick={onConsultar}
-          className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{
-            background: C.navy,
-            color: "#fff",
-            padding: "18px 16px",
-            fontFamily: FONT_BODY,
-            fontSize: 16,
-            borderRadius: "16px 5px 16px 5px",
-            boxShadow: `0 4px 14px ${C.navy}44`,
-          }}
-        >
-          <Search size={18} /> Buscar en la bolsa
-        </button>
-
-        <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, marginTop: 28, marginBottom: 12 }}>
+        <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, marginBottom: 12 }}>
           Herramientas
         </p>
         <div className="grid grid-cols-2 gap-3">
@@ -511,85 +578,60 @@ function PantallaInicio({ onConsultar, onHerramienta, seguimientos, onAbrirSegui
             );
           })}
         </div>
-
-        {seguimientos.length > 0 && (
-          <div style={{ marginTop: 28 }}>
-            <div className="flex items-center justify-between mb-3">
-              <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, margin: 0 }}>
-                Mis seguimientos
-              </p>
-              {seguimientos.length > 2 && (
-                <button
-                  type="button"
-                  onClick={onVerSeguimientos}
-                  className="focus:outline-none"
-                  style={{ fontFamily: FONT_BODY, fontSize: 12, fontWeight: 600, color: C.navy }}
-                >
-                  Ver todos
-                </button>
-              )}
-            </div>
-            <div className="flex flex-col gap-3">
-              {seguimientos.slice(0, 2).map((s, i) => (
-                <TarjetaSeguimientoResumen
-                  key={`${s.categoria}-${s.gerencia}-${s.ambito}-${s.candidato.nombreCompleto}`}
-                  seguimiento={s}
-                  index={i}
-                  onAbrir={onAbrirSeguimiento}
-                  gruposSanidad={gruposSanidad}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        <div style={{ marginTop: 28 }}>
+          <AvisoLegal onAbrirPrivacidad={onPrivacidad} />
+        </div>
       </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------
-// PANTALLA 1 — elegir comunidad
-// ---------------------------------------------------------------
-function PantallaCCAA({ onSelect, atras }) {
-  return (
-    <div className="flex flex-col" style={{ height: "calc(100dvh - 48px)", maxHeight: "100dvh" }}>
-      {atras && <Barra titulo="Tu comunidad" atras={atras} />}
-      <div className="px-4 pt-4 pb-0 flex-shrink-0">
-        <Sello>Expediente nacional · 17 CC. AA.</Sello>
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 600, color: C.navy, lineHeight: 1.2, marginTop: 8, marginBottom: 0 }}>
-          Tu posición, sin adivinar<span style={{ color: C.clay }}>.</span>
-        </h1>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 12.5, color: C.inkSoft, marginTop: 8, marginBottom: 0, lineHeight: 1.4 }}>
-          ¿Estás en una o varias comunidades? Selecciona todas las que te correspondan en el mapa.
-        </p>
-      </div>
-
-      <div className="flex-1 px-1 pb-4 pt-2" style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <MapaEspanaCCAA ccaaList={CCAA_LIST} onConfirm={onSelect} colors={C} />
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------
-// PANTALLA 2 — elegir sector
-// ---------------------------------------------------------------
-function PantallaSector({ ccaas, onSelect, atras }) {
-  const titulo = ccaas.length === 1 ? ccaas[0].nombre : ccaas.map((c) => c.nombre).join(" · ");
+function SelectorSectorInline({ ccaas, sectorId, onSectorChange }) {
   const sectores = sectoresParaCcaas(ccaas.map((c) => c.id)).map((s) => ({
     ...s,
     icono: ICONOS_SECTOR[s.id] || Stethoscope,
   }));
+
   return (
-    <div className="flex flex-col" style={{ height: "calc(100dvh - 48px)", maxHeight: "100dvh" }}>
-      <Barra titulo={titulo} atras={atras} />
-      {ccaas.length > 1 && (
-        <p style={{ fontFamily: FONT_BODY, fontSize: 12.5, color: C.inkSoft, padding: "0 20px 8px", lineHeight: 1.4 }}>
-          Consultarás las bolsas de {ccaas.map((c) => c.nombre).join(", ")}.
-        </p>
-      )}
-      <div className="flex-1 px-3 pb-4" style={{ minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <SelectorSectores sectores={sectores} onConfirm={onSelect} colors={C} />
+    <div>
+      <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Sector</label>
+      <div className="flex gap-2 mt-2">
+        {sectores.map((s) => {
+          const Icono = s.icono;
+          const sel = sectorId === s.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              disabled={!s.activo}
+              onClick={() => s.activo && onSectorChange(s)}
+              className="flex-1 focus:outline-none flex flex-col items-center gap-1"
+              style={{
+                background: sel && s.activo ? C.navy : C.card,
+                border: `1.5px solid ${sel && s.activo ? C.navy : C.line}`,
+                borderRadius: "12px 4px 12px 4px",
+                padding: "10px 6px",
+                opacity: s.activo ? 1 : 0.62,
+                cursor: s.activo ? "pointer" : "default",
+              }}
+            >
+              <Icono size={16} color={sel && s.activo ? C.goldSoft : C.inkSoft} />
+              <span
+                style={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  color: sel && s.activo ? "#fff" : C.inkSoft,
+                  lineHeight: 1.2,
+                  textAlign: "center",
+                }}
+              >
+                {s.nombre}
+              </span>
+              {!s.activo && <Lock size={10} color={C.inkSoft} />}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -603,6 +645,11 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const capa = useCapaDatos();
   const multi = ccaas.length > 1;
   const ccaaIds = ccaas.map((c) => c.id);
+  const sectores = sectoresParaCcaas(ccaaIds);
+  const [sectorId, setSectorId] = useState(
+    sectores.find((s) => s.activo)?.id || "sanidad"
+  );
+  const sectorActivo = sectores.find((s) => s.id === sectorId)?.activo;
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
   const grupo = gruposSanidad.find((g) => g.id === grupoId);
   const [categoria, setCategoria] = useState(grupo?.categorias[0] || "");
@@ -612,8 +659,8 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const [sinDatosCategoria, setSinDatosCategoria] = useState(false);
   const [gerenciaListado, setGerenciaListado] = useState("");
 
-  const categoriaConDatos = grupo?.activo && capa.tieneDatosReales(categoria, grupoId);
-  const tituloBarra = multi ? tituloBolsaMulti(ccaaIds) : tituloBolsa(ccaaIds[0] || "clm");
+  const categoriaConDatos = sectorActivo && grupo?.activo && capa.tieneDatosReales(categoria, grupoId);
+  const tituloBarra = multi ? ccaas.map((c) => c.nombre).join(" · ") : (ccaas[0]?.nombre || "Castilla-La Mancha");
   const textoAyuda = multi
     ? TEXTO_AYUDA_BUSQUEDA_BASE.multi
     : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm);
@@ -662,7 +709,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
     <div>
       <Barra titulo={tituloBarra} atras={atras} />
 
-      <div className="px-5 flex flex-col gap-5 mt-2">
+      <div className="px-5 flex flex-col gap-5 mt-2 pb-8">
         {multi && (
           <div className="flex flex-wrap gap-2">
             {ccaas.map((c) => (
@@ -685,32 +732,16 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           </div>
         )}
 
-        {recientes.length > 0 && (
-          <div>
-            <p style={{ fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700, color: C.inkSoft, display: "flex", alignItems: "center", gap: 5 }}>
-              <History size={13} /> Últimas búsquedas
-            </p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {recientes.map((rec, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    const g = grupoDeCategoria(rec.categoria, gruposSanidad, rec.ccaaId);
-                    if (g) setGrupoId(g.id);
-                    setCategoria(rec.categoria);
-                    setConsulta(rec.consulta);
-                    if (rec.global) buscarGlobal(rec.consulta);
-                    else buscar(rec.categoria, rec.consulta);
-                  }}
-                  className="focus:outline-none"
-                  style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "6px 12px", fontFamily: FONT_BODY, fontSize: 12, color: C.navy }}
-                >
-                  {rec.consulta}{rec.global ? " · todas" : rec.categoria ? ` · ${rec.categoria}` : ""}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <SelectorSectorInline
+          ccaas={ccaas}
+          sectorId={sectorId}
+          onSectorChange={(s) => {
+            setSectorId(s.id);
+            setSinResultados(false);
+            setSinResultadosGlobal(false);
+            setSinDatosCategoria(false);
+          }}
+        />
 
         <div>
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Grupo profesional</label>
@@ -758,7 +789,16 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           </p>
         </div>
 
-        {!categoriaConDatos && (
+        {!sectorActivo && (
+          <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+            <Lock size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
+              Este sector aún no está disponible en esta comunidad.
+            </p>
+          </div>
+        )}
+
+        {!categoriaConDatos && sectorActivo && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
@@ -804,6 +844,33 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           >
             <Search size={15} /> Buscar en todas mis comunidades
           </button>
+        )}
+
+        {recientes.length > 0 && (
+          <div>
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700, color: C.inkSoft, display: "flex", alignItems: "center", gap: 5 }}>
+              <History size={13} /> Últimas búsquedas
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {recientes.map((rec, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    const g = grupoDeCategoria(rec.categoria, gruposSanidad, rec.ccaaId);
+                    if (g) setGrupoId(g.id);
+                    setCategoria(rec.categoria);
+                    setConsulta(rec.consulta);
+                    if (rec.global) buscarGlobal(rec.consulta);
+                    else buscar(rec.categoria, rec.consulta);
+                  }}
+                  className="focus:outline-none"
+                  style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 20, padding: "6px 12px", fontFamily: FONT_BODY, fontSize: 12, color: C.navy }}
+                >
+                  {rec.consulta}{rec.global ? " · todas" : rec.categoria ? ` · ${rec.categoria}` : ""}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {sinDatosCategoria && (
@@ -1629,6 +1696,23 @@ export default function ListasApp() {
     setPaso("privacidad");
   };
 
+  const irABuscarConCcaa = (ccaa) => {
+    setCcaas([ccaa]);
+    setSector({ id: "sanidad", nombre: "Sanidad", activo: true });
+    guardarUltimaCcaaId(ccaa.id);
+    setPaso("buscar");
+  };
+
+  const irABuscarUltima = () => {
+    const ccaa = ccaaPorId(leerUltimaCcaaId());
+    irABuscarConCcaa(ccaa.activo ? ccaa : ccaaPorId("clm"));
+  };
+
+  const irSeguimientos = () => {
+    setPasoSeguimientosOrigen(paso);
+    setPaso("seguimientos");
+  };
+
   const irSimuladorGerencia = (puntos, categoria = herramientasCtx.categoria || categoriaActual) => {
     setHerramientasCtx({ puntos, categoria: categoria || "" });
     setPaso("simulador-gerencia");
@@ -1768,46 +1852,30 @@ export default function ListasApp() {
         @media (prefers-reduced-motion: reduce) { button { transition: none; } }
       `}</style>
 
-      <div className="max-w-md mx-auto pb-10">
-        {paso !== "inicio" && paso !== "ccaa" && seguimientos.length > 0 && (
-          <div className="flex justify-end px-5 pt-4">
-            <button
-              onClick={() => { setPasoSeguimientosOrigen(paso); setPaso("seguimientos"); }}
-              className="flex items-center gap-1.5 focus:outline-none"
-              style={{ background: C.navy, color: "#fff", padding: "7px 13px", borderRadius: "12px 4px 12px 4px", fontFamily: FONT_BODY, fontSize: 12, fontWeight: 700 }}
-            >
-              <BellRing size={13} /> {seguimientos.length}
-            </button>
-          </div>
-        )}
-
+      <div className={`max-w-md mx-auto ${paso === "inicio" ? "" : "pb-10"}`}>
         {paso === "inicio" && (
-          <PantallaInicio
-            onConsultar={() => setPaso("ccaa")}
-            onHerramienta={(id) => setPaso(id)}
-            seguimientos={seguimientos}
-            onAbrirSeguimiento={abrirSeguimiento}
-            onVerSeguimientos={() => { setPasoSeguimientosOrigen("inicio"); setPaso("seguimientos"); }}
-            gruposSanidad={gruposSanidad}
+          <PantallaHome
+            onSelectCcaa={(ccaa) => irABuscarConCcaa(ccaa)}
+            onBuscar={irABuscarUltima}
+            onSeguimientos={irSeguimientos}
+            onMas={() => setPaso("mas")}
+            numSeguimientos={seguimientos.length}
           />
         )}
 
-        {paso === "ccaa" && (
-          <PantallaCCAA
-            onSelect={(lista) => { setCcaas(lista); setPaso("sector"); }}
+        {paso === "mas" && (
+          <PantallaMas
+            onHerramienta={(id) => setPaso(id)}
+            onPrivacidad={abrirPrivacidad}
             atras={() => setPaso("inicio")}
           />
-        )}
-
-        {paso === "sector" && ccaas.length > 0 && (
-          <PantallaSector ccaas={ccaas} atras={() => setPaso("ccaa")} onSelect={(s) => { setSector(s); setPaso("buscar"); }} />
         )}
 
         {paso === "buscar" && (
           <PantallaBuscar
             key={ccaas.map((c) => c.id).join("+") || "clm"}
-            ccaas={ccaas.length ? ccaas : [{ id: "clm", nombre: "Castilla-La Mancha" }]}
-            atras={() => setPaso("sector")}
+            ccaas={ccaas.length ? ccaas : [ccaaPorId("clm")]}
+            atras={() => setPaso("inicio")}
             onBuscar={iniciarBusqueda}
             onBuscarGlobal={capaDatos.multi ? iniciarBusquedaGlobal : undefined}
             onVerListado={(categoria, gerencia) => {
@@ -1893,7 +1961,7 @@ export default function ListasApp() {
             <SimuladorBaremo
               C={C}
               Barra={Barra}
-              atras={() => setPaso("inicio")}
+              atras={() => setPaso("mas")}
               onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
             />
           </Suspense>
@@ -1908,7 +1976,7 @@ export default function ListasApp() {
               grupoDeCategoria={grupoDeCategoria}
               categoriaInicial={herramientasCtx.categoria || categoriaActual}
               puntosIniciales={herramientasCtx.puntos}
-              atras={() => setPaso("inicio")}
+              atras={() => setPaso("mas")}
             />
           </Suspense>
         )}
@@ -1922,20 +1990,20 @@ export default function ListasApp() {
               grupoDeCategoria={grupoDeCategoria}
               categoriaInicial={herramientasCtx.categoria || categoriaActual}
               puntosIniciales={herramientasCtx.puntos}
-              atras={() => setPaso("inicio")}
+              atras={() => setPaso("mas")}
             />
           </Suspense>
         )}
 
         {paso === "calculadora-nomina" && (
           <Suspense fallback={<CargandoHerramienta />}>
-            <CalculadoraNomina C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+            <CalculadoraNomina C={C} Barra={Barra} atras={() => setPaso("mas")} />
           </Suspense>
         )}
 
         {paso === "guia-llamamiento" && (
           <Suspense fallback={<CargandoHerramienta />}>
-            <GuiaLlamamiento C={C} Barra={Barra} atras={() => setPaso("inicio")} />
+            <GuiaLlamamiento C={C} Barra={Barra} atras={() => setPaso("mas")} />
           </Suspense>
         )}
 
@@ -1945,7 +2013,7 @@ export default function ListasApp() {
               C={C}
               Barra={Barra}
               puntosIniciales={herramientasCtx.puntos ?? candidatoElegido?.apariciones?.[0]?.puntos}
-              atras={() => setPaso("inicio")}
+              atras={() => setPaso("mas")}
               onIrGerencia={(puntos) => irSimuladorGerencia(puntos)}
             />
           </Suspense>
@@ -1958,8 +2026,6 @@ export default function ListasApp() {
             atras={() => setPaso(pasoPrivacidadOrigen)}
           />
         )}
-
-        {paso !== "privacidad" && <AvisoLegal onAbrirPrivacidad={abrirPrivacidad} />}
       </div>
     </div>
     </CcaaCapaProvider>

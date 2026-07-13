@@ -44,7 +44,7 @@ const NOMBRES_CCAA = {
 const VIEWBOX = "15 0 575 335";
 const CANARIAS_TRANSFORM = "translate(88, 292) scale(2.5) translate(-58, -515)";
 
-/** Colores del mapa — más vivos que la paleta general de la app. */
+/** Colores legacy (pantalla selección antigua). */
 const MAP_COLORS = {
   disponible: "#1A7A4C",
   disponibleHover: "#22A364",
@@ -55,7 +55,25 @@ const MAP_COLORS = {
   borde: "#6B5E4A",
 };
 
-function estilosPath({ activo, isHover, isSel }) {
+function estilosPathHero({ activo, isHover, isClm, C }) {
+  if (!activo) {
+    return {
+      fill: C.paperDeep,
+      stroke: C.line,
+      strokeWidth: 1.2,
+      opacity: 1,
+    };
+  }
+  return {
+    fill: isHover ? C.goldSoft : isClm ? C.navyDeep : C.navy,
+    stroke: isHover ? C.gold : isClm ? C.navyDeep : C.navy,
+    strokeWidth: isHover ? 2 : 1.5,
+    opacity: 1,
+    filter: isHover ? `drop-shadow(0 0 8px ${C.gold}88)` : undefined,
+  };
+}
+
+function estilosPathSeleccion({ activo, isHover, isSel }) {
   if (isSel) {
     return {
       fill: MAP_COLORS.seleccionado,
@@ -82,8 +100,11 @@ function estilosPath({ activo, isHover, isSel }) {
   };
 }
 
-function PathCCAA({ loc, ccaaId, activo, isHover, isSel, onHover, onTap }) {
-  const st = estilosPath({ activo, isHover, isSel });
+function PathCCAA({ loc, ccaaId, activo, isHover, isSel, onHover, onTap, modo, C, isClm }) {
+  const st = modo === "hero"
+    ? estilosPathHero({ activo, isHover, isClm, C })
+    : estilosPathSeleccion({ activo, isHover, isSel });
+
   return (
     <path
       d={loc.path}
@@ -108,9 +129,10 @@ function PathCCAA({ loc, ccaaId, activo, isHover, isSel, onHover, onTap }) {
   );
 }
 
-export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
+export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "seleccion", colors: C }) {
   const [hoverId, setHoverId] = useState(null);
   const [seleccionados, setSeleccionados] = useState(() => new Set());
+  const [proximamenteId, setProximamenteId] = useState(null);
 
   const { peninsula, canarias } = useMemo(() => {
     const can = MAPA_ESPANIA.locations.find((l) => l.id === "canary-islands");
@@ -130,15 +152,24 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
   );
 
   const etiqueta = (() => {
+    if (modo === "hero") return null;
     if (hoverId) return ccaaPorId[hoverId]?.nombre || NOMBRES_CCAA[hoverId];
     if (seleccionados.size === 1) return nombresSeleccionados[0];
-    if (seleccionados.size > 1) {
-      return `${seleccionados.size} comunidades seleccionadas`;
-    }
+    if (seleccionados.size > 1) return `${seleccionados.size} comunidades seleccionadas`;
     return "Toca una o varias comunidades";
   })();
 
   const tapRegion = (ccaaId) => {
+    if (modo === "hero") {
+      if (!regionActiva(ccaaId)) {
+        setProximamenteId(ccaaId);
+        window.setTimeout(() => setProximamenteId(null), 1800);
+        return;
+      }
+      const ccaa = ccaaPorId[ccaaId] || { id: ccaaId, nombre: NOMBRES_CCAA[ccaaId], activo: true };
+      onSelect?.(ccaa);
+      return;
+    }
     if (!regionActiva(ccaaId)) return;
     setSeleccionados((prev) => {
       const next = new Set(prev);
@@ -160,7 +191,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
             activo: true,
           }
       );
-    if (lista.length) onConfirm(lista);
+    if (lista.length) onConfirm?.(lista);
   };
 
   const puedeConfirmar = seleccionados.size > 0 && [...seleccionados].every(regionActiva);
@@ -171,29 +202,64 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
     return `Continuar con ${seleccionados.size} comunidades`;
   })();
 
-  return (
-    <div className="flex flex-col" style={{ width: "100%", height: "100%", minHeight: 0 }}>
-      <p
-        style={{
-          fontFamily: "'Inter', system-ui, sans-serif",
-          fontSize: 15,
-          fontWeight: 700,
-          color: C.navy,
-          textAlign: "center",
-          margin: 0,
-          height: 28,
-          lineHeight: "28px",
-          flexShrink: 0,
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          textOverflow: "ellipsis",
-          padding: "0 8px",
-        }}
-      >
-        {etiqueta}
-      </p>
+  const renderPath = (loc, ccaaId, extraSel) => {
+    const activo = regionActiva(ccaaId);
+    const isSel = modo === "seleccion" && (extraSel ?? seleccionados.has(ccaaId));
+    const isClm = ccaaId === "clm";
+    return (
+      <g key={loc.id}>
+        {isSel && (
+          <path
+            d={loc.path}
+            fill="none"
+            stroke={modo === "hero" ? C.gold : MAP_COLORS.seleccionadoBorde}
+            strokeWidth={7}
+            opacity={0.9}
+            pointerEvents="none"
+            style={{ filter: "blur(1px)" }}
+          />
+        )}
+        <PathCCAA
+          loc={loc}
+          ccaaId={ccaaId}
+          activo={activo}
+          isHover={hoverId === ccaaId}
+          isSel={isSel}
+          onHover={setHoverId}
+          onTap={tapRegion}
+          modo={modo}
+          C={C}
+          isClm={isClm}
+        />
+      </g>
+    );
+  };
 
-      {seleccionados.size > 1 && (
+  return (
+    <div className="flex flex-col" style={{ width: "100%", height: "100%", minHeight: 0, position: "relative" }}>
+      {etiqueta && (
+        <p
+          style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 15,
+            fontWeight: 700,
+            color: C.navy,
+            textAlign: "center",
+            margin: 0,
+            height: 28,
+            lineHeight: "28px",
+            flexShrink: 0,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+            padding: "0 8px",
+          }}
+        >
+          {etiqueta}
+        </p>
+      )}
+
+      {modo === "seleccion" && seleccionados.size > 1 && (
         <p
           style={{
             fontFamily: "'Inter', system-ui, sans-serif",
@@ -221,35 +287,10 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
           {peninsula.map((loc) => {
             const ccaaId = SVG_ID_A_CCAA[loc.id];
             if (!ccaaId) return null;
-            const activo = regionActiva(ccaaId);
-            const isSel = seleccionados.has(ccaaId);
-            return (
-              <g key={loc.id}>
-                {isSel && (
-                  <path
-                    d={loc.path}
-                    fill="none"
-                    stroke={MAP_COLORS.seleccionadoBorde}
-                    strokeWidth={7}
-                    opacity={0.9}
-                    pointerEvents="none"
-                    style={{ filter: "blur(1px)" }}
-                  />
-                )}
-                <PathCCAA
-                  loc={loc}
-                  ccaaId={ccaaId}
-                  activo={activo}
-                  isHover={hoverId === ccaaId}
-                  isSel={isSel}
-                  onHover={setHoverId}
-                  onTap={tapRegion}
-                />
-              </g>
-            );
+            return renderPath(loc, ccaaId);
           })}
 
-          {seleccionados.size === 0 &&
+          {modo === "seleccion" && seleccionados.size === 0 &&
             peninsula
               .filter((l) => l.id === "castile-la-mancha")
               .map((loc) => (
@@ -267,72 +308,83 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, colors: C }) {
 
           {canarias && (
             <g transform={CANARIAS_TRANSFORM}>
-              {seleccionados.has("can") && (
-                <path
-                  d={canarias.path}
-                  fill="none"
-                  stroke={MAP_COLORS.seleccionadoBorde}
-                  strokeWidth={7}
-                  opacity={0.9}
-                  pointerEvents="none"
-                />
-              )}
-              <PathCCAA
-                loc={canarias}
-                ccaaId="can"
-                activo={regionActiva("can")}
-                isHover={hoverId === "can"}
-                isSel={seleccionados.has("can")}
-                onHover={setHoverId}
-                onTap={tapRegion}
-              />
+              {renderPath(canarias, "can", modo === "seleccion" && seleccionados.has("can"))}
             </g>
           )}
 
-          <text
-            x={88}
-            y={328}
-            textAnchor="middle"
-            style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, fill: C.inkSoft, pointerEvents: "none" }}
-          >
-            Canarias
-          </text>
+          {modo === "hero" && (
+            <text
+              x={88}
+              y={328}
+              textAnchor="middle"
+              style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fill: C.inkSoft, pointerEvents: "none" }}
+            >
+              Canarias
+            </text>
+          )}
         </svg>
       </div>
 
-      <p
-        style={{
-          fontFamily: "'Inter', system-ui, sans-serif",
-          fontSize: 11,
-          color: C.inkSoft,
-          textAlign: "center",
-          margin: "8px 0 0",
-          flexShrink: 0,
-        }}
-      >
-        Vuelve a tocar una región para quitarla de la selección
-      </p>
+      {modo === "hero" && proximamenteId && (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: 8,
+            transform: "translateX(-50%)",
+            background: C.card,
+            border: `1px solid ${C.line}`,
+            borderRadius: 20,
+            padding: "6px 14px",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 12,
+            fontWeight: 600,
+            color: C.inkSoft,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            pointerEvents: "none",
+            zIndex: 2,
+          }}
+        >
+          {NOMBRES_CCAA[proximamenteId]} — Próximamente
+        </div>
+      )}
 
-      <button
-        type="button"
-        onClick={confirmar}
-        disabled={!puedeConfirmar}
-        className="w-full font-bold focus:outline-none flex-shrink-0"
-        style={{
-          marginTop: 10,
-          background: puedeConfirmar ? C.navy : C.paperDeep,
-          color: puedeConfirmar ? "#fff" : C.inkSoft,
-          padding: "16px",
-          fontFamily: "'Inter', system-ui, sans-serif",
-          fontSize: 15,
-          borderRadius: "16px 5px 16px 5px",
-          border: puedeConfirmar ? `2px solid ${C.gold}` : `1.5px solid ${C.line}`,
-          cursor: puedeConfirmar ? "pointer" : "default",
-          opacity: puedeConfirmar ? 1 : 0.7,
-        }}
-      >
-        {textoBoton}
-      </button>
+      {modo === "seleccion" && (
+        <>
+          <p
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: 11,
+              color: C.inkSoft,
+              textAlign: "center",
+              margin: "8px 0 0",
+              flexShrink: 0,
+            }}
+          >
+            Vuelve a tocar una región para quitarla de la selección
+          </p>
+          <button
+            type="button"
+            onClick={confirmar}
+            disabled={!puedeConfirmar}
+            className="w-full font-bold focus:outline-none flex-shrink-0"
+            style={{
+              marginTop: 10,
+              background: puedeConfirmar ? C.navy : C.paperDeep,
+              color: puedeConfirmar ? "#fff" : C.inkSoft,
+              padding: "16px",
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: 15,
+              borderRadius: "16px 5px 16px 5px",
+              border: puedeConfirmar ? `2px solid ${C.gold}` : `1.5px solid ${C.line}`,
+              cursor: puedeConfirmar ? "pointer" : "default",
+              opacity: puedeConfirmar ? 1 : 0.7,
+            }}
+          >
+            {textoBoton}
+          </button>
+        </>
+      )}
     </div>
   );
 }
