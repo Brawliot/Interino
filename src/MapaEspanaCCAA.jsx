@@ -55,13 +55,22 @@ const MAP_COLORS = {
   borde: "#6B5E4A",
 };
 
-function estilosPathHero({ activo, isHover, isClm, C }) {
+function estilosPathHero({ activo, isHover, isSel, isClm, C }) {
   if (!activo) {
     return {
       fill: C.paperDeep,
       stroke: C.line,
       strokeWidth: 1.2,
       opacity: 1,
+    };
+  }
+  if (isSel) {
+    return {
+      fill: C.gold,
+      stroke: C.navy,
+      strokeWidth: 2.5,
+      opacity: 1,
+      filter: `drop-shadow(0 0 10px ${C.gold}99) drop-shadow(0 2px 4px rgba(0,0,0,0.12))`,
     };
   }
   return {
@@ -102,7 +111,7 @@ function estilosPathSeleccion({ activo, isHover, isSel }) {
 
 function PathCCAA({ loc, ccaaId, activo, isHover, isSel, onHover, onTap, modo, C, isClm }) {
   const st = modo === "hero"
-    ? estilosPathHero({ activo, isHover, isClm, C })
+    ? estilosPathHero({ activo, isHover, isSel, isClm, C })
     : estilosPathSeleccion({ activo, isHover, isSel });
 
   return (
@@ -129,7 +138,7 @@ function PathCCAA({ loc, ccaaId, activo, isHover, isSel, onHover, onTap, modo, C
   );
 }
 
-export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "seleccion", colors: C }) {
+export default function MapaEspanaCCAA({ ccaaList, onConfirm, modo = "seleccion", colors: C }) {
   const [hoverId, setHoverId] = useState(null);
   const [seleccionados, setSeleccionados] = useState(() => new Set());
   const [proximamenteId, setProximamenteId] = useState(null);
@@ -152,25 +161,20 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "
   );
 
   const etiqueta = (() => {
-    if (modo === "hero") return null;
     if (hoverId) return ccaaPorId[hoverId]?.nombre || NOMBRES_CCAA[hoverId];
     if (seleccionados.size === 1) return nombresSeleccionados[0];
     if (seleccionados.size > 1) return `${seleccionados.size} comunidades seleccionadas`;
-    return "Toca una o varias comunidades";
+    return modo === "hero" ? "Toca tu comunidad en el mapa" : "Toca una o varias comunidades";
   })();
 
   const tapRegion = (ccaaId) => {
-    if (modo === "hero") {
-      if (!regionActiva(ccaaId)) {
+    if (!regionActiva(ccaaId)) {
+      if (modo === "hero") {
         setProximamenteId(ccaaId);
         window.setTimeout(() => setProximamenteId(null), 1800);
-        return;
       }
-      const ccaa = ccaaPorId[ccaaId] || { id: ccaaId, nombre: NOMBRES_CCAA[ccaaId], activo: true };
-      onSelect?.(ccaa);
       return;
     }
-    if (!regionActiva(ccaaId)) return;
     setSeleccionados((prev) => {
       const next = new Set(prev);
       if (next.has(ccaaId)) next.delete(ccaaId);
@@ -197,14 +201,14 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "
   const puedeConfirmar = seleccionados.size > 0 && [...seleccionados].every(regionActiva);
 
   const textoBoton = (() => {
-    if (!puedeConfirmar) return "Seleccionar comunidad";
-    if (seleccionados.size === 1) return `Continuar con ${nombresSeleccionados[0]}`;
-    return `Continuar con ${seleccionados.size} comunidades`;
+    if (!puedeConfirmar) return modo === "hero" ? "Buscar en la bolsa" : "Seleccionar comunidad";
+    if (seleccionados.size === 1) return `Buscar en ${nombresSeleccionados[0]}`;
+    return `Buscar en ${seleccionados.size} comunidades`;
   })();
 
-  const renderPath = (loc, ccaaId, extraSel) => {
+  const renderPath = (loc, ccaaId) => {
     const activo = regionActiva(ccaaId);
-    const isSel = modo === "seleccion" && (extraSel ?? seleccionados.has(ccaaId));
+    const isSel = seleccionados.has(ccaaId);
     const isClm = ccaaId === "clm";
     return (
       <g key={loc.id}>
@@ -241,13 +245,13 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "
         <p
           style={{
             fontFamily: "'Inter', system-ui, sans-serif",
-            fontSize: 15,
-            fontWeight: 700,
-            color: C.navy,
+            fontSize: modo === "hero" ? 13 : 15,
+            fontWeight: 600,
+            color: modo === "hero" ? C.inkSoft : C.navy,
             textAlign: "center",
             margin: 0,
-            height: 28,
-            lineHeight: "28px",
+            height: 24,
+            lineHeight: "24px",
             flexShrink: 0,
             overflow: "hidden",
             whiteSpace: "nowrap",
@@ -259,7 +263,7 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "
         </p>
       )}
 
-      {modo === "seleccion" && seleccionados.size > 1 && (
+      {seleccionados.size > 1 && (
         <p
           style={{
             fontFamily: "'Inter', system-ui, sans-serif",
@@ -308,19 +312,8 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "
 
           {canarias && (
             <g transform={CANARIAS_TRANSFORM}>
-              {renderPath(canarias, "can", modo === "seleccion" && seleccionados.has("can"))}
+              {renderPath(canarias, "can")}
             </g>
-          )}
-
-          {modo === "hero" && (
-            <text
-              x={88}
-              y={328}
-              textAnchor="middle"
-              style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fill: C.inkSoft, pointerEvents: "none" }}
-            >
-              Canarias
-            </text>
           )}
         </svg>
       </div>
@@ -349,32 +342,34 @@ export default function MapaEspanaCCAA({ ccaaList, onConfirm, onSelect, modo = "
         </div>
       )}
 
-      {modo === "seleccion" && (
+      {(modo === "seleccion" || modo === "hero") && (
         <>
-          <p
-            style={{
-              fontFamily: "'Inter', system-ui, sans-serif",
-              fontSize: 11,
-              color: C.inkSoft,
-              textAlign: "center",
-              margin: "8px 0 0",
-              flexShrink: 0,
-            }}
-          >
-            Vuelve a tocar una región para quitarla de la selección
-          </p>
+          {seleccionados.size > 0 && (
+            <p
+              style={{
+                fontFamily: "'Inter', system-ui, sans-serif",
+                fontSize: 11,
+                color: C.inkSoft,
+                textAlign: "center",
+                margin: "6px 0 0",
+                flexShrink: 0,
+              }}
+            >
+              Vuelve a tocar una región para quitarla
+            </p>
+          )}
           <button
             type="button"
             onClick={confirmar}
             disabled={!puedeConfirmar}
             className="w-full font-bold focus:outline-none flex-shrink-0"
             style={{
-              marginTop: 10,
+              marginTop: 8,
               background: puedeConfirmar ? C.navy : C.paperDeep,
               color: puedeConfirmar ? "#fff" : C.inkSoft,
-              padding: "16px",
+              padding: modo === "hero" ? "14px" : "16px",
               fontFamily: "'Inter', system-ui, sans-serif",
-              fontSize: 15,
+              fontSize: 14,
               borderRadius: "16px 5px 16px 5px",
               border: puedeConfirmar ? `2px solid ${C.gold}` : `1.5px solid ${C.line}`,
               cursor: puedeConfirmar ? "pointer" : "default",

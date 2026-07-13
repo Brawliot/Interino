@@ -3,6 +3,7 @@ import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, G
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
+import LogoInterino from "./src/components/LogoInterino.jsx";
 import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 
 const SimuladorBaremo = lazy(() => import("./src/herramientas/SimuladorBaremo.jsx"));
@@ -467,7 +468,7 @@ function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
   );
 }
 
-function PantallaHome({ onSelectCcaa, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
+function PantallaHome({ onConfirmCcaas, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
   return (
     <>
       <div
@@ -479,11 +480,19 @@ function PantallaHome({ onSelectCcaa, onBuscar, onSeguimientos, onMas, numSeguim
           paddingBottom: 56,
         }}
       >
-        <header style={{ flex: "0 0 auto", padding: "16px 20px 6px", position: "relative" }}>
-          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 600, color: C.navy, margin: 0, lineHeight: 1.2 }}>
-            {NOMBRE_APP}
-          </h1>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, margin: "4px 0 0" }}>
+        <header style={{ flex: "0 0 auto", padding: "14px 20px 4px", position: "relative" }}>
+          <LogoInterino height={34} C={C} />
+          <p
+            style={{
+              fontFamily: FONT_BODY,
+              fontSize: 16,
+              fontWeight: 500,
+              color: C.ink,
+              margin: "8px 0 0",
+              lineHeight: 1.35,
+              letterSpacing: "-0.01em",
+            }}
+          >
             Tu posición en la bolsa
           </p>
           {numSeguimientos > 0 && (
@@ -515,8 +524,8 @@ function PantallaHome({ onSelectCcaa, onBuscar, onSeguimientos, onMas, numSeguim
           )}
         </header>
 
-        <div style={{ flex: 1, minHeight: 0, padding: "0 4px 4px", display: "flex", flexDirection: "column" }}>
-          <MapaEspanaCCAA modo="hero" onSelect={onSelectCcaa} ccaaList={CCAA_LIST} colors={C} />
+        <div style={{ flex: 1, minHeight: 0, padding: "0 12px 4px", display: "flex", flexDirection: "column" }}>
+          <MapaEspanaCCAA modo="hero" onConfirm={onConfirmCcaas} ccaaList={CCAA_LIST} colors={C} />
         </div>
       </div>
       <BarraInferior onBuscar={onBuscar} onSeguimientos={onSeguimientos} onMas={onMas} numSeguimientos={numSeguimientos} />
@@ -1696,16 +1705,17 @@ export default function ListasApp() {
     setPaso("privacidad");
   };
 
-  const irABuscarConCcaa = (ccaa) => {
-    setCcaas([ccaa]);
+  const irABuscarConCcaas = (lista) => {
+    if (!lista?.length) return;
+    setCcaas(lista);
     setSector({ id: "sanidad", nombre: "Sanidad", activo: true });
-    guardarUltimaCcaaId(ccaa.id);
+    guardarUltimaCcaaId(lista[0].id);
     setPaso("buscar");
   };
 
   const irABuscarUltima = () => {
     const ccaa = ccaaPorId(leerUltimaCcaaId());
-    irABuscarConCcaa(ccaa.activo ? ccaa : ccaaPorId("clm"));
+    irABuscarConCcaas([ccaa.activo ? ccaa : ccaaPorId("clm")]);
   };
 
   const irSeguimientos = () => {
@@ -1855,7 +1865,7 @@ export default function ListasApp() {
       <div className={`max-w-md mx-auto ${paso === "inicio" ? "" : "pb-10"}`}>
         {paso === "inicio" && (
           <PantallaHome
-            onSelectCcaa={(ccaa) => irABuscarConCcaa(ccaa)}
+            onConfirmCcaas={irABuscarConCcaas}
             onBuscar={irABuscarUltima}
             onSeguimientos={irSeguimientos}
             onMas={() => setPaso("mas")}
