@@ -99,6 +99,9 @@ data/educacion/fp-singulares/*.json
 data/educacion/**/*.busqueda.json
 data/educacion/manifest.json
 !data/educacion/categorias.json
+data/educacion-bolsa/**/*.json
+!data/educacion-bolsa/categorias.json
+data/educacion-bolsa/manifest.json
 
 # Artefactos locales (no subir a R2)
 data/_local/

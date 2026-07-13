@@ -19,6 +19,15 @@ export const DATA_EDUCACION_BASE_URL = (() => {
   return "/data/educacion/";
 })();
 
+/** Bolsa ordinaria completa (listado por puntuación). Fuente distinta a «disponibles». */
+export const DATA_EDUCACION_BOLSA_BASE_URL = (() => {
+  const explicit = import.meta.env.VITE_DATA_EDUCACION_BOLSA_URL;
+  if (explicit) return explicit.replace(/\/?$/, "/");
+  const sanidad = import.meta.env.VITE_DATA_CATEGORIAS_URL;
+  if (sanidad) return `${sanidad.replace(/\/?$/, "/")}educacion-bolsa/`;
+  return "/data/educacion-bolsa/";
+})();
+
 /** Nombre PDF → slug de archivo (debe coincidir con scraper.slug_archivo). */
 export function slugArchivo(categoriaScraper) {
   return categoriaScraper
@@ -587,7 +596,7 @@ function nombreCuerpoUi(nombre) {
   return portalAUi(nombre.replace(/^PROFESORES\s+/i, "Profesores "));
 }
 
-function filaEducacionAApp(fila, total) {
+function filaEducacionAApp(fila, total, tipoListado = "disponibles") {
   const nombreCompleto = formatearNombre(fila.apellidos_nombre);
   const apellidos = fila.apellidos_nombre.split(",")[0].replace(/\n/g, " ").trim();
   return {
@@ -598,13 +607,18 @@ function filaEducacionAApp(fila, total) {
     total,
     dniParcial: fila.dni_parcial,
     tipo_bolsa: fila.tipo_bolsa,
+    bolsa_codigo: fila.bolsa_codigo,
+    acceso: fila.acceso,
     orden_lista: fila.orden,
     provincias: fila.provincias || [],
     idiomas: fila.idiomas,
+    tipoListado,
   };
 }
 
-export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
+export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {}) {
+  const baseUrl = opciones.baseUrl || DATA_EDUCACION_BASE_URL;
+  const tipoListado = opciones.tipoListado || "disponibles";
   const archivosDisponibles = new Set(manifest?.archivos || []);
   const cache = new Map();
   const metaPorCategoria = new Map();
@@ -666,8 +680,8 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
   async function cargarJson(rel) {
     if (!rel) throw new Error("Sin ruta");
     if (cache.has(rel)) return cache.get(rel);
-    const res = await fetch(`${DATA_EDUCACION_BASE_URL}${rel}`);
-    if (!res.ok) throw new Error(`No se pudo cargar ${DATA_EDUCACION_BASE_URL}${rel} (${res.status})`);
+    const res = await fetch(`${baseUrl}${rel}`);
+    if (!res.ok) throw new Error(`No se pudo cargar ${baseUrl}${rel} (${res.status})`);
     const data = await res.json();
     cache.set(rel, data);
     return data;
@@ -687,7 +701,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
     const snap = await cargarCategoria(grupoId, categoriaUi);
     const total = snap.personas?.length || 0;
     return (snap.personas || [])
-      .map((f) => filaEducacionAApp(f, total))
+      .map((f) => filaEducacionAApp(f, total, tipoListado))
       .sort((a, b) => a.pos - b.pos);
   }
 
@@ -745,6 +759,9 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
             total,
             delante: Math.max(0, p.bolsa_orden - 1),
             tipo_bolsa: p.tipo_bolsa,
+            bolsa_codigo: p.bolsa_codigo,
+            acceso: p.acceso,
+            tipoListado,
             provincias: p.provincias || [],
             idiomas: p.idiomas,
           },
@@ -754,16 +771,22 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
   }
 
   async function estadoActualizacion(categoriaUi, grupoId, grupoActivo) {
+    const etiquetaFuente =
+      tipoListado === "bolsa_ordinaria"
+        ? "bolsa ordinaria (listado completo por puntuación)"
+        : "aspirantes disponibles para sustituciones";
     if (grupoActivo === false) {
       return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
     }
     if (!tieneDatosReales(categoriaUi, grupoId)) {
-      return { tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta especialidad." };
+      return { tipo: "sin_datos", texto: `Aún no tenemos ${etiquetaFuente} para esta especialidad.` };
     }
     let generado = null;
+    let curso = null;
     try {
       const snap = await cargarCategoria(grupoId, categoriaUi);
       generado = snap.generado;
+      curso = snap.fuente?.curso;
     } catch {
       return { tipo: "sin_datos", texto: "No se pudo cargar el listado de esta especialidad." };
     }
@@ -772,19 +795,29 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc) {
     }
     const fecha = new Date(generado);
     const dias = Math.floor((Date.now() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+    const cursoTxt = curso ? ` · curso ${curso}` : "";
+    if (tipoListado === "bolsa_ordinaria") {
+      const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
+      return {
+        tipo: dias > 60 ? "desactualizado" : "ok",
+        texto: `Bolsa ordinaria scrapeada ${fecha.toLocaleString("es-ES")} (${hace})${cursoTxt}. Se publica en junio/julio con la renovación anual.`,
+      };
+    }
     if (dias > 14) {
       return {
         tipo: "desactualizado",
-        texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). Educación CLM puede haber publicado cambios desde entonces.`,
+        texto: `Listado de disponibles del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). Educación CLM publica uno nuevo cada semana de adjudicación.`,
       };
     }
     const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
-    return { tipo: "ok", texto: `Snapshot del listado: ${fecha.toLocaleString("es-ES")} (${hace}).` };
+    return { tipo: "ok", texto: `Disponibles scrapeados ${fecha.toLocaleString("es-ES")} (${hace}).` };
   }
 
   return {
     ccaaId: "clm",
     sector: "educacion",
+    tipoListado,
+    baseUrl,
     gruposSanidad,
     archivosDisponibles,
     tieneDatosReales,
@@ -953,7 +986,8 @@ export function crearCapaDatosMulti(capas, ccaaIds) {
 export async function cargarDatos() {
   const base = DATA_CATEGORIAS_BASE_URL;
   const eduBase = DATA_EDUCACION_BASE_URL;
-  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes] =
+  const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
+  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes] =
     await Promise.all([
       fetch(`${base}historico.json`),
       fetch(`${base}manifest.json`),
@@ -963,6 +997,7 @@ export async function cargarDatos() {
       fetch(`${base}madrid/categorias_sanidad.json`),
       fetch(`${eduBase}manifest.json`),
       fetch(`${eduBase}categorias.json`),
+      fetch(`${eduBolsaBase}manifest.json`),
     ]);
   if (!historicoRes.ok) throw new Error(`No se pudo cargar historico.json (${historicoRes.status})`);
   const historico = await historicoRes.json();
@@ -978,15 +1013,28 @@ export async function cargarDatos() {
   }
   const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
   const manifestEducacion = eduManifestRes.ok ? await eduManifestRes.json() : { archivos: [] };
+  const manifestEducacionBolsa = eduBolsaManifestRes.ok ? await eduBolsaManifestRes.json() : { archivos: [] };
   const categoriasEducacion = eduCatsRes.ok ? await eduCatsRes.json() : null;
-  const educacionActiva =
-    (manifestEducacion.archivos || []).some(
-      (a) => a.endsWith(".json") && !a.endsWith(".busqueda.json")
-    ) && Boolean(categoriasEducacion);
-  const educacionClm =
-    educacionActiva && categoriasEducacion
-      ? crearCapaDatosEducacionClm(manifestEducacion, categoriasEducacion)
+  const tieneArchivosListado = (manifest) =>
+    (manifest.archivos || []).some((a) => a.endsWith(".json") && !a.endsWith(".busqueda.json"));
+  const educacionDisponiblesActiva = tieneArchivosListado(manifestEducacion) && Boolean(categoriasEducacion);
+  const educacionBolsaActiva = tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
+  const educacionActiva = educacionDisponiblesActiva || educacionBolsaActiva;
+  const educacionDisponiblesClm =
+    educacionDisponiblesActiva && categoriasEducacion
+      ? crearCapaDatosEducacionClm(manifestEducacion, categoriasEducacion, {
+          baseUrl: eduBase,
+          tipoListado: "disponibles",
+        })
       : null;
+  const educacionBolsaClm =
+    educacionBolsaActiva && categoriasEducacion
+      ? crearCapaDatosEducacionClm(manifestEducacionBolsa, categoriasEducacion, {
+          baseUrl: eduBolsaBase,
+          tipoListado: "bolsa_ordinaria",
+        })
+      : null;
+  const educacionClm = educacionBolsaClm || educacionDisponiblesClm;
 
   let numGerenciasClm = null;
   try {
@@ -1010,10 +1058,19 @@ export async function cargarDatos() {
     regiones: CCAA_LIST,
     numGerenciasClm,
     educacionActiva,
+    educacionBolsaActiva,
+    educacionDisponiblesActiva,
     educacionClm,
+    educacionBolsaClm,
+    educacionDisponiblesClm,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
-    paraSector: (ccaaId, sectorId) => {
-      if (sectorId === "educacion" && ccaaId === "clm" && educacionClm) return educacionClm;
+    paraSector: (ccaaId, sectorId, opciones = {}) => {
+      if (sectorId === "educacion" && ccaaId === "clm") {
+        const modo = opciones.modoListadoEducacion;
+        if (modo === "disponibles" && educacionDisponiblesClm) return educacionDisponiblesClm;
+        if (modo === "bolsa" && educacionBolsaClm) return educacionBolsaClm;
+        return educacionBolsaClm || educacionDisponiblesClm || capas.clm;
+      }
       return capas[ccaaId] || capas.clm;
     },
     paraCcaas: (ccaaIds) => {

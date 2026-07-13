@@ -30390,5 +30390,1133 @@
     "ambito": "Atencion Primaria",
     "total_admitidos": 999,
     "punto_minimo_admitido": 0.06
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA DEL TRABAJO",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 25,
+    "punto_minimo_admitido": 21.78
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA DEL TRABAJO",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 29,
+    "punto_minimo_admitido": 7.32
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA EN ENF. FAMILIAR Y COMUNITARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 211,
+    "punto_minimo_admitido": 9.18
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA EN ENF. GERIATRICA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 29,
+    "punto_minimo_admitido": 94.29
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA EN ENF. PEDIATRICA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 35,
+    "punto_minimo_admitido": 55.67
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA EN SALUD MENTAL",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 53,
+    "punto_minimo_admitido": 5.1
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA EN SALUD MENTAL",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 45,
+    "punto_minimo_admitido": 5.1
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A ESPECIALISTA OBSTETRICIO - GINECOLOGICA (MATRONA)",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 179,
+    "punto_minimo_admitido": 1.8
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A P.E.A.C.",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 2747,
+    "punto_minimo_admitido": 0.14
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 8816,
+    "punto_minimo_admitido": 0.38
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4556,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "ENFERMERO/A",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 5633,
+    "punto_minimo_admitido": 0.38
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FISIOTERAPEUTA",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 1854,
+    "punto_minimo_admitido": 0.35
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FISIOTERAPEUTA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 1174,
+    "punto_minimo_admitido": 0.35
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FISIOTERAPEUTA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 1672,
+    "punto_minimo_admitido": 0.35
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "LOGOPEDA",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 254,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "LOGOPEDA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 219,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "OPTICO/A OPTOMETRISTA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 68,
+    "punto_minimo_admitido": 3.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "OPTICO/A OPTOMETRISTA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 80,
+    "punto_minimo_admitido": 0.7
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "PODOLOGO/A",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 80,
+    "punto_minimo_admitido": 1.4
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "PODOLOGO/A",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 45,
+    "punto_minimo_admitido": 1.4
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "PODOLOGO/A",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 71,
+    "punto_minimo_admitido": 1.4
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TERAPEUTA OCUPACIONAL",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 520,
+    "punto_minimo_admitido": 0.3
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TERAPEUTA OCUPACIONAL",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 759,
+    "punto_minimo_admitido": 0.02
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "HIGIENISTA DENTAL",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 490,
+    "punto_minimo_admitido": 0.26
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERIA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 4203,
+    "punto_minimo_admitido": 0.2
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A MEDIO SANITARIO: CUIDADOS AUXILIARES DE ENFERMERIA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 7601,
+    "punto_minimo_admitido": 0.2
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A MEDIO SANITARIO: FARMACIA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 399,
+    "punto_minimo_admitido": 0.96
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A MEDIO SANITARIO: FARMACIA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 488,
+    "punto_minimo_admitido": 0.32
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR EN DOCUMENTACION SANITARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 127,
+    "punto_minimo_admitido": 0.36
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR EN DOCUMENTACION SANITARIA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 133,
+    "punto_minimo_admitido": 0.36
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR SANITARIO EN ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 707,
+    "punto_minimo_admitido": 0.48
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR SANITARIO EN ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 816,
+    "punto_minimo_admitido": 0.48
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR SANITARIO EN LABORATORIO",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 2031,
+    "punto_minimo_admitido": 0.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR SANITARIO EN LABORATORIO",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 2394,
+    "punto_minimo_admitido": 0.16
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR SANITARIO EN RADIODIAGNOSTICO",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 2485,
+    "punto_minimo_admitido": 0.12
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "TECNICO/A SUPERIOR SANITARIO EN RADIODIAGNOSTICO",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Primaria",
+    "total_admitidos": 2762,
+    "punto_minimo_admitido": 0.12
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 299,
+    "punto_minimo_admitido": 1.9
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 270,
+    "punto_minimo_admitido": 2.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 250,
+    "punto_minimo_admitido": 2.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 277,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 254,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 264,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 244,
+    "punto_minimo_admitido": 2.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 246,
+    "punto_minimo_admitido": 1.9
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 234,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 246,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 243,
+    "punto_minimo_admitido": 2.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 241,
+    "punto_minimo_admitido": 1.9
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 242,
+    "punto_minimo_admitido": 2.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FARMACEUTICO/A DE ATENCION PRIMARIA",
+    "gerencia": "Gerencia de Atencion Primaria de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 330,
+    "punto_minimo_admitido": 0.5
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 52,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 27,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 34,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 24,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 37,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 26,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 44,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 17,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 25,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 22,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 33,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 27,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 20,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 27,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ALERGOLOGIA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 24,
+    "punto_minimo_admitido": 8.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 180,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 148,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 137,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 128,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 153,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 133,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 162,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 121,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 114,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 129,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 131,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 115,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 113,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 109,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANALISIS CLINICOS",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 129,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 37,
+    "punto_minimo_admitido": 5.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 28,
+    "punto_minimo_admitido": 28.34
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 18,
+    "punto_minimo_admitido": 5.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 13,
+    "punto_minimo_admitido": 60.54
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 29,
+    "punto_minimo_admitido": 5.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 25,
+    "punto_minimo_admitido": 5.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 34,
+    "punto_minimo_admitido": 2.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 14,
+    "punto_minimo_admitido": 60.54
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 12,
+    "punto_minimo_admitido": 60.54
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 17,
+    "punto_minimo_admitido": 59.56
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 22,
+    "punto_minimo_admitido": 5.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 10,
+    "punto_minimo_admitido": 60.54
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 12,
+    "punto_minimo_admitido": 60.54
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 12,
+    "punto_minimo_admitido": 60.54
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANATOMIA PATOLOGICA",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 16,
+    "punto_minimo_admitido": 5.6
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 55,
+    "punto_minimo_admitido": 7.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 45,
+    "punto_minimo_admitido": 35.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 23,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 29,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 37,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 26,
+    "punto_minimo_admitido": 35.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 34,
+    "punto_minimo_admitido": 35.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 27,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 21,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 20,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 27,
+    "punto_minimo_admitido": 24.75
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 20,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 17,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 30,
+    "punto_minimo_admitido": 78.76
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANESTESIOLOGIA Y REANIMACION",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 19,
+    "punto_minimo_admitido": 102.55
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 14,
+    "punto_minimo_admitido": 61.84
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 10,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 9,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 10,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 10,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 6,
+    "punto_minimo_admitido": 1.26
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-13",
+    "categoria": "FEA ANGIOLOGIA Y CIRUGIA VASCULAR",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 2,
+    "punto_minimo_admitido": 85.0
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Especializada de Toledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 71,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Albacete",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 41,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Alcazar de San Juan",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 37,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Almansa",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 27,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Ciudad Real",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 42,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Cuenca",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 29,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Guadalajara",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 37,
+    "punto_minimo_admitido": 100.0
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Hellin",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 25,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Manzanares",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 25,
+    "punto_minimo_admitido": 231.18
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Puertollano",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 25,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Talavera de la Reina",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 29,
+    "punto_minimo_admitido": 174.02
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Tomelloso",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 28,
+    "punto_minimo_admitido": 231.18
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Valdepenas",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 22,
+    "punto_minimo_admitido": 106.28
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia de Atencion Integrada de Villarrobledo",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 31,
+    "punto_minimo_admitido": 101.83
+  },
+  {
+    "fecha": "2026-07-14",
+    "categoria": "FEA APARATO DIGESTIVO",
+    "gerencia": "Gerencia del Hospital Nacional de Paraplejicos",
+    "ambito": "Atencion Especializada",
+    "total_admitidos": 11,
+    "punto_minimo_admitido": 277.71
   }
 ]

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
-import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION } from "./src/educacion.js";
+import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria, MODOS_LISTADO_EDUCACION } from "./src/educacion.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
@@ -108,9 +108,24 @@ const TEXTO_AYUDA_BUSQUEDA_BASE = {
   multi: "Puedes buscar por apellidos o DNI parcial en todas tus comunidades seleccionadas, o elegir grupo y categoría concretos por región. No te pedimos ni guardamos tu DNI completo.",
 };
 
-function textoAyudaBusqueda(ccaaId, numGerencias, modoEducacion) {
+const LS_EDUCACION_LISTADO = "interino-educacion-listado";
+
+function leerModoListadoEducacion(datos) {
+  try {
+    const guardado = localStorage.getItem(LS_EDUCACION_LISTADO);
+    if (guardado === "bolsa" && datos.educacionBolsaActiva) return "bolsa";
+    if (guardado === "disponibles" && datos.educacionDisponiblesActiva) return "disponibles";
+  } catch { /* quota / modo privado */ }
+  if (datos.educacionBolsaActiva) return "bolsa";
+  return "disponibles";
+}
+
+function textoAyudaBusqueda(ccaaId, numGerencias, modoEducacion, modoListadoEducacion) {
   if (modoEducacion) {
-    return "Puedes buscar por apellidos o DNI parcial (como los publica Educación CLM). Cada persona tiene una posición en la bolsa de su especialidad y las provincias donde acepta sustituciones. No te pedimos ni guardamos tu DNI completo.";
+    if (modoListadoEducacion === "bolsa") {
+      return "Busca por apellidos o DNI parcial. Verás tu posición en la bolsa ordinaria completa de tu especialidad (orden por puntuación, como en sanidad). No te pedimos ni guardamos tu DNI completo.";
+    }
+    return "Busca por apellidos o DNI parcial. Este listado semanal solo incluye quienes están disponibles para sustituciones y las provincias donde aceptan. No te pedimos ni guardamos tu DNI completo.";
   }
   if (ccaaId === "mur") return TEXTO_AYUDA_BUSQUEDA_BASE.mur;
   if (ccaaId === "mad") return TEXTO_AYUDA_BUSQUEDA_BASE.mad;
@@ -681,10 +696,50 @@ function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva
   );
 }
 
+function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva }) {
+  if (!bolsaActiva && !disponiblesActiva) return null;
+  const mostrarToggle = bolsaActiva && disponiblesActiva;
+
+  return (
+    <div>
+      <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 12.5, color: C.navy, marginBottom: 8 }}>
+        Tipo de listado
+      </p>
+      <div className="flex flex-col gap-2">
+        {[MODOS_LISTADO_EDUCACION.bolsa, MODOS_LISTADO_EDUCACION.disponibles].map((m) => {
+          const activo = m.id === "bolsa" ? bolsaActiva : disponiblesActiva;
+          const seleccionado = modo === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              disabled={!activo}
+              onClick={() => activo && onModoChange(m.id)}
+              className="text-left focus:outline-none"
+              style={{
+                background: seleccionado ? C.navy : C.card,
+                color: seleccionado ? "#fff" : activo ? C.ink : C.inkSoft,
+                border: `1.5px solid ${seleccionado ? C.navy : C.line}`,
+                borderRadius: m.id === "bolsa" ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
+                padding: "12px 14px",
+                opacity: activo ? 1 : 0.55,
+                cursor: activo && mostrarToggle ? "pointer" : "default",
+              }}
+            >
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5 }}>{m.titulo}</p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, marginTop: 3, opacity: 0.85 }}>{m.subtitulo}</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, modoEducacion }) {
+function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, educacionBolsaActiva, educacionDisponiblesActiva, modoEducacion, modoListadoEducacion, onModoListadoEducacionChange }) {
   const datos = useDatos();
   const capa = useCapaDatos();
   const multi = ccaas.length > 1;
@@ -704,7 +759,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const tituloBarra = multi ? ccaas.map((c) => c.nombre).join(" · ") : (ccaas[0]?.nombre || "Castilla-La Mancha");
   const textoAyuda = multi
     ? TEXTO_AYUDA_BUSQUEDA_BASE.multi
-    : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm, modoEducacion);
+    : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm, modoEducacion, modoListadoEducacion);
 
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
@@ -723,7 +778,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
     setSinResultados(false);
     setSinResultadosGlobal(false);
     setSinDatosCategoria(false);
-  }, [sectorId, gruposSanidad]);
+  }, [sectorId, gruposSanidad, modoListadoEducacion]);
 
   const buscar = async (cat, q) => {
     setSinDatosCategoria(false);
@@ -783,6 +838,15 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             setSinDatosCategoria(false);
           }}
         />
+
+        {modoEducacion && (
+          <SelectorListadoEducacion
+            modo={modoListadoEducacion}
+            onModoChange={onModoListadoEducacionChange}
+            bolsaActiva={educacionBolsaActiva}
+            disponiblesActiva={educacionDisponiblesActiva}
+          />
+        )}
 
         <div>
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
@@ -1011,9 +1075,10 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
 // ---------------------------------------------------------------
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
-function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion }) {
+function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion, modoListadoEducacion }) {
   const capa = useCapaDatos();
   const esEducacion = modoEducacion || capa.sector === "educacion";
+  const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(capa.tipoListado));
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
@@ -1079,7 +1144,11 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
             <span style={{ flex: "0 0 40px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>POS.</span>
             <span style={{ flex: 1, fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>NOMBRE Y APELLIDOS</span>
             {esEducacion ? (
-              <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, textAlign: "right" }}>PROV.</span>
+              esBolsaCompleta ? (
+                <span style={{ flex: "0 0 56px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, textAlign: "right" }}>BOLSA</span>
+              ) : (
+                <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, textAlign: "right" }}>PROV.</span>
+              )
             ) : (
               <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
             )}
@@ -1095,11 +1164,17 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
                 )}
               </span>
               {esEducacion ? (
-                <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, textAlign: "right" }}>
-                  {(f.provincias || [])
-                    .map((c) => PROVINCIAS_CLM.find((p) => p.codigo === c)?.abrev || c)
-                    .join(" ")}
-                </span>
+                esBolsaCompleta ? (
+                  <span style={{ flex: "0 0 56px", fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, textAlign: "right" }}>
+                    {f.bolsa_codigo ?? "—"}
+                  </span>
+                ) : (
+                  <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, textAlign: "right" }}>
+                    {(f.provincias || [])
+                      .map((c) => PROVINCIAS_CLM.find((p) => p.codigo === c)?.abrev || c)
+                      .join(" ")}
+                  </span>
+                )
               ) : (
                 <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: C.inkSoft }}>{f.puntos?.toFixed?.(2) ?? "—"}</span>
               )}
@@ -1124,8 +1199,9 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
 // ---------------------------------------------------------------
 
 // Bloque de detalle educación CLM: posición en bolsa + provincias
-function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
+function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos, esBolsaCompleta }) {
   const capa = useCapaDatos();
+  const bolsaCompleta = esBolsaCompleta ?? esBolsaOrdinaria(r?.tipoListado ?? capa.tipoListado);
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const posicion = Number(r?.bolsa_orden ?? r?.posicion ?? r?.pos ?? 0) || 0;
   const total = Number(r?.total ?? 0) || 0;
@@ -1158,8 +1234,12 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
         </p>
         <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
           {total > 0
-            ? `de ${total.toLocaleString("es-ES")} personas en la bolsa · por delante del ${percentil}%`
-            : "Posición en la bolsa de sustituciones"}
+            ? bolsaCompleta
+              ? `de ${total.toLocaleString("es-ES")} personas en la bolsa ordinaria · por delante del ${percentil}%`
+              : `de ${total.toLocaleString("es-ES")} personas en la bolsa · por delante del ${percentil}%`
+            : bolsaCompleta
+              ? "Posición en la bolsa ordinaria completa"
+              : "Posición en la bolsa de sustituciones"}
         </p>
         {r?.tipo_bolsa && (
           <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6 }}>
@@ -1170,6 +1250,7 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
       </div>
       <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
 
+      {!bolsaCompleta && (
       <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
         <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Provincias donde acepta sustituciones</p>
         <div className="flex flex-wrap gap-2 mt-3">
@@ -1200,8 +1281,23 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
           AB = Albacete · CR = Ciudad Real · CU = Cuenca · GU = Guadalajara · TO = Toledo
         </p>
       </div>
+      )}
 
-      {idiomasActivos.length > 0 && (
+      {bolsaCompleta && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Bolsa ordinaria completa</p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
+            Listado por puntuación publicado en la renovación anual (junio/julio). Incluye a todas las personas admitidas en la bolsa, no solo quienes están disponibles para sustituciones.
+          </p>
+          {r?.bolsa_codigo != null && (
+            <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8 }}>
+              Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
+            </p>
+          )}
+        </div>
+      )}
+
+      {!bolsaCompleta && idiomasActivos.length > 0 && (
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16, marginTop: 12 }}>
           <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Idiomas acreditados</p>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -1532,10 +1628,11 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
 }
 
 // Contenedor: tabla resumen de gerencias + detalle al tocar una fila.
-function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, modoEducacion }) {
+function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, modoEducacion, modoListadoEducacion }) {
   const capa = useCapaDatos();
   const apariciones = candidato?.apariciones ?? [];
   const esEducacion = modoEducacion || apariciones[0]?.sector === "educacion";
+  const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(apariciones[0]?.tipoListado ?? capa.tipoListado));
   const [detalleFila, setDetalleFila] = useState(null);
   const [bulkSeguido, setBulkSeguido] = useState(false);
 
@@ -1580,6 +1677,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
             }
             onVerListado={() => onVerListado("", "", catAparicion, grupoAparicion)}
             onInfoLlamamientos={onInfoLlamamientos}
+            esBolsaCompleta={esBolsaCompleta}
           />
         </div>
       </div>
@@ -1929,15 +2027,21 @@ export default function ListasApp() {
   const datos = useDatos();
   const [ccaas, setCcaas] = useState([]);
   const [sectorId, setSectorId] = useState("sanidad");
+  const [listadoEducacionModo, setListadoEducacionModo] = useState(() => leerModoListadoEducacion(datos));
   const capaDatos = useMemo(() => {
     const ids = ccaas.map((c) => c.id);
     const ccaaPrincipal = ids[0] || "clm";
     if (sectorId === "educacion") {
-      return datos.paraSector?.(ccaaPrincipal, "educacion") || datos.educacionClm || datos.paraCcaa("clm");
+      return (
+        datos.paraSector?.(ccaaPrincipal, "educacion", { modoListadoEducacion: listadoEducacionModo }) ||
+        datos.educacionBolsaClm ||
+        datos.educacionDisponiblesClm ||
+        datos.paraCcaa("clm")
+      );
     }
     if (ids.length === 0) return datos.paraCcaa("clm");
     return datos.paraCcaas(ids);
-  }, [datos, ccaas, sectorId]);
+  }, [datos, ccaas, sectorId, listadoEducacionModo]);
   const gruposSanidad = capaDatos.gruposSanidad?.length ? capaDatos.gruposSanidad : GRUPOS_SANIDAD_FALLBACK;
   const modoEducacion = sectorId === "educacion" || capaDatos.sector === "educacion";
   const [paso, setPaso] = useState("inicio");
@@ -1974,6 +2078,21 @@ export default function ListasApp() {
       localStorage.setItem(LS_RECIENTES, JSON.stringify(recientes));
     } catch { /* quota / modo privado */ }
   }, [recientes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_EDUCACION_LISTADO, listadoEducacionModo);
+    } catch { /* quota / modo privado */ }
+  }, [listadoEducacionModo]);
+
+  useEffect(() => {
+    if (sectorId !== "educacion") return;
+    if (listadoEducacionModo === "bolsa" && !datos.educacionBolsaActiva && datos.educacionDisponiblesActiva) {
+      setListadoEducacionModo("disponibles");
+    } else if (listadoEducacionModo === "disponibles" && !datos.educacionDisponiblesActiva && datos.educacionBolsaActiva) {
+      setListadoEducacionModo("bolsa");
+    }
+  }, [sectorId, listadoEducacionModo, datos.educacionBolsaActiva, datos.educacionDisponiblesActiva]);
 
   const abrirPrivacidad = () => {
     setPasoPrivacidadOrigen(paso);
@@ -2162,7 +2281,7 @@ export default function ListasApp() {
 
         {paso === "buscar" && (
           <PantallaBuscar
-            key={`${ccaas.map((c) => c.id).join("+") || "clm"}-${sectorId}`}
+            key={`${ccaas.map((c) => c.id).join("+") || "clm"}-${sectorId}-${listadoEducacionModo}`}
             ccaas={ccaas.length ? ccaas : [ccaaPorId("clm")]}
             atras={() => setPaso("inicio")}
             onBuscar={iniciarBusqueda}
@@ -2172,7 +2291,7 @@ export default function ListasApp() {
               setListadoCategoria(categoria);
               setListadoGerencia(gerencia || "");
               setListadoAmbito("");
-              setListadoGrupoId(g?.id || (modoEducacion ? "maestros" : "diplomado"));
+              setListadoGrupoId(g?.id || (modoEducacion ? "secundaria" : "diplomado"));
               setPantallaPrevia("buscar");
               setPaso("listado");
             }}
@@ -2180,7 +2299,11 @@ export default function ListasApp() {
             gruposSanidad={gruposSanidad}
             sectorId={sectorId}
             educacionActiva={datos.educacionActiva}
+            educacionBolsaActiva={datos.educacionBolsaActiva}
+            educacionDisponiblesActiva={datos.educacionDisponiblesActiva}
             modoEducacion={modoEducacion}
+            modoListadoEducacion={listadoEducacionModo}
+            onModoListadoEducacionChange={setListadoEducacionModo}
             onSectorChange={(s) => setSectorId(s.id)}
           />
         )}
@@ -2211,6 +2334,7 @@ export default function ListasApp() {
             )?.activo}
             candidato={candidatoElegido}
             modoEducacion={modoEducacion}
+            modoListadoEducacion={listadoEducacionModo}
             atras={() => setPaso("buscar")}
             estaGuardado={(gerencia, ambito, nombre, cat, ccaaId) => estaGuardado(gerencia, ambito, nombre, cat, ccaaId)}
             onGuardar={guardarSeguimiento}
@@ -2238,6 +2362,7 @@ export default function ListasApp() {
             grupoId={listadoGrupoId}
             grupoActivo={(gruposSanidad.find((g) => g.id === listadoGrupoId) || grupoDeCategoria(listadoCategoria, gruposSanidad))?.activo}
             modoEducacion={modoEducacion}
+            modoListadoEducacion={listadoEducacionModo}
             atras={() => setPaso(pantallaPrevia)}
           />
         )}

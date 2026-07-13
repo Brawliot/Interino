@@ -26,3 +26,20 @@ export function tipoBolsaLegible(tipo) {
   if (tipo === "reserva") return "Bolsa de reserva";
   return tipo || "Bolsa";
 }
+
+export function esBolsaOrdinaria(tipoListado) {
+  return tipoListado === "bolsa_ordinaria";
+}
+
+export const MODOS_LISTADO_EDUCACION = {
+  bolsa: {
+    id: "bolsa",
+    titulo: "Bolsa completa",
+    subtitulo: "Listado por puntuación (renovación anual)",
+  },
+  disponibles: {
+    id: "disponibles",
+    titulo: "Disponibles",
+    subtitulo: "Quién acepta sustituciones esta semana",
+  },
+};
