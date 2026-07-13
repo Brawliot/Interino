@@ -1,2 +1,8 @@
 Copia TODO el contenido de esta carpeta (data/public/) a la raiz del bucket R2 interino-data.
 No subas la carpeta public ni data/_local/.
+
+URL publica R2 (ya en .env.production):
+  https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev/
+
+CORS: en R2 → bucket → Settings → CORS policy → pegar r2-cors.json de la raiz del repo.
+Sin CORS la app en interino.pages.dev no puede leer los JSON desde el navegador.
