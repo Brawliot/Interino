@@ -1486,6 +1486,10 @@ export async function cargarDatos() {
   const educacionBolsaActiva = tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
   const educacionAfinActiva = educacionBolsaActiva && Boolean(afinidadEducacion);
   const educacionActiva = educacionDisponiblesActiva || educacionBolsaActiva;
+  const murciaActiva = murCatsRes.ok && tieneArchivosListado(manifestMurcia);
+  const madridActiva =
+    madCatsRes.ok &&
+    (manifest.archivos || []).some((a) => a.startsWith("madrid/") && a.endsWith(".json") && !a.endsWith(".busqueda.json"));
   const administracionActiva =
     tieneArchivosListado(manifestAdmin) &&
     Array.isArray(categoriasAdmin) &&
@@ -1566,6 +1570,8 @@ export async function cargarDatos() {
     educacionDisponiblesClm,
     administracionActiva,
     administracionClm,
+    murciaActiva,
+    madridActiva,
     coberturaEducacion,
     adminSinPdf,
     frescura,

@@ -7,7 +7,7 @@ cd /d "%~dp0\.."
 set LOG=data\_local\logs\scrape_murcia.log
 echo === Inicio %date% %time% === >> "%LOG%"
 
-if not exist "data\murcia\categorias.json" (
+if not exist "data\public\murcia\categorias.json" (
   echo Generando inventario...
   echo [%date% %time%] inventario >> "%LOG%"
   python scraper_murcia.py --inventario >> "%LOG%" 2>&1

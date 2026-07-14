@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
@@ -7,6 +7,8 @@ import { viaBolsaLegible, TEXTO_AFIN_NORMATIVA } from "./src/educacion-afin.js";
 import { subBolsaLegible } from "./src/admin-clm.js";
 import { etiquetaFrescuraSector } from "./src/cobertura-clm.js";
 import { activarNotificacionesSeguimiento, notificacionesSoportadas } from "./src/notificaciones.js";
+import { PLAN, limiteSeguimientos, puedeAnadirSeguimiento, mensajeLimiteSeguimientos, FEATURES_PREMIUM } from "./src/plan.js";
+import { LS_SEGUIMIENTOS, exportarSeguimientos, importarSeguimientosDesdeArchivo } from "./src/seguimientos-backup.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
@@ -20,7 +22,6 @@ const GuiaLlamamiento = lazy(() => import("./src/herramientas/GuiaLlamamiento.js
 const CalculadoraMeritos = lazy(() => import("./src/herramientas/CalculadoraMeritos.jsx"));
 const GraficoHistoricoCorte = lazy(() => import("./src/components/GraficoHistoricoCorte.jsx"));
 
-const LS_SEGUIMIENTOS = "interino_seguimientos_v1";
 const LS_RECIENTES = "interino_recientes_v1";
 const LS_LAST_CCAA = "interino_last_ccaa_v1";
 const LS_BIENVENIDA = "interino_bienvenida_v2";
@@ -690,6 +691,30 @@ function PantallaHome({ onConfirmCcaas, onBuscar, onSeguimientos, onMas, numSegu
   );
 }
 
+function AvisoRegionSinListados({ ccaaId, murciaActiva, madridActiva }) {
+  if (ccaaId === "mur" && !murciaActiva) {
+    return (
+      <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+        <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+        <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.45 }}>
+          Los listados de sanidad de Murcia (SMS) aún no están en el servidor. Puedes ver el inventario de categorías, pero la búsqueda requiere subir los JSON scrapeados a R2 (<code style={{ fontSize: 11 }}>murcia/</code>).
+        </p>
+      </div>
+    );
+  }
+  if (ccaaId === "mad" && !madridActiva) {
+    return (
+      <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+        <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+        <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.45 }}>
+          Madrid (SERMAS) está en fase de exploración: solo hay inventario de categorías, sin listados scrapeados todavía. La búsqueda estará disponible cuando haya datos en R2.
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
   return (
     <div className="pb-8">
@@ -743,6 +768,22 @@ function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
               </button>
             );
           })}
+        </div>
+        <div style={{ marginTop: 28, padding: "14px 16px", background: C.card, border: `1px solid ${C.line}`, borderRadius: "12px 4px 12px 4px" }}>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 6 }}>
+            Plan · {PLAN.nombre}
+          </p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, marginBottom: 10 }}>
+            {mensajeLimiteSeguimientos()}
+          </p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700, color: C.inkSoft, marginBottom: 6 }}>
+            Premium (próximamente, {PLAN.premiumPrecioEur} €)
+          </p>
+          <ul style={{ margin: 0, paddingLeft: 18, fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5 }}>
+            {FEATURES_PREMIUM.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
         </div>
         <div style={{ marginTop: 28, padding: "14px 16px", background: C.card, border: `1px solid ${C.line}`, borderRadius: "12px 4px 12px 4px" }}>
           <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
@@ -979,7 +1020,7 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, educacionAfinActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
+function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, educacionAfinActiva, murciaActiva, madridActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
   const datos = useDatos();
   const capa = useCapaDatos();
   const multi = ccaas.length > 1;
@@ -1084,6 +1125,10 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             setSinDatosCategoria(false);
           }}
         />
+
+        {!multi && !modoEducacion && !modoAdministracion && (
+          <AvisoRegionSinListados ccaaId={ccaaIds[0]} murciaActiva={murciaActiva} madridActiva={madridActiva} />
+        )}
 
         {sectorDisponible && (
           <LineaFrescura
@@ -2574,12 +2619,68 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
 // ---------------------------------------------------------------
 // PANTALLA — Mis seguimientos (varias listas a la vez)
 // ---------------------------------------------------------------
-function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad }) {
+function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad, onExportar, onImportar, limiteMax }) {
   const capa = useCapaDatos();
+  const inputImportRef = useRef(null);
   return (
     <div>
       <Barra titulo="Mis seguimientos" atras={atras} />
       <div className="px-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, margin: 0 }}>
+            {seguimientos.length} / {limiteMax} · {PLAN.nombre}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onExportar}
+              disabled={!seguimientos.length}
+              className="font-bold focus:outline-none"
+              style={{
+                fontFamily: FONT_BODY,
+                fontSize: 11.5,
+                padding: "6px 10px",
+                border: `1px solid ${C.line}`,
+                borderRadius: 8,
+                background: C.card,
+                color: seguimientos.length ? C.navy : C.inkSoft,
+                opacity: seguimientos.length ? 1 : 0.6,
+              }}
+            >
+              Exportar
+            </button>
+            <button
+              type="button"
+              onClick={() => inputImportRef.current?.click()}
+              className="font-bold focus:outline-none"
+              style={{
+                fontFamily: FONT_BODY,
+                fontSize: 11.5,
+                padding: "6px 10px",
+                border: `1px solid ${C.line}`,
+                borderRadius: 8,
+                background: C.card,
+                color: C.navy,
+              }}
+            >
+              Importar
+            </button>
+            <input
+              ref={inputImportRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onImportar(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        </div>
+        <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, lineHeight: 1.4, marginBottom: 8 }}>
+          {mensajeLimiteSeguimientos()}
+        </p>
         {seguimientos.length === 0 && (
           <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.inkSoft }}>
             Todavía no guardas ninguna lista. Puedes seguir varias a la vez — por ejemplo, la general de Enfermería y la de Salud Mental.
@@ -2720,6 +2821,7 @@ export default function ListasApp() {
   const [listadoGrupoId, setListadoGrupoId] = useState("diplomado");
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
   const [herramientasCtx, setHerramientasCtx] = useState({ puntos: null, categoria: "" });
+  const [avisoLimite, setAvisoLimite] = useState("");
 
   useEffect(() => {
     setSeguimientos(leerStorage(LS_SEGUIMIENTOS, []));
@@ -2872,6 +2974,11 @@ export default function ListasApp() {
       ) {
         return prev;
       }
+      if (!puedeAnadirSeguimiento(prev.length)) {
+        setAvisoLimite(mensajeLimiteSeguimientos());
+        return prev;
+      }
+      setAvisoLimite("");
       return [
         ...prev,
         {
@@ -2884,6 +2991,22 @@ export default function ListasApp() {
         },
       ];
     });
+  };
+
+  const importarSeguimientos = async (file) => {
+    try {
+      const lista = await importarSeguimientosDesdeArchivo(file);
+      const max = limiteSeguimientos();
+      if (lista.length > max) {
+        setSeguimientos(lista.slice(0, max));
+        setAvisoLimite(`Importados ${max} de ${lista.length} (límite del plan).`);
+      } else {
+        setSeguimientos(lista);
+        setAvisoLimite("");
+      }
+    } catch {
+      setAvisoLimite("No se pudo importar el archivo. Comprueba que sea un JSON de Interino.");
+    }
   };
 
   const abrirSeguimiento = (s) => {
@@ -2969,6 +3092,8 @@ export default function ListasApp() {
             educacionBolsaActiva={datos.educacionBolsaActiva}
             educacionDisponiblesActiva={datos.educacionDisponiblesActiva}
             educacionAfinActiva={datos.educacionAfinActiva}
+            murciaActiva={datos.murciaActiva}
+            madridActiva={datos.madridActiva}
             modoEducacion={modoEducacion}
             modoAdministracion={modoAdministracion}
             modoListadoEducacion={listadoEducacionModo}
@@ -3063,6 +3188,9 @@ export default function ListasApp() {
           <PantallaSeguimientos
             seguimientos={seguimientos}
             atras={() => setPaso(pasoSeguimientosOrigen)}
+            limiteMax={limiteSeguimientos()}
+            onExportar={() => exportarSeguimientos(seguimientos)}
+            onImportar={importarSeguimientos}
             gruposSanidad={gruposSanidad}
             onAbrir={abrirSeguimiento}
           />
@@ -3137,6 +3265,32 @@ export default function ListasApp() {
             Barra={Barra}
             atras={() => setPaso(pasoPrivacidadOrigen)}
           />
+        )}
+
+        {avisoLimite && (
+          <div
+            className="fixed bottom-4 left-4 right-4 mx-auto max-w-md px-4 py-3 z-50"
+            style={{
+              background: C.navy,
+              color: "#fff",
+              borderRadius: "12px 4px 12px 4px",
+              fontFamily: FONT_BODY,
+              fontSize: 12,
+              lineHeight: 1.45,
+              boxShadow: "0 8px 24px rgba(0,0,0,.18)",
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p style={{ margin: 0 }}>{avisoLimite}</p>
+              <button
+                type="button"
+                onClick={() => setAvisoLimite("")}
+                style={{ background: "transparent", border: "none", color: C.goldSoft, fontWeight: 700, fontSize: 12, flexShrink: 0 }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

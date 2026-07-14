@@ -28,9 +28,17 @@ No seguir invirtiendo en una fuente de Cajón B "porque ya se ha empezado" — c
 | **Sanidad** | ✅ 4 grupos activos | ✅ `scraper.py` | ✅ ~227 listados | Facultativo sin categorías en portal |
 | **Educación** | ✅ 3 modos (disponibles / bolsa / AFIN) | ✅ | ⚠️ bolsa manifest | Ver `docs/OPERACION.md` |
 | **Administración** | ✅ 91 bolsas | ✅ `scraper_admin_clm.py` | ✅ ~150 listados | 4 bolsas sin PDF en portal |
-| **Murcia / Madrid** | ✅ sanidad | Parcial | ❌ no en R2 | Metadatos en repo |
+| **Murcia / Madrid** | ✅ sanidad | Parcial | ❌ no en R2 | Metadatos + docs expansión |
 
 Producción: **https://interino.pages.dev** · Datos: bucket R2 `interino-data`.
+
+### Fase 4 — crecimiento (jul 2026)
+
+- **Freemium:** `src/plan.js` — beta gratis (`BETA_GRATIS`), límites preparados sin Stripe.
+- **Backup seguimientos:** export/import JSON en pantalla Seguimientos (`src/seguimientos-backup.js`).
+- **Expansión CCAA:** Murcia/Madrid en `subir_sectores_r2.py`, `scripts/estado_regiones.py`, avisos UI si R2 vacío.
+- **Docs:** `docs/PLAN-PRODUCTO.md`, `docs/EXPANSION-CCAA.md`, `docs/TEXTO-BETA.md`, `docs/APP-STORES.md`.
+- **Plantilla env:** `.env.example` (Supabase futuro).
 
 ## Sanidad CLM (5 grupos)
 
@@ -64,7 +72,8 @@ Secrets GitHub: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
 3. ~~Feedback in-app~~ — email en pantalla Más.
 4. Push en segundo plano (requiere backend/VAPID; ahora notificaciones locales al activar seguimiento).
 5. Consulta legal antes de freemium / cobros.
-6. Murcia/Madrid en R2 si se promocionan esas CCAA.
+6. Murcia/Madrid en R2 si se promocionan esas CCAA — ver `docs/EXPANSION-CCAA.md` y `python scripts/estado_regiones.py`.
+7. Activar freemium / Stripe tras consulta legal — ver `docs/PLAN-PRODUCTO.md`.
 
 ## Legal
 

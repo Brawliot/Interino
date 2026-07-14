@@ -27,12 +27,14 @@ SECTORES_R2_PATH = ROOT / "data" / "_local" / "vigia_sectores_r2.json"
 
 MAPEO = {
     "sanidad": ("data/public", ""),
+    "murcia": ("data/public/murcia", "murcia"),
+    "madrid": ("data/public/madrid", "madrid"),
     "educacion": ("data/educacion", "educacion"),
     "educacion-bolsa": ("data/educacion-bolsa", "educacion-bolsa"),
     "admin-clm": ("data/admin-clm", "admin-clm"),
 }
 
-MANIFESTS = frozenset({"manifest.json", "afinidad.json", "categorias.json", "categorias_por_grupo.json"})
+MANIFESTS = frozenset({"manifest.json", "afinidad.json", "categorias.json", "categorias_por_grupo.json", "categorias_sanidad.json"})
 
 
 def _cliente_s3():
@@ -124,7 +126,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Subir sectores CLM a R2 (boto3)")
     p.add_argument(
         "--sectores",
-        help="Lista separada por comas (sanidad,educacion,educacion-bolsa,admin-clm). "
+        help="Lista separada por comas (sanidad,murcia,madrid,educacion,educacion-bolsa,admin-clm). "
         "Por defecto lee vigia_sectores_r2.json",
     )
     p.add_argument(
