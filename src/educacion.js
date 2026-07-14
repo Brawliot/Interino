@@ -31,15 +31,29 @@ export function esBolsaOrdinaria(tipoListado) {
   return tipoListado === "bolsa_ordinaria";
 }
 
+export function esModoAfin(modo) {
+  return modo === "afin";
+}
+
+/** Bolsa ordinaria o modo afines (misma fuente educacion-bolsa/). */
+export function usaDatosBolsaOrdinaria(tipoListado) {
+  return tipoListado === "bolsa_ordinaria" || tipoListado === "afin";
+}
+
 export const MODOS_LISTADO_EDUCACION = {
   bolsa: {
     id: "bolsa",
-    titulo: "Bolsa completa",
+    titulo: "Bolsa ordinaria",
     subtitulo: "Listado por puntuación (renovación anual)",
   },
   disponibles: {
     id: "disponibles",
     titulo: "Disponibles",
     subtitulo: "Quién acepta sustituciones esta semana",
+  },
+  afin: {
+    id: "afin",
+    titulo: "Bolsas afines",
+    subtitulo: "Otras especialidades y plazas por titulación",
   },
 };

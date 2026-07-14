@@ -1,7 +1,8 @@
 import { createContext, useContext } from "react";
 import { deduplicarApariciones } from "./utils/apariciones.js";
 import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js";
-import { CUERPO_SLUG, GERENCIA_EDUCACION } from "./educacion.js";
+import { CUERPO_SLUG, GERENCIA_EDUCACION, usaDatosBolsaOrdinaria } from "./educacion.js";
+import { codigoCuerpoDesdeGrupo, plazasAfinUi } from "./educacion-afin.js";
 import { COLECTIVOS_ADMIN, ORGANISMO_ADMIN } from "./admin-clm.js";
 
 /**
@@ -606,7 +607,7 @@ function nombreCuerpoUi(nombre) {
 }
 
 function posicionEducacion(fila, tipoListado = "disponibles") {
-  if (tipoListado === "bolsa_ordinaria") {
+  if (usaDatosBolsaOrdinaria(tipoListado)) {
     return Number(fila?.bolsa_orden ?? fila?.orden ?? 0) || 0;
   }
   return Number(fila?.orden ?? fila?.bolsa_orden ?? 0) || 0;
@@ -637,6 +638,7 @@ function filaEducacionAApp(fila, total, tipoListado = "disponibles") {
 export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {}) {
   const baseUrl = opciones.baseUrl || DATA_EDUCACION_BASE_URL;
   const tipoListado = opciones.tipoListado || "disponibles";
+  const afinidadDoc = opciones.afinidadDoc || null;
   const archivosDisponibles = new Set(manifest?.archivos || []);
   const cache = new Map();
   const metaPorCategoria = new Map();
@@ -723,6 +725,110 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
       .sort((a, b) => a.pos - b.pos);
   }
 
+  async function buscarEnIndiceMeta(meta, dniParcial, nombreCompleto) {
+    if (!meta || !archivosDisponibles.has(meta.rel)) return null;
+    let candidatos = [];
+    try {
+      const indice = await cargarJson(meta.relIdx);
+      candidatos = indice.personas || [];
+    } catch {
+      const snap = await cargarJson(meta.rel);
+      candidatos = (snap.personas || []).map((p) => ({
+        nombreCompleto: formatearNombre(p.apellidos_nombre),
+        dniParcial: p.dni_parcial,
+        apellidos: p.apellidos_nombre.split(",")[0].replace(/\n/g, " ").trim(),
+        orden: p.orden,
+        bolsa_orden: p.bolsa_orden,
+        bolsa_codigo: p.bolsa_codigo ?? p.tipo_bolsa_codigo,
+        acceso: p.acceso,
+        tipo_bolsa: p.tipo_bolsa,
+        provincias: p.provincias || [],
+        idiomas: p.idiomas,
+      }));
+    }
+    const match = candidatos.find((p) =>
+      dniParcial && p.dniParcial
+        ? p.dniParcial === dniParcial
+        : p.nombreCompleto === nombreCompleto
+    );
+    if (!match) return null;
+    let total = candidatos.length;
+    try {
+      const snap = await cargarCategoria(meta.grupoId, meta.categoriaUi);
+      total = snap.personas?.length || total;
+    } catch {
+      /* índice sin snapshot completo */
+    }
+    return { fila: match, total, meta };
+  }
+
+  function aparicionDesdeFila(meta, fila, total, viaBolsa) {
+    const pos = posicionEducacion(fila, tipoListado);
+    return {
+      sector: "educacion",
+      categoria: meta.categoriaUi,
+      grupoId: meta.grupoId,
+      ccaaId: "clm",
+      gerencia: GERENCIA_EDUCACION,
+      ambito: "",
+      posicion: pos,
+      bolsa_orden: fila.bolsa_orden,
+      orden_lista: fila.orden,
+      total,
+      delante: Math.max(0, pos - 1),
+      tipo_bolsa: fila.tipo_bolsa,
+      bolsa_codigo: fila.bolsa_codigo,
+      acceso: fila.acceso,
+      tipoListado,
+      provincias: fila.provincias || [],
+      idiomas: fila.idiomas,
+      viaBolsa,
+    };
+  }
+
+  async function ampliarConBolsasRelacionadas(persona, metaOrigen) {
+    if (tipoListado !== "afin") {
+      return persona;
+    }
+    const apariciones = persona.apariciones.length
+      ? [{ ...persona.apariciones[0], viaBolsa: "propia" }]
+      : [];
+    const visitado = new Set(apariciones.map((a) => `${a.grupoId}\0${a.categoria}`));
+    const dni = persona.dniParcial;
+    const nombre = persona.nombreCompleto;
+
+    const metasRelacionadas = [...metaPorCategoria.values()].filter(
+      (m) => m.grupoId === metaOrigen.grupoId && m !== metaOrigen
+    );
+
+    const extras = await Promise.all(
+      metasRelacionadas.map((meta) => buscarEnIndiceMeta(meta, dni, nombre))
+    );
+    for (const hit of extras) {
+      if (!hit) continue;
+      const clave = `${hit.meta.grupoId}\0${hit.meta.categoriaUi}`;
+      if (visitado.has(clave)) continue;
+      visitado.add(clave);
+      apariciones.push(aparicionDesdeFila(hit.meta, hit.fila, hit.total, "inscrita"));
+    }
+
+    const { _fila, ...limpia } = persona;
+    return { ...limpia, apariciones };
+  }
+
+  function plazasAfinPara(categoriaUi, grupoId) {
+    const meta = metaDe(categoriaUi, grupoId);
+    if (!meta || !afinidadDoc) return [];
+    const cuerpoCodigo = codigoCuerpoDesdeGrupo(meta.grupoId, CUERPO_SLUG);
+    if (!cuerpoCodigo) return [];
+    const inscritas = new Set([categoriaUi]);
+    return plazasAfinUi(afinidadDoc, cuerpoCodigo, meta).filter((nombre) => {
+      if (inscritas.has(nombre)) return false;
+      inscritas.add(nombre);
+      return true;
+    });
+  }
+
   async function buscarPersonas(grupoId, categoriaUi, consulta) {
     const q = consulta.trim();
     if (!q) return { personas: [], gerencias: [] };
@@ -751,7 +857,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
       }));
     }
 
-    const personas = candidatos
+    const personasBase = candidatos
       .filter((p) =>
         coincideBusqueda(
           { apellidos: p.apellidos, nombreCompleto: p.nombreCompleto, dniParcial: p.dniParcial },
@@ -765,6 +871,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
         dniParcial: p.dniParcial,
         categoria: categoriaUi,
         grupoId: meta.grupoId,
+        _fila: p,
         apariciones: [
           {
             sector: "educacion",
@@ -784,10 +891,17 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
             tipoListado,
             provincias: p.provincias || [],
             idiomas: p.idiomas,
+            ...(tipoListado === "afin" ? { viaBolsa: "propia" } : {}),
           },
         ],
       };
       });
+
+    const personas =
+      tipoListado === "afin"
+        ? await Promise.all(personasBase.map((p) => ampliarConBolsasRelacionadas(p, meta)))
+        : personasBase;
+
     return { personas, gerencias: [] };
   }
 
@@ -795,7 +909,9 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
     const etiquetaFuente =
       tipoListado === "bolsa_ordinaria"
         ? "bolsa ordinaria (listado completo por puntuación)"
-        : "aspirantes disponibles para sustituciones";
+        : tipoListado === "afin"
+          ? "bolsas afines (posiciones en bolsa ordinaria)"
+          : "aspirantes disponibles para sustituciones";
     if (grupoActivo === false) {
       return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
     }
@@ -817,11 +933,15 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
     const fecha = new Date(generado);
     const dias = Math.floor((Date.now() - fecha.getTime()) / (1000 * 60 * 60 * 24));
     const cursoTxt = curso ? ` · curso ${curso}` : "";
-    if (tipoListado === "bolsa_ordinaria") {
+    if (usaDatosBolsaOrdinaria(tipoListado)) {
       const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
+      const prefijo =
+        tipoListado === "afin"
+          ? "Posiciones en bolsa ordinaria (base para bolsas afines)"
+          : "Bolsa ordinaria scrapeada";
       return {
         tipo: dias > 60 ? "desactualizado" : "ok",
-        texto: `Bolsa ordinaria scrapeada ${fecha.toLocaleString("es-ES")} (${hace})${cursoTxt}. Se publica en junio/julio con la renovación anual.`,
+        texto: `${prefijo} ${fecha.toLocaleString("es-ES")} (${hace})${cursoTxt}. Se publica en junio/julio con la renovación anual.`,
       };
     }
     if (dias > 14) {
@@ -847,6 +967,8 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
     gerenciasDeCategoria,
     obtenerListadoCompleto,
     buscarPersonas,
+    plazasAfinPara,
+    afinidadDoc,
     historialCorte: () => [],
     estadoActualizacion,
   };
@@ -1312,7 +1434,7 @@ export async function cargarDatos() {
   const eduBase = DATA_EDUCACION_BASE_URL;
   const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
   const adminBase = DATA_ADMIN_CLM_BASE_URL;
-  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, adminManifestRes, adminCatsRes] =
+  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes, adminManifestRes, adminCatsRes] =
     await Promise.all([
       fetch(`${base}historico.json`),
       fetch(`${base}manifest.json`),
@@ -1323,6 +1445,7 @@ export async function cargarDatos() {
       fetch(`${eduBase}manifest.json`),
       fetch(`${eduBase}categorias.json`),
       fetch(`${eduBolsaBase}manifest.json`),
+      fetch(`${eduBase}afinidad.json`),
       fetch(`${adminBase}manifest.json`),
       fetch(`${adminBase}categorias.json`),
     ]);
@@ -1342,12 +1465,14 @@ export async function cargarDatos() {
   const manifestEducacion = eduManifestRes.ok ? await eduManifestRes.json() : { archivos: [] };
   const manifestEducacionBolsa = eduBolsaManifestRes.ok ? await eduBolsaManifestRes.json() : { archivos: [] };
   const categoriasEducacion = eduCatsRes.ok ? await eduCatsRes.json() : null;
+  const afinidadEducacion = eduAfinidadRes.ok ? await eduAfinidadRes.json() : null;
   const manifestAdmin = adminManifestRes.ok ? await adminManifestRes.json() : { archivos: [] };
   const categoriasAdmin = adminCatsRes.ok ? await adminCatsRes.json() : [];
   const tieneArchivosListado = (manifest) =>
     (manifest.archivos || []).some((a) => a.endsWith(".json") && !a.endsWith(".busqueda.json"));
   const educacionDisponiblesActiva = tieneArchivosListado(manifestEducacion) && Boolean(categoriasEducacion);
   const educacionBolsaActiva = tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
+  const educacionAfinActiva = educacionBolsaActiva && Boolean(afinidadEducacion);
   const educacionActiva = educacionDisponiblesActiva || educacionBolsaActiva;
   const administracionActiva =
     tieneArchivosListado(manifestAdmin) &&
@@ -1370,7 +1495,15 @@ export async function cargarDatos() {
           tipoListado: "bolsa_ordinaria",
         })
       : null;
-  const educacionClm = educacionBolsaClm || educacionDisponiblesClm;
+  const educacionAfinClm =
+    educacionAfinActiva && categoriasEducacion
+      ? crearCapaDatosEducacionClm(manifestEducacionBolsa, categoriasEducacion, {
+          baseUrl: eduBolsaBase,
+          tipoListado: "afin",
+          afinidadDoc: afinidadEducacion,
+        })
+      : null;
+  const educacionClm = educacionBolsaClm || educacionAfinClm || educacionDisponiblesClm;
 
   let numGerenciasClm = null;
   try {
@@ -1395,9 +1528,11 @@ export async function cargarDatos() {
     numGerenciasClm,
     educacionActiva,
     educacionBolsaActiva,
+    educacionAfinActiva,
     educacionDisponiblesActiva,
     educacionClm,
     educacionBolsaClm,
+    educacionAfinClm,
     educacionDisponiblesClm,
     administracionActiva,
     administracionClm,
@@ -1407,7 +1542,8 @@ export async function cargarDatos() {
         const modo = opciones.modoListadoEducacion;
         if (modo === "disponibles" && educacionDisponiblesClm) return educacionDisponiblesClm;
         if (modo === "bolsa" && educacionBolsaClm) return educacionBolsaClm;
-        return educacionBolsaClm || educacionDisponiblesClm || crearCapaEducacionVacia();
+        if (modo === "afin" && educacionAfinClm) return educacionAfinClm;
+        return educacionBolsaClm || educacionAfinClm || educacionDisponiblesClm || crearCapaEducacionVacia();
       }
       if (sectorId === "administracion" && ccaaId === "clm") {
         return administracionClm || crearCapaAdminVacia();

@@ -1,13 +1,14 @@
 """
-Vigía ligero del portal de baremos SESCAM y bolsas de Administración CLM.
+Vigía ligero del portal de baremos SESCAM, educación CLM y bolsas de Administración CLM.
 
-Sanidad: comprueba convocatoria vigente o catálogo por grupo activo.
-Admin CLM: compara fecha_modificacion de cada bolsa con categorias.json.
-No descarga ni parsea PDFs.
+Sanidad: convocatoria vigente o catálogo por grupo activo.
+Educación: PDF «disponibles» y «bolsa ordinaria» más reciente por cuerpo.
+Admin CLM: fecha_modificacion de cada bolsa vs categorias.json.
+No descarga ni parsea PDFs de listados.
 
 Salida:
   - exit 0: sin cambios
-  - exit 1: al menos un grupo/bolsa cambió (ver data/_local/vigia_cambios.json)
+  - exit 1: al menos un grupo/bolsa/cuerpo cambió (ver data/_local/vigia_cambios.json)
 """
 
 from __future__ import annotations
@@ -27,7 +28,9 @@ import requests
 from scraper import LOCAL_DATA_DIR, local_path
 
 ADMIN_CATEGORIAS_PATH = os.path.join("data", "admin-clm", "categorias.json")
+EDUCACION_CATEGORIAS_PATH = os.path.join("data", "educacion", "categorias.json")
 ADMIN_BASE = "https://empleopublico.castillalamancha.es"
+RE_FECHA_PDF = re.compile(r"(\d{8})")
 ADMIN_FECHA_MOD_RE = re.compile(
     r"Fecha de [UÚ]ltima Modificaci[oó]n:?\s*(\d{1,2}/\d{1,2}/\d{4})",
     re.I,
@@ -218,6 +221,131 @@ def _fecha_admin_iso(fecha_dmY: str) -> str | None:
     return f"{y}-{int(mo):02d}-{int(d):02d}"
 
 
+def _fecha_desde_url_pdf(url: str | None) -> str | None:
+    if not url:
+        return None
+    m = RE_FECHA_PDF.search(unquote(url))
+    return m.group(1) if m else None
+
+
+def _cargar_cuerpos_educacion() -> list[dict]:
+    if not os.path.exists(EDUCACION_CATEGORIAS_PATH):
+        return []
+    with open(EDUCACION_CATEGORIAS_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("cuerpos") or []
+
+
+def _consultar_bolsa_admin(entry: dict) -> tuple[str, dict | str]:
+    slug = entry.get("slug_pagina")
+    colectivo = entry.get("colectivo")
+    if not slug or not colectivo:
+        return "", "sin slug/colectivo"
+    clave = f"{colectivo}/{slug}"
+    url = entry.get("url_pagina") or f"{ADMIN_BASE}/bolsas/personal-{colectivo}/{slug}"
+    try:
+        r = requests.get(url, headers=REQUEST_HEADERS, timeout=HTTP_TIMEOUT)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding or "utf-8"
+        fecha = _fecha_modificacion_admin(r.text)
+        return clave, {
+            "categoria": entry.get("categoria"),
+            "fecha_modificacion": fecha,
+            "url_pagina": url,
+            "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+    except requests.RequestException as exc:
+        return clave, str(exc)
+
+
+def _estado_educacion_disponibles() -> dict:
+    from scraper_educacion_clm import ClienteEducacion
+
+    cuerpos = _cargar_cuerpos_educacion()
+    if not cuerpos:
+        raise ValueError(f"Sin inventario educación en {EDUCACION_CATEGORIAS_PATH}")
+
+    cliente = ClienteEducacion()
+    por_cuerpo: dict[str, dict] = {}
+    errores: list[str] = []
+
+    for cuerpo in cuerpos:
+        codigo = cuerpo.get("codigo")
+        if not codigo:
+            continue
+        try:
+            url = cliente.descubrir_pdf_mas_reciente(codigo)
+            por_cuerpo[codigo] = {
+                "nombre": cuerpo.get("nombre"),
+                "pdf_url": url,
+                "pdf_fecha": _fecha_desde_url_pdf(url),
+                "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            }
+        except Exception as exc:
+            errores.append(f"{codigo}: {exc}")
+        time.sleep(0.4)
+
+    return {
+        "num_cuerpos": len(por_cuerpo),
+        "cuerpos": por_cuerpo,
+        "errores": errores,
+        "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def _estado_educacion_bolsa() -> dict:
+    from scraper_bolsa_ordinaria_educacion_clm import ClienteBolsaOrdinaria
+
+    cuerpos = _cargar_cuerpos_educacion()
+    if not cuerpos:
+        raise ValueError(f"Sin inventario educación en {EDUCACION_CATEGORIAS_PATH}")
+
+    cliente = ClienteBolsaOrdinaria()
+    por_cuerpo: dict[str, dict] = {}
+    errores: list[str] = []
+
+    for cuerpo in cuerpos:
+        codigo = cuerpo.get("codigo")
+        if not codigo:
+            continue
+        try:
+            url = cliente.descubrir_pdf(codigo)
+            por_cuerpo[codigo] = {
+                "nombre": cuerpo.get("nombre"),
+                "pdf_url": url,
+                "pdf_fecha": _fecha_desde_url_pdf(url),
+                "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            }
+        except Exception as exc:
+            errores.append(f"{codigo}: {exc}")
+        time.sleep(0.4)
+
+    return {
+        "num_cuerpos": len(por_cuerpo),
+        "cuerpos": por_cuerpo,
+        "errores": errores,
+        "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def _comparar_educacion_cuerpos(anterior: dict | None, actual: dict, prefijo: str) -> list[str]:
+    if not anterior:
+        return []
+    cambios: list[str] = []
+    prev_cuerpos = anterior.get("cuerpos") or {}
+    for codigo, info in (actual.get("cuerpos") or {}).items():
+        prev = prev_cuerpos.get(codigo) or {}
+        nueva_fecha = info.get("pdf_fecha")
+        prev_fecha = prev.get("pdf_fecha")
+        nueva_url = info.get("pdf_url")
+        prev_url = prev.get("pdf_url")
+        if nueva_fecha and prev_fecha and nueva_fecha != prev_fecha:
+            cambios.append(f"{prefijo}:{codigo}")
+        elif nueva_url and prev_url and nueva_url != prev_url:
+            cambios.append(f"{prefijo}:{codigo}")
+    return cambios
+
+
 def _fecha_modificacion_admin(html: str) -> str | None:
     plain = re.sub(r"<[^>]+>", " ", html)
     m = ADMIN_FECHA_MOD_RE.search(plain)
@@ -242,30 +370,16 @@ def _estado_admin_clm() -> dict:
 
     bolsas: dict[str, dict] = {}
     errores: list[str] = []
+    entradas = [e for e in catalogo if not e.get("error") and e.get("slug_pagina")]
 
-    for entry in catalogo:
-        if entry.get("error"):
-            continue
-        slug = entry.get("slug_pagina")
-        colectivo = entry.get("colectivo")
-        if not slug or not colectivo:
-            continue
-        clave = f"{colectivo}/{slug}"
-        url = entry.get("url_pagina") or f"{ADMIN_BASE}/bolsas/personal-{colectivo}/{slug}"
-        try:
-            r = requests.get(url, headers=REQUEST_HEADERS, timeout=HTTP_TIMEOUT)
-            r.raise_for_status()
-            r.encoding = r.apparent_encoding or "utf-8"
-            fecha = _fecha_modificacion_admin(r.text)
-            bolsas[clave] = {
-                "categoria": entry.get("categoria"),
-                "fecha_modificacion": fecha,
-                "url_pagina": url,
-                "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-            }
-        except requests.RequestException as exc:
-            errores.append(f"{clave}: {exc}")
-        time.sleep(1.0)
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futuros = {pool.submit(_consultar_bolsa_admin, e): e for e in entradas}
+        for futuro in as_completed(futuros):
+            clave, resultado = futuro.result()
+            if isinstance(resultado, str):
+                errores.append(f"{clave}: {resultado}")
+            else:
+                bolsas[clave] = resultado
 
     if errores and not bolsas:
         raise ValueError("; ".join(errores[:3]))
@@ -377,6 +491,64 @@ def main() -> int:
             print(f"ERROR vigía admin-clm: {exc}", file=sys.stderr)
     else:
         print("admin-clm: sin categorias.json — omitido")
+
+    # --- Educación CLM (disponibles semanales) ---
+    if _cargar_cuerpos_educacion():
+        try:
+            actual_edu_disp = _estado_educacion_disponibles()
+            prev_edu_disp = anterior.get("educacion_disponibles")
+            cambios_edu_disp = _comparar_educacion_cuerpos(
+                prev_edu_disp, actual_edu_disp, "educacion:disponibles"
+            )
+            if cambios_edu_disp:
+                for clave in cambios_edu_disp:
+                    codigo = clave.split(":")[-1]
+                    info = actual_edu_disp["cuerpos"].get(codigo, {})
+                    prev_info = (prev_edu_disp or {}).get("cuerpos", {}).get(codigo, {})
+                    print(f"CAMBIO DETECTADO en educacion/disponibles/{codigo}")
+                    print(
+                        f"  PDF: {prev_info.get('pdf_fecha')} -> "
+                        f"{info.get('pdf_fecha')} ({info.get('nombre')})"
+                    )
+                    cambios.append(clave)
+            else:
+                etiqueta = "inicializado" if not prev_edu_disp else "sin cambio"
+                print(
+                    f"educacion/disponibles: {actual_edu_disp['num_cuerpos']} cuerpos ({etiqueta})"
+                )
+            if actual_edu_disp.get("errores"):
+                print(f"  avisos educación disponibles: {len(actual_edu_disp['errores'])}")
+            actual_por_grupo["educacion_disponibles"] = actual_edu_disp
+        except Exception as exc:
+            print(f"ERROR vigía educación disponibles: {exc}", file=sys.stderr)
+
+        try:
+            actual_edu_bolsa = _estado_educacion_bolsa()
+            prev_edu_bolsa = anterior.get("educacion_bolsa")
+            cambios_edu_bolsa = _comparar_educacion_cuerpos(
+                prev_edu_bolsa, actual_edu_bolsa, "educacion:bolsa"
+            )
+            if cambios_edu_bolsa:
+                for clave in cambios_edu_bolsa:
+                    codigo = clave.split(":")[-1]
+                    info = actual_edu_bolsa["cuerpos"].get(codigo, {})
+                    prev_info = (prev_edu_bolsa or {}).get("cuerpos", {}).get(codigo, {})
+                    print(f"CAMBIO DETECTADO en educacion/bolsa/{codigo}")
+                    print(
+                        f"  PDF: {prev_info.get('pdf_fecha')} -> "
+                        f"{info.get('pdf_fecha')} ({info.get('nombre')})"
+                    )
+                    cambios.append(clave)
+            else:
+                etiqueta = "inicializado" if not prev_edu_bolsa else "sin cambio"
+                print(f"educacion/bolsa: {actual_edu_bolsa['num_cuerpos']} cuerpos ({etiqueta})")
+            if actual_edu_bolsa.get("errores"):
+                print(f"  avisos educación bolsa: {len(actual_edu_bolsa['errores'])}")
+            actual_por_grupo["educacion_bolsa"] = actual_edu_bolsa
+        except Exception as exc:
+            print(f"ERROR vigía educación bolsa: {exc}", file=sys.stderr)
+    else:
+        print("educacion: sin categorias.json — omitido")
 
     # Fusionar estado: conservar grupos previos no consultados + nuevos
     estado_nuevo = {**anterior, **actual_por_grupo}

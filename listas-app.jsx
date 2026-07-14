@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
-import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria, MODOS_LISTADO_EDUCACION } from "./src/educacion.js";
+import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria, esModoAfin, MODOS_LISTADO_EDUCACION } from "./src/educacion.js";
+import { viaBolsaLegible, TEXTO_AFIN_NORMATIVA } from "./src/educacion-afin.js";
 import { subBolsaLegible } from "./src/admin-clm.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
@@ -116,8 +117,11 @@ function leerModoListadoEducacion(datos) {
     const guardado = localStorage.getItem(LS_EDUCACION_LISTADO);
     if (guardado === "bolsa" && datos.educacionBolsaActiva) return "bolsa";
     if (guardado === "disponibles" && datos.educacionDisponiblesActiva) return "disponibles";
+    if (guardado === "afin" && datos.educacionAfinActiva) return "afin";
   } catch { /* quota / modo privado */ }
   if (datos.educacionBolsaActiva) return "bolsa";
+  if (datos.educacionDisponiblesActiva) return "disponibles";
+  if (datos.educacionAfinActiva) return "afin";
   return "disponibles";
 }
 
@@ -127,7 +131,10 @@ function textoAyudaBusqueda(ccaaId, numGerencias, modoEducacion, modoListadoEduc
   }
   if (modoEducacion) {
     if (modoListadoEducacion === "bolsa") {
-      return "Busca por apellidos o DNI parcial. Verás tu posición en la bolsa ordinaria completa de tu especialidad (orden por puntuación, como en sanidad). No te pedimos ni guardamos tu DNI completo.";
+      return "Busca por apellidos o DNI parcial. Verás tu posición en la bolsa ordinaria de tu especialidad (orden por puntuación). No te pedimos ni guardamos tu DNI completo.";
+    }
+    if (modoListadoEducacion === "afin") {
+      return "Busca por apellidos o DNI parcial. Verás tu bolsa de origen, otras bolsas donde estés inscrito/a y plazas afines por titulación (Orden 32/2018). No te pedimos ni guardamos tu DNI completo.";
     }
     return "Busca por apellidos o DNI parcial. Este listado semanal solo incluye quienes están disponibles para sustituciones y las provincias donde aceptan. No te pedimos ni guardamos tu DNI completo.";
   }
@@ -244,6 +251,7 @@ function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, gr
         tipoListado: f.tipoListado || tipoListado,
         provincias: f.provincias || [],
         idiomas: f.idiomas,
+        viaBolsa: f.viaBolsa || "propia",
       };
     }
     if (esAdministracion) {
@@ -769,9 +777,14 @@ function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva
   );
 }
 
-function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva }) {
-  if (!bolsaActiva && !disponiblesActiva) return null;
-  const mostrarToggle = bolsaActiva && disponiblesActiva;
+function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva, afinActiva }) {
+  if (!bolsaActiva && !disponiblesActiva && !afinActiva) return null;
+
+  const modos = [
+    MODOS_LISTADO_EDUCACION.bolsa,
+    MODOS_LISTADO_EDUCACION.disponibles,
+    MODOS_LISTADO_EDUCACION.afin,
+  ];
 
   return (
     <div>
@@ -779,9 +792,12 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
         Tipo de listado
       </p>
       <div className="flex flex-col gap-2">
-        {[MODOS_LISTADO_EDUCACION.bolsa, MODOS_LISTADO_EDUCACION.disponibles].map((m) => {
-          const activo = m.id === "bolsa" ? bolsaActiva : disponiblesActiva;
+        {modos.map((m) => {
+          const activo =
+            m.id === "bolsa" ? bolsaActiva : m.id === "disponibles" ? disponiblesActiva : afinActiva;
           const seleccionado = modo === m.id;
+          const radius =
+            m.id === "bolsa" ? "16px 6px 16px 6px" : m.id === "disponibles" ? "6px 16px 6px 16px" : "12px 12px 6px 6px";
           return (
             <button
               key={m.id}
@@ -793,10 +809,10 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
                 background: seleccionado ? C.navy : C.card,
                 color: seleccionado ? "#fff" : activo ? C.ink : C.inkSoft,
                 border: `1.5px solid ${seleccionado ? C.navy : C.line}`,
-                borderRadius: m.id === "bolsa" ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
+                borderRadius: radius,
                 padding: "12px 14px",
                 opacity: activo ? 1 : 0.55,
-                cursor: activo && mostrarToggle ? "pointer" : "default",
+                cursor: activo ? "pointer" : "default",
               }}
             >
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5 }}>{m.titulo}</p>
@@ -812,7 +828,7 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
+function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, educacionAfinActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
   const datos = useDatos();
   const capa = useCapaDatos();
   const multi = ccaas.length > 1;
@@ -924,6 +940,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             onModoChange={onModoListadoEducacionChange}
             bolsaActiva={educacionBolsaActiva}
             disponiblesActiva={educacionDisponiblesActiva}
+            afinActiva={educacionAfinActiva}
           />
         )}
 
@@ -1187,7 +1204,9 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
   const capa = useCapaDatos();
   const esEducacion = modoEducacion || capa.sector === "educacion";
   const esAdministracion = modoAdministracion || capa.sector === "administracion";
-  const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(capa.tipoListado));
+  const esBolsaCompleta =
+    esEducacion &&
+    (modoListadoEducacion === "bolsa" || esModoAfin(modoListadoEducacion) || esBolsaOrdinaria(capa.tipoListado));
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
@@ -1366,9 +1385,11 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
 // ---------------------------------------------------------------
 
 // Bloque de detalle educación CLM: posición en bolsa + provincias
-function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos, esBolsaCompleta }) {
+function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado, onInfoLlamamientos, esBolsaCompleta, esModoAfinEducacion, plazasAfin = [] }) {
   const capa = useCapaDatos();
   const bolsaCompleta = esBolsaCompleta ?? esBolsaOrdinaria(r?.tipoListado ?? capa.tipoListado);
+  const viaBolsa = r?.viaBolsa || "propia";
+  const viaTxt = viaBolsaLegible(viaBolsa);
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const posicion = Number(r?.posicion ?? r?.pos ?? r?.bolsa_orden ?? 0) || 0;
   const total = Number(r?.total ?? 0) || 0;
@@ -1392,6 +1413,11 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
         }}
       >
         <Sello>{categoria}</Sello>
+        {viaTxt && viaBolsa !== "propia" && (
+          <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, marginTop: 10, letterSpacing: 0.4 }}>
+            {viaTxt}
+          </p>
+        )}
         <p
           style={{
             fontFamily: FONT_DISPLAY, fontSize: 60, fontWeight: 700, color: "#fff",
@@ -1456,9 +1482,9 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
       </div>
       )}
 
-      {bolsaCompleta && (
+      {bolsaCompleta && !esModoAfinEducacion && (
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Bolsa ordinaria completa</p>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Bolsa ordinaria</p>
           <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
             Listado por puntuación publicado en la renovación anual (junio/julio). Incluye a todas las personas admitidas en la bolsa, no solo quienes están disponibles para sustituciones.
           </p>
@@ -1467,6 +1493,52 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
               Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
             </p>
           )}
+        </div>
+      )}
+
+      {bolsaCompleta && esModoAfinEducacion && viaBolsa === "propia" && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Tu bolsa de origen</p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
+            Posición en la bolsa ordinaria de {categoria}. En adjudicaciones «a la carta» compites primero por plazas de propia bolsa; esta posición también cuenta para desempate entre afines.
+          </p>
+          {r?.bolsa_codigo != null && (
+            <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8 }}>
+              Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
+            </p>
+          )}
+        </div>
+      )}
+
+      {esModoAfinEducacion && viaBolsa === "propia" && plazasAfin.length > 0 && (
+        <div style={{ background: C.paperDeep, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16, marginTop: 12 }}>
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Plazas afines (titulación)</p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
+            {TEXTO_AFIN_NORMATIVA}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {plazasAfin.slice(0, 12).map((esp) => (
+              <span
+                key={esp}
+                style={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 11,
+                  padding: "5px 10px",
+                  borderRadius: 16,
+                  background: C.card,
+                  color: C.navy,
+                  border: `1px solid ${C.line}`,
+                }}
+              >
+                {esp}
+              </span>
+            ))}
+            {plazasAfin.length > 12 && (
+              <span style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, alignSelf: "center" }}>
+                +{plazasAfin.length - 12} más
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -1898,7 +1970,10 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
   const apariciones = candidato?.apariciones ?? [];
   const esEducacion = modoEducacion || apariciones[0]?.sector === "educacion";
   const esAdministracion = modoAdministracion || apariciones[0]?.sector === "administracion";
-  const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(apariciones[0]?.tipoListado ?? capa.tipoListado));
+  const esModoAfinEducacion = esEducacion && (esModoAfin(modoListadoEducacion) || capa.tipoListado === "afin");
+  const esBolsaCompleta =
+    esEducacion &&
+    (modoListadoEducacion === "bolsa" || esModoAfinEducacion || esBolsaOrdinaria(apariciones[0]?.tipoListado ?? capa.tipoListado));
   const [detalleFila, setDetalleFila] = useState(null);
   const [bulkSeguido, setBulkSeguido] = useState(false);
 
@@ -1911,7 +1986,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
     setBulkSeguido(false);
   }, [candidato?.dniParcial, candidato?.nombreCompleto]);
 
-  if (esEducacion && apariciones.length > 0) {
+  if (esEducacion && apariciones.length > 0 && !esModoAfinEducacion) {
     const a = normalizarAparicion(apariciones[0]);
     const catAparicion = a.categoria || categoriaMostrada || categoria;
     const grupoAparicion = grupoIdParaCapa(capa, a, grupoId);
@@ -1930,6 +2005,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
             grupoId={grupoAparicion}
             grupoActivo={grupoActivo ?? true}
             r={a}
+            esModoAfinEducacion={false}
             guardado={estaGuardado(GERENCIA_EDUCACION, "", candidato.nombreCompleto, catAparicion, a.ccaaId || "clm")}
             onGuardar={() =>
               onGuardar(
@@ -1945,6 +2021,79 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
             onInfoLlamamientos={onInfoLlamamientos}
             esBolsaCompleta={esBolsaCompleta}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (esEducacion && apariciones.length > 0 && esModoAfinEducacion) {
+    const aparicionesOrd = [...apariciones]
+      .map(normalizarAparicion)
+      .sort((a, b) => {
+        const peso = { propia: 0, inscrita: 1, afin: 2 };
+        const pa = peso[a.viaBolsa] ?? 1;
+        const pb = peso[b.viaBolsa] ?? 1;
+        if (pa !== pb) return pa - pb;
+        return (a.categoria || "").localeCompare(b.categoria || "", "es");
+      });
+    const catPrincipal = aparicionesOrd[0]?.categoria || categoriaMostrada || categoria;
+    const grupoPrincipal = grupoIdParaCapa(capa, aparicionesOrd[0], grupoId);
+    const plazasAfin = capa.plazasAfinPara
+        ? capa.plazasAfinPara(catPrincipal, grupoPrincipal)
+        : [];
+    const inscritas = new Set(aparicionesOrd.map((a) => a.categoria).filter(Boolean));
+    const plazasSoloNormativas = plazasAfin.filter((p) => !inscritas.has(p));
+
+    return (
+      <div>
+        <Barra titulo="Resultado" atras={atras} />
+        <div className="px-5 pb-6">
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, marginBottom: 12 }}>
+            Mostrando a <strong style={{ color: C.navy }}>{candidato.nombreCompleto}</strong>
+            {candidato.dniParcial && (
+              <span style={{ fontFamily: FONT_MONO, fontSize: 11.5 }}> · DNI {candidato.dniParcial}</span>
+            )}
+          </p>
+          {aparicionesOrd.length > 1 && (
+            <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.navy, fontWeight: 600, marginBottom: 16 }}>
+              {catPrincipal}
+              <span style={{ color: C.inkSoft, fontWeight: 500 }}>
+                {" "}
+                · {aparicionesOrd.length} bolsa{aparicionesOrd.length !== 1 ? "s" : ""}
+              </span>
+            </p>
+          )}
+          {aparicionesOrd.map((a) => {
+            const catAparicion = a.categoria || catPrincipal;
+            const grupoAparicion = grupoIdParaCapa(capa, a, grupoId);
+            const esPropia = (a.viaBolsa || "propia") === "propia";
+            return (
+              <div key={`${a.grupoId || grupoAparicion}-${catAparicion}-${a.viaBolsa || "propia"}`} style={{ marginBottom: 14 }}>
+              <TarjetaEducacion
+                categoria={catAparicion}
+                grupoId={grupoAparicion}
+                grupoActivo={grupoActivo ?? true}
+                r={a}
+                plazasAfin={esPropia ? plazasSoloNormativas : []}
+                esModoAfinEducacion
+                guardado={estaGuardado(GERENCIA_EDUCACION, "", candidato.nombreCompleto, catAparicion, a.ccaaId || "clm")}
+                onGuardar={() =>
+                  onGuardar(
+                    GERENCIA_EDUCACION,
+                    "",
+                    { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: candidato.dniParcial },
+                    catAparicion,
+                    grupoAparicion,
+                    a.ccaaId || "clm"
+                  )
+                }
+                onVerListado={() => onVerListado("", "", catAparicion, grupoAparicion)}
+                onInfoLlamamientos={onInfoLlamamientos}
+                esBolsaCompleta={esBolsaCompleta}
+              />
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -2339,6 +2488,7 @@ export default function ListasApp() {
       return (
         datos.paraSector?.(ccaaPrincipal, "educacion", { modoListadoEducacion: listadoEducacionModo }) ||
         datos.educacionBolsaClm ||
+        datos.educacionAfinClm ||
         datos.educacionDisponiblesClm ||
         datos.paraCcaa("clm")
       );
@@ -2400,12 +2550,17 @@ export default function ListasApp() {
 
   useEffect(() => {
     if (sectorId !== "educacion") return;
-    if (listadoEducacionModo === "bolsa" && !datos.educacionBolsaActiva && datos.educacionDisponiblesActiva) {
-      setListadoEducacionModo("disponibles");
-    } else if (listadoEducacionModo === "disponibles" && !datos.educacionDisponiblesActiva && datos.educacionBolsaActiva) {
-      setListadoEducacionModo("bolsa");
+    if (listadoEducacionModo === "bolsa" && !datos.educacionBolsaActiva) {
+      if (datos.educacionDisponiblesActiva) setListadoEducacionModo("disponibles");
+      else if (datos.educacionAfinActiva) setListadoEducacionModo("afin");
+    } else if (listadoEducacionModo === "disponibles" && !datos.educacionDisponiblesActiva) {
+      if (datos.educacionBolsaActiva) setListadoEducacionModo("bolsa");
+      else if (datos.educacionAfinActiva) setListadoEducacionModo("afin");
+    } else if (listadoEducacionModo === "afin" && !datos.educacionAfinActiva) {
+      if (datos.educacionBolsaActiva) setListadoEducacionModo("bolsa");
+      else if (datos.educacionDisponiblesActiva) setListadoEducacionModo("disponibles");
     }
-  }, [sectorId, listadoEducacionModo, datos.educacionBolsaActiva, datos.educacionDisponiblesActiva]);
+  }, [sectorId, listadoEducacionModo, datos.educacionBolsaActiva, datos.educacionDisponiblesActiva, datos.educacionAfinActiva]);
 
   const abrirPrivacidad = () => {
     setPasoPrivacidadOrigen(paso);
@@ -2617,6 +2772,7 @@ export default function ListasApp() {
             administracionActiva={datos.administracionActiva}
             educacionBolsaActiva={datos.educacionBolsaActiva}
             educacionDisponiblesActiva={datos.educacionDisponiblesActiva}
+            educacionAfinActiva={datos.educacionAfinActiva}
             modoEducacion={modoEducacion}
             modoAdministracion={modoAdministracion}
             modoListadoEducacion={listadoEducacionModo}

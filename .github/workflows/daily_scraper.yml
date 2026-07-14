@@ -1,15 +1,15 @@
-name: Scraper Diario SESCAM
+name: Vigía diario CLM
 on:
   schedule:
     - cron: '0 8 * * *'   # Todos los días a las 8:00 UTC
-  workflow_dispatch:      # Permite ejecución manual desde la pestaña Actions
+  workflow_dispatch:
 
 jobs:
-  scrape-and-commit:
+  vigia-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # scrape completo solo si vigía detecta cambios
+    timeout-minutes: 360
     permissions:
-      contents: write    # necesario para hacer push al repo
+      contents: write
 
     steps:
       - name: Clonar repositorio
@@ -25,40 +25,43 @@ jobs:
           cache-dependency-path: requirements.txt
 
       - name: Instalar dependencias
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install boto3
 
-      - name: Vigía — comprobar cambios en portal
+      - name: Vigía — comprobar cambios en portales
         id: vigia
         continue-on-error: true
         run: python vigia.py
 
-      - name: Scrapear grupos con cambios
+      - name: Scrapear sectores con cambios
         if: steps.vigia.outcome == 'failure'
+        run: python scripts/ejecutar_vigia_scrapers.py
+
+      - name: Subir educación y administración a R2
+        if: steps.vigia.outcome == 'failure'
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: interino-data
         run: |
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
+          if [ -f data/_local/vigia_sectores_r2.json ]; then
+            python scripts/subir_sectores_r2.py
+          else
+            echo "Sin sectores R2 pendientes"
+          fi
 
-          with open("data/_local/vigia_cambios.json", encoding="utf-8") as f:
-              cambios = json.load(f).get("cambios", [])
-          if not cambios:
-              print("Vigía marcó cambio pero no hay grupos en vigia_cambios.json")
-              sys.exit(1)
-          for grupo in cambios:
-              print(f"=== Scrapeando {grupo} ===")
-              subprocess.run(
-                  ["python", "scraper.py", "--grupo", grupo, "--presupuesto", "7200"],
-                  check=True,
-              )
-          PY
-
-      - name: Commit y push de data/ (vigía + listados si hubo scrape)
+      - name: Commit y push (sanidad + metadatos + vigía)
         if: steps.vigia.outcome == 'failure'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           mkdir -p data/public data/_local
-          git add data/public/ data/_local/vigia_estado.json data/_local/vigia_cambios.json
-          git diff --staged --quiet || git commit -m "Actualizacion automatica SESCAM - $(date +'%Y-%m-%d')"
+          git add data/public/ \
+            data/_local/vigia_estado.json \
+            data/_local/vigia_cambios.json \
+            data/_local/vigia_sectores_r2.json \
+            data/admin-clm/categorias.json
+          git diff --staged --quiet || git commit -m "Actualizacion automatica CLM - $(date +'%Y-%m-%d')"
           git push
