@@ -4,6 +4,11 @@ import { CCAA_LIST, esGrupoSanitarioMurcia, organismoCcaa } from "./regiones.js"
 import { CUERPO_SLUG, GERENCIA_EDUCACION, usaDatosBolsaOrdinaria } from "./educacion.js";
 import { codigoCuerpoDesdeGrupo, plazasAfinUi } from "./educacion-afin.js";
 import { COLECTIVOS_ADMIN, ORGANISMO_ADMIN } from "./admin-clm.js";
+import {
+  adminBolsasSinPdf,
+  calcularCoberturaEducacion,
+  frescuraDesdeManifests,
+} from "./cobertura-clm.js";
 
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
@@ -1485,6 +1490,24 @@ export async function cargarDatos() {
     tieneArchivosListado(manifestAdmin) &&
     Array.isArray(categoriasAdmin) &&
     categoriasAdmin.length > 0;
+
+  const coberturaEducacion =
+    categoriasEducacion
+      ? calcularCoberturaEducacion(
+          categoriasEducacion,
+          manifestEducacion,
+          manifestEducacionBolsa,
+          slugArchivo,
+        )
+      : null;
+  const adminSinPdf = adminBolsasSinPdf(categoriasAdmin);
+  const frescura = frescuraDesdeManifests({
+    sanidad: manifest,
+    educacion: manifestEducacion,
+    educacionBolsa: manifestEducacionBolsa,
+    admin: manifestAdmin,
+  });
+
   const administracionClm = administracionActiva
     ? crearCapaDatosAdminClm(manifestAdmin, categoriasAdmin, { baseUrl: adminBase })
     : null;
@@ -1543,6 +1566,9 @@ export async function cargarDatos() {
     educacionDisponiblesClm,
     administracionActiva,
     administracionClm,
+    coberturaEducacion,
+    adminSinPdf,
+    frescura,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
     paraSector: (ccaaId, sectorId, opciones = {}) => {
       if (sectorId === "educacion" && ccaaId === "clm") {

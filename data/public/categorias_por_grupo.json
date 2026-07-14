@@ -47,7 +47,7 @@
     "categorias_portal": [],
     "categorias_pdf": [],
     "total": 0,
-    "nota": "Dropdown vacío en HTML estático; categorías no disponibles sin JS/AJAX."
+    "nota": "Formulario Drupal: el HTML inicial no trae categorias (solo placeholders). Requiere JS/AJAX — ver scripts/probe_facultativo_clm.py (Cajon B)."
   },
   "licenciados": {
     "slug_portal": "personal-sanitario-licenciados",

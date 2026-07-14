@@ -90,7 +90,15 @@ python scripts/generar_afinidad_educacion.py
 |---------|-------|----------|
 | App muestra menos especialidades educacion bolsa | `educacion-bolsa/manifest.json` en R2 viejo | Subir manifest (forzado) con subir_r2 o wrangler |
 | Modo AFIN vacio | Falta `educacion/afinidad.json` en R2 | `generar_afinidad_educacion.py` + subir educacion |
-| Facultativo sin categorias | Portal SESCAM sin listado estatico | Esperar PDF o investigar AJAX |
+| Facultativo sin categorias | Portal SESCAM sin listado estatico | `python scripts/probe_facultativo_clm.py` (Cajon B) |
+
+## Informes
+
+```bash
+python scripts/informe_clm.py
+python scripts/informe_clm.py -o data/_local/informe_clm.md
+python scripts/test_cobertura_clm.py
+```
 | Murcia/Madrid 404 en smoke | No subidos a R2 | Subir `data/public/murcia/` y metadatos Madrid si los usas |
 | Subida wrangler interrumpida | Rate limit / 503 | Repetir con `-SkipExisting` |
 

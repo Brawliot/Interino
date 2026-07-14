@@ -5,6 +5,7 @@ import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
 import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria, esModoAfin, MODOS_LISTADO_EDUCACION } from "./src/educacion.js";
 import { viaBolsaLegible, TEXTO_AFIN_NORMATIVA } from "./src/educacion-afin.js";
 import { subBolsaLegible } from "./src/admin-clm.js";
+import { etiquetaFrescuraSector } from "./src/cobertura-clm.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
@@ -777,7 +778,93 @@ function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva
   );
 }
 
-function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva, afinActiva }) {
+function LineaFrescura({ sectorId, frescura, modoListadoEducacion }) {
+  const texto = etiquetaFrescuraSector(sectorId, frescura, modoListadoEducacion);
+  if (!texto) return null;
+  return (
+    <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, margin: 0, lineHeight: 1.4 }}>
+      Datos actualizados: <span style={{ color: C.navy, fontWeight: 600 }}>{texto}</span>
+    </p>
+  );
+}
+
+function PanelHuecosEducacion({ cobertura, modoListadoEducacion }) {
+  const [abierto, setAbierto] = useState(false);
+  if (!cobertura) return null;
+
+  const faltantes =
+    modoListadoEducacion === "disponibles"
+      ? cobertura.faltantesDisponibles
+      : modoListadoEducacion === "bolsa"
+        ? cobertura.faltantesBolsa
+        : cobertura.faltantesBolsa;
+  const n = faltantes.length;
+  if (n === 0) return null;
+
+  const tituloModo =
+    modoListadoEducacion === "disponibles"
+      ? "disponibles (PDF semanal)"
+      : "bolsa ordinaria";
+
+  return (
+    <div style={{ background: C.paperDeep, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 12px" }}>
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className="w-full text-left focus:outline-none flex items-start gap-2"
+      >
+        <Info size={15} color={C.navy} style={{ flexShrink: 0, marginTop: 1 }} />
+        <span style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.ink, lineHeight: 1.45, flex: 1 }}>
+          <strong>{n}</strong> especialidad{n !== 1 ? "es" : ""} del catalogo sin datos de {tituloModo} en el servidor.
+          {modoListadoEducacion === "afin" && " AFIN usa la bolsa ordinaria como base."}
+          {" "}
+          <span style={{ color: C.navy, fontWeight: 600 }}>{abierto ? "Ocultar" : "Ver listado"}</span>
+        </span>
+      </button>
+      {abierto && (
+        <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5 }}>
+          {faltantes.slice(0, 12).map((f) => (
+            <li key={f.rel}>{f.cuerpo}: {f.especialidad.replace(/^\d{3}\s+/, "")}</li>
+          ))}
+          {n > 12 && <li>… y {n - 12} mas (sin PDF publico en empleopublico/educacion)</li>}
+        </ul>
+      )}
+      <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "8px 0 0", lineHeight: 1.4 }}>
+        Portal oficial:{" "}
+        <a href={cobertura.urlPortal} target="_blank" rel="noopener noreferrer" style={{ color: C.navy }}>
+          educacion CLM · bolsas
+        </a>
+      </p>
+    </div>
+  );
+}
+
+function PanelAdminSinPdf({ bolsas }) {
+  if (!bolsas?.length) return null;
+  return (
+    <div style={{ background: C.paperDeep, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 12px" }}>
+      <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 12, color: C.navy, margin: "0 0 6px" }}>
+        Bolsas sin listado PDF en el portal
+      </p>
+      <ul style={{ margin: 0, paddingLeft: 18, fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5 }}>
+        {bolsas.map((b) => (
+          <li key={`${b.colectivo}-${b.categoria}`}>
+            {b.categoria}
+            {b.url ? (
+              <>
+                {" "}
+                (<a href={b.url} target="_blank" rel="noopener noreferrer" style={{ color: C.navy }}>pagina</a>)
+              </>
+            ) : null}
+            {b.nota ? ` — ${b.nota}` : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva, afinActiva, cobertura }) {
   if (!bolsaActiva && !disponiblesActiva && !afinActiva) return null;
 
   const modos = [
@@ -821,6 +908,18 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
           );
         })}
       </div>
+      {cobertura && (
+        <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 10, lineHeight: 1.45 }}>
+          Cobertura:{" "}
+          <span style={{ color: C.navy, fontWeight: 600 }}>
+            {cobertura.disponibles}/{cobertura.catalogo} disponibles
+          </span>
+          {" · "}
+          <span style={{ color: C.navy, fontWeight: 600 }}>
+            {cobertura.bolsa}/{cobertura.catalogo} bolsa
+          </span>
+        </p>
+      )}
     </div>
   );
 }
@@ -934,6 +1033,14 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           }}
         />
 
+        {sectorDisponible && (
+          <LineaFrescura
+            sectorId={sectorId}
+            frescura={datos.frescura}
+            modoListadoEducacion={modoListadoEducacion}
+          />
+        )}
+
         {modoEducacion && (
           <SelectorListadoEducacion
             modo={modoListadoEducacion}
@@ -941,7 +1048,19 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             bolsaActiva={educacionBolsaActiva}
             disponiblesActiva={educacionDisponiblesActiva}
             afinActiva={educacionAfinActiva}
+            cobertura={datos.coberturaEducacion}
           />
+        )}
+
+        {modoEducacion && datos.coberturaEducacion && (
+          <PanelHuecosEducacion
+            cobertura={datos.coberturaEducacion}
+            modoListadoEducacion={modoListadoEducacion}
+          />
+        )}
+
+        {modoAdministracion && datos.adminSinPdf?.length > 0 && (
+          <PanelAdminSinPdf bolsas={datos.adminSinPdf} />
         )}
 
         {modoAdministracion && !gruposSanidad.length && (
