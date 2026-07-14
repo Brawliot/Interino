@@ -436,20 +436,27 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
   }
 
   const gruposSanidad = categoriasPorGrupo
-    ? Object.entries(categoriasPorGrupo)
-        .filter(([id]) => id !== "facultativo")
-        .map(([id, info]) => ({
+    ? Object.entries(categoriasPorGrupo).map(([id, info]) => ({
           id,
           nombre: {
             diplomado: "Personal Sanitario Diplomado",
             licenciados: "Personal Sanitario Licenciado",
             tecnico: "Personal Sanitario Técnico",
             gestion: "Personal de Gestión y Servicios",
+            facultativo: "Personal Facultativo",
           }[id] || id,
-          activo: grupoTieneDatos(id),
-          categorias: (info.categorias_pdf || [])
-            .filter((pdf) => !CATEGORIAS_SIN_PDF_PORTAL.has(pdf))
-            .map(portalAUi),
+          activo: id === "facultativo" ? false : grupoTieneDatos(id),
+          categorias:
+            id === "facultativo"
+              ? []
+              : (info.categorias_pdf || [])
+                  .filter((pdf) => !CATEGORIAS_SIN_PDF_PORTAL.has(pdf))
+                  .map(portalAUi),
+          nota:
+            id === "facultativo"
+              ? info.nota ||
+                "El portal SESCAM no publica categorías de facultativo en el listado estático (dropdown vacío). Cuando existan PDFs, aparecerán aquí."
+              : null,
         }))
     : [];
 

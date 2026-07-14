@@ -979,6 +979,11 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
               </option>
             ))}
           </select>
+          {grupo?.nota && (
+            <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 8, lineHeight: 1.45 }}>
+              {grupo.nota}
+            </p>
+          )}
         </div>
         )}
 

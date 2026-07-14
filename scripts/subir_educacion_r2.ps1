@@ -66,7 +66,7 @@ function Subir-Carpeta($localRel, $r2Prefix) {
         Write-Host "[$i/$total] $key"
 
         if ($SkipExisting -and (Test-ObjetoR2 $key)) {
-            Write-Host "  ya en R2 — omitido" -ForegroundColor DarkGray
+            Write-Host "  ya en R2 - omitido" -ForegroundColor DarkGray
             $skip++
             continue
         }
@@ -80,7 +80,7 @@ function Subir-Carpeta($localRel, $r2Prefix) {
         }
     }
 
-    Write-Host "Resumen $r2Prefix → subidos: $ok | omitidos: $skip | fallos: $fail" -ForegroundColor Cyan
+    Write-Host "Resumen $r2Prefix -> subidos: $ok | omitidos: $skip | fallos: $fail" -ForegroundColor Cyan
     return $fallidos
 }
 
@@ -102,4 +102,5 @@ if ($fallidosTotales.Count -gt 0) {
 
 Write-Host "`nListo. Comprueba:"
 Write-Host "  $R2Public/educacion/manifest.json"
+Write-Host "  $R2Public/educacion/afinidad.json"
 Write-Host "  $R2Public/educacion-bolsa/manifest.json"

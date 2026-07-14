@@ -511,6 +511,8 @@
     "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-de-investigacion-recursos-fitogeneticos",
     "fecha_modificacion": "2026-01-26",
     "pdfs": [],
+    "sin_pdf_portal": true,
+    "nota_portal": "La página de la bolsa no enlaza ningún PDF de listado.",
     "cuerpo": "Cuerpo SUPERIOR DE INVESTIGACIÓN"
   },
   {
@@ -1040,6 +1042,8 @@
     "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ingenieria-de-minas",
     "fecha_modificacion": "2025-05-05",
     "pdfs": [],
+    "sin_pdf_portal": true,
+    "nota_portal": "La página de la bolsa no enlaza ningún PDF de listado.",
     "cuerpo": "Cuerpo SUPERIOR"
   },
   {
@@ -1504,6 +1508,8 @@
     "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
     "fecha_modificacion": "2022-09-20",
     "pdfs": [],
+    "sin_pdf_portal": true,
+    "nota_portal": "La página de la bolsa no enlaza ningún PDF de listado.",
     "cuerpo": "Cuerpo TÉCNICO"
   },
   {
@@ -1513,6 +1519,8 @@
     "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
     "fecha_modificacion": "2024-09-04",
     "pdfs": [],
+    "sin_pdf_portal": true,
+    "nota_portal": "La página de la bolsa no enlaza ningún PDF de listado.",
     "cuerpo": "Cuerpo TÉCNICO"
   },
   {
