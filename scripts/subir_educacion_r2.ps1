@@ -1,4 +1,4 @@
-# Sube data/educacion/ y data/educacion-bolsa/ a R2
+# Sube data/educacion/ y data/educacion-bolsa/ a R2 (wrangler; alternativa: scripts/subir_r2.ps1 con boto3)
 # Uso:
 #   .\scripts\subir_educacion_r2.ps1
 #   .\scripts\subir_educacion_r2.ps1 -SkipExisting          # omite los que ya responden 200 en R2
@@ -65,7 +65,7 @@ function Subir-Carpeta($localRel, $r2Prefix) {
         $key = "$r2Prefix/$rel"
         Write-Host "[$i/$total] $key"
 
-        if ($SkipExisting -and (Test-ObjetoR2 $key)) {
+        if ($SkipExisting -and -not ($rel -eq "manifest.json" -or $rel -eq "afinidad.json" -or $rel -eq "categorias.json") -and (Test-ObjetoR2 $key)) {
             Write-Host "  ya en R2 - omitido" -ForegroundColor DarkGray
             $skip++
             continue

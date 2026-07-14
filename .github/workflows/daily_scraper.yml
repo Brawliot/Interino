@@ -38,7 +38,7 @@ jobs:
         if: steps.vigia.outcome == 'failure'
         run: python scripts/ejecutar_vigia_scrapers.py
 
-      - name: Subir educación y administración a R2
+      - name: Subir sectores a R2
         if: steps.vigia.outcome == 'failure'
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -47,10 +47,17 @@ jobs:
           R2_BUCKET: interino-data
         run: |
           if [ -f data/_local/vigia_sectores_r2.json ]; then
-            python scripts/subir_sectores_r2.py
+            python scripts/subir_sectores_r2.py --skip-existing
           else
             echo "Sin sectores R2 pendientes"
           fi
+
+      - name: Auditoría smoke R2
+        if: steps.vigia.outcome == 'failure'
+        continue-on-error: true
+        env:
+          R2_PUBLIC_URL: https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev
+        run: python scripts/auditar_paridad_clm.py --smoke
 
       - name: Commit y push (sanidad + metadatos + vigía)
         if: steps.vigia.outcome == 'failure'

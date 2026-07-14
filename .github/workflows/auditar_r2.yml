@@ -1,0 +1,31 @@
+name: Auditoria paridad R2
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Lunes 9:00 UTC
+  workflow_dispatch:
+
+jobs:
+  auditar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Smoke test URLs R2 (CLM core)
+        env:
+          R2_PUBLIC_URL: https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev
+        run: python scripts/auditar_paridad_clm.py --smoke
+
+      - name: Paridad local/R2 (si hay manifests en runner)
+        continue-on-error: true
+        env:
+          R2_PUBLIC_URL: https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev
+        run: python scripts/auditar_paridad_clm.py

@@ -154,6 +154,15 @@ def main() -> int:
     if admin_claves:
         _actualizar_fechas_admin(admin_claves)
 
+    if sectores_r2 & {"educacion", "educacion-bolsa"}:
+        print("\n>>> Regenerar afinidad.json (educacion)")
+        subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "generar_afinidad_educacion.py")],
+            cwd=ROOT,
+            check=False,
+        )
+        sectores_r2.add("educacion")
+
     if sectores_r2:
         out = ROOT / "data" / "_local" / "vigia_sectores_r2.json"
         out.parent.mkdir(parents=True, exist_ok=True)

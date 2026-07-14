@@ -21,58 +21,49 @@ Antes de comprometer desarrollo en cualquier fuente nueva (comunidad, sector o g
 
 No seguir invirtiendo en una fuente de Cajón B "porque ya se ha empezado" — cortar pronto y priorizar otra.
 
-## Estructura del mercado
+## Sectores CLM (estado jul 2026)
 
-**Niveles:** Autonómico (donde trabajamos ahora) → Provincial/Gerencial (resuelto como filtro; en sanidad CLM, 13 gerencias) → Estatal (no explorado, no priorizado).
+| Sector | App | Scraper | R2 | Notas |
+|--------|-----|---------|-----|-------|
+| **Sanidad** | ✅ 4 grupos activos | ✅ `scraper.py` | ✅ ~227 listados | Facultativo sin categorías en portal |
+| **Educación** | ✅ 3 modos (disponibles / bolsa / AFIN) | ✅ | ⚠️ bolsa manifest | Ver `docs/OPERACION.md` |
+| **Administración** | ✅ 91 bolsas | ✅ `scraper_admin_clm.py` | ✅ ~150 listados | 4 bolsas sin PDF en portal |
+| **Murcia / Madrid** | ✅ sanidad | Parcial | ❌ no en R2 | Metadatos en repo |
 
-**Sectores:**
+Producción: **https://interino.pages.dev** · Datos: bucket R2 `interino-data`.
 
-- **Sanidad** — ✅ investigado, scraper funcionando (ver abajo). Sin competencia de apps dedicadas. Prioridad máxima.
-- **Administración General** — ⚠️ superficial. PDFs públicos sin login en empleopublico.castillalamancha.es, pero sin fórmula de nombre de archivo fija (hay que rastrear enlaces). Sin competencia detectada. Segunda prioridad.
-- **Educación** — ⚠️ superficial. Baremos públicos en PDFs adjuntos a resoluciones, sin patrón de URL. Mercado saturado (4-5 apps establecidas). Baja prioridad.
+## Sanidad CLM (5 grupos)
 
-## Subsectores de Sanidad CLM (5 grupos profesionales)
+| Grupo | Estado |
+|-------|--------|
+| Diplomado | ✅ datos reales |
+| Licenciados | ✅ |
+| Técnico | ✅ |
+| Gestión y servicios | ✅ |
+| Facultativo | ⚠️ portal sin listado estático (dropdown vacío) |
 
-Viven en `sanidad.castillalamancha.es/profesionales/atencion-al-profesional/bolsas-constituidas/baremos/{slug}`:
+## Operación y CI
 
-| Grupo | Estado scraper | Notas |
-|---|---|---|
-| personal-sanitario-diplomado | ✅ funcionando | Enfermero/a (+7 especialidades), Fisioterapeuta, Logopeda, Óptico-Optometrista, Podólogo/a, Terapeuta Ocupacional, Dietista-Nutricionista. 14 categorías, datos reales confirmados. |
-| personal-facultativo | ❌ pendiente | Categorías no extraídas. |
-| personal-sanitario-licenciados | ❌ pendiente | Categorías no extraídas. |
-| personal-sanitario-tecnico | ❌ pendiente | Categorías no extraídas (TCAE, laboratorio, radiodiagnóstico…). |
-| personal-de-gestion-y-servicios | ❌ pendiente | Categorías no extraídas (aux. administrativo, celador…). |
+- **Vigía diario:** `.github/workflows/daily_scraper.yml` — detecta cambios, scrapea, regenera `afinidad.json` si educación cambia, sube a R2 con `--skip-existing`.
+- **Auditoría R2:** `.github/workflows/auditar_r2.yml` + `python scripts/auditar_paridad_clm.py`.
+- **Runbook:** `docs/OPERACION.md`.
+- **Subida R2 unificada:** `scripts/subir_sectores_r2.py` (boto3) o `scripts/subir_r2.ps1` / `subir_educacion_r2.ps1` (local).
 
-**Hipótesis no verificada:** los 5 grupos probablemente comparten carpeta de PDFs y patrón de nombre de archivo confirmado con Enfermería — comprobar con un PDF real de cada grupo antes de dar nada por bueno.
+Secrets GitHub: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
 
-## Estado técnico actual
+## App (React + Vite)
 
-### Hecho y funcionando
+- `listas-app.jsx` — búsqueda por apellidos, seguimientos, listado completo, histórico de corte, hub de herramientas.
+- Sectores CLM en selector; educación con modos **disponibles**, **bolsa ordinaria** y **bolsas afines** (Orden 32/2018).
+- Datos desde R2 en producción (`VITE_DATA_CATEGORIAS_URL` en `.env.production`).
 
-- `scraper.py` — descarga y parsea los PDFs reales (grupo diplomado), con reintentos, presupuesto de tiempo total, y guardado en `data/latest.json` (snapshot diario, se sobrescribe) y `data/historico.json` (agregado por categoría+gerencia+ámbito+fecha, sin datos personales).
-- `.github/workflows/daily_scraper.yml` — ejecución diaria, `timeout-minutes: 45`, caché de pip, commit + push del resultado.
-- `requirements.txt` — necesario para la caché de pip.
-- `politica-privacidad.md` — borrador, pendiente rellenar contacto real.
-- **Prototipo React (`listas-app.jsx`)** con: búsqueda por apellidos, desambiguación de coincidencias, "mis seguimientos", listado completo consultable, aviso de listado desactualizado, gráfico de tendencia del corte, aviso legal, notificaciones simuladas con aviso de que no sustituyen la llamada oficial.
+### Pendiente producto (no bloquea consulta básica)
 
-### Novedad (esta sesión): prototipo con los 5 grupos profesionales
-
-El prototipo ya cubre la estructura completa de subsectores de sanidad:
-
-- `GRUPOS_SANIDAD` sustituye a la antigua lista plana de categorías: los 5 grupos, cada uno con flag `activo` y su lista de categorías. Solo *diplomado* está activo, con sus 7 categorías reales. Los otros 4 llevan **categorías de ejemplo (inventadas, sustituir por las reales cuando se extraigan del portal)**.
-- Selector de "Grupo profesional" en la pantalla de búsqueda, con el de categoría dependiente. Grupos pendientes marcados como "· datos de ejemplo".
-- `estadoActualizacion()` se deriva del grupo: cualquier categoría de un grupo sin scraper muestra automáticamente el aviso "sin scraping activo", sin hardcodear categorías.
-- Las búsquedas recientes sincronizan el grupo al recuperarlas.
-
-### Pendiente, bloqueante para publicar (en orden)
-
-1. **Conectar la app a `data/latest.json`** — ahora usa datos inventados (`generarListadoCompleto()`). Sin esto no hay producto, hay maqueta.
-2. **Selector de Gerencia** en la búsqueda — el dato está por categoría+gerencia+ámbito pero la UI solo pregunta grupo+categoría+apellidos.
-3. Decidir qué mostrar en "zona de riesgo" sin histórico suficiente (día 1 habrá 1 solo día de datos).
-4. Nombre definitivo + disponibilidad de dominio (y nombre de paquete por si algún día hay tiendas).
-5. Envoltorio PWA: manifest.json, iconos, meta tags.
-6. Dominio real donde alojar PWA y política de privacidad.
-7. Prueba extremo a extremo con un nombre real conocido, con datos reales.
+1. PWA (manifest, iconos) y dominio propio.
+2. Política de privacidad con contacto real.
+3. Notificaciones reales (ahora simuladas).
+4. Consulta legal antes de freemium / cobros.
+5. Murcia/Madrid en R2 si se promocionan esas CCAA.
 
 ## Legal
 

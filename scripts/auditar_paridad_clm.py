@@ -2,7 +2,9 @@
 """Audita huecos locales CLM, paridad local↔R2 y smoke test de URLs de la app."""
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -11,7 +13,10 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-R2 = "https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev"
+R2 = os.environ.get(
+    "R2_PUBLIC_URL",
+    "https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev",
+).rstrip("/")
 
 CUERPO_SLUG = {
     "0597": "maestros",
@@ -139,9 +144,14 @@ def listados_manifest(archivos: list[str]) -> list[str]:
 
 def educacion_huecos_catalogo() -> tuple[list[str], list[str]]:
     sin_d, sin_b = [], []
-    edu = json.loads((ROOT / "data/educacion/categorias.json").read_text(encoding="utf-8"))
-    man_d = set(json.loads((ROOT / "data/educacion/manifest.json").read_text(encoding="utf-8"))["archivos"])
-    man_b = set(json.loads((ROOT / "data/educacion-bolsa/manifest.json").read_text(encoding="utf-8"))["archivos"])
+    cat_path = ROOT / "data/educacion/categorias.json"
+    man_d_path = ROOT / "data/educacion/manifest.json"
+    man_b_path = ROOT / "data/educacion-bolsa/manifest.json"
+    if not cat_path.is_file() or not man_d_path.is_file() or not man_b_path.is_file():
+        return sin_d, sin_b
+    edu = json.loads(cat_path.read_text(encoding="utf-8"))
+    man_d = set(json.loads(man_d_path.read_text(encoding="utf-8"))["archivos"])
+    man_b = set(json.loads(man_b_path.read_text(encoding="utf-8"))["archivos"])
     for c in edu["cuerpos"]:
         g = CUERPO_SLUG.get(c["codigo"])
         if not g:
@@ -252,63 +262,77 @@ def muestras_listado_r2(comparisons: list[dict]) -> list[dict]:
 
 
 def main() -> int:
+    p = argparse.ArgumentParser(description="Auditoria paridad CLM local/R2")
+    p.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Solo smoke test de URLs R2 (util en CI sin datos locales)",
+    )
+    args = p.parse_args()
     exit_code = 0
+    comparisons: list[dict] = []
 
-    print("=" * 60)
-    print("0.4 - HUECOS LOCALES (catalogo educacion vs manifests)")
-    print("=" * 60)
-    sin_d, sin_b = educacion_huecos_catalogo()
-    print(f"Disponibles sin JSON local: {len(sin_d)}/{96} catálogo")
-    for rel in sin_d:
-        print(f"  - {rel}")
-    print(f"Bolsa ordinaria sin JSON local: {len(sin_b)}")
-    for rel in sin_b:
-        print(f"  - {rel}")
-    print(f"afinidad.json local: {(ROOT / 'data/educacion/afinidad.json').is_file()}")
-
-    print("\n=== Admin sin PDF en portal ===")
-    admin = json.loads((ROOT / "data/admin-clm/categorias.json").read_text(encoding="utf-8"))
-    for e in admin:
-        if not e.get("pdfs"):
-            print(f"  {e.get('categoria')} ({e.get('colectivo')})")
-
-    print("\n=== Facultativo sanidad ===")
-    cats = json.loads((ROOT / "data/public/categorias_por_grupo.json").read_text(encoding="utf-8"))
-    fac = cats.get("facultativo", {})
-    print(f"  categorias_pdf: {len(fac.get('categorias_pdf') or [])}")
-    if fac.get("nota"):
-        print(f"  nota: {fac.get('nota')[:80]}...")
-
-    print("\n" + "=" * 60)
-    print("0.4 - PARIDAD LOCAL <-> R2 (manifests)")
-    print("=" * 60)
-    comparisons = []
-    for nombre, local_dir, r2_prefix, manifest_name in PARITY_SECTORS:
-        cmp = comparar_manifest(nombre, local_dir, r2_prefix, manifest_name)
-        comparisons.append(cmp)
-        print(f"\n[{cmp['sector']}]")
-        if cmp.get("error"):
-            print(f"  ERROR: {cmp['error']}")
-            exit_code = 1
-            continue
-        if cmp.get("r2_status") != 200:
-            print(f"  R2 manifest: FALTA ({cmp.get('r2_status')} {cmp.get('r2_error')})")
-            exit_code = 1
+    if not args.smoke:
+        print("=" * 60)
+        print("0.4 - HUECOS LOCALES (catalogo educacion vs manifests)")
+        print("=" * 60)
+        sin_d, sin_b = educacion_huecos_catalogo()
+        if not (ROOT / "data/educacion/manifest.json").is_file():
+            print("  (sin manifest local educacion - omitido)")
         else:
-            print(f"  Local: {cmp['local_count']} archivos ({cmp.get('local_generado')})")
-            print(f"  R2:    {cmp['r2_count']} archivos ({cmp.get('r2_generado')})")
-            print(f"  En ambos: {cmp['en_ambos']}")
-            delta = len(cmp.get("solo_local") or [])
-            if delta:
-                print(f"  [!] Solo en local (falta subir a R2): {delta}")
+            print(f"Disponibles sin JSON local: {len(sin_d)}/96 catalogo")
+            for rel in sin_d:
+                print(f"  - {rel}")
+            print(f"Bolsa ordinaria sin JSON local: {len(sin_b)}")
+            for rel in sin_b:
+                print(f"  - {rel}")
+        print(f"afinidad.json local: {(ROOT / 'data/educacion/afinidad.json').is_file()}")
+
+        print("\n=== Admin sin PDF en portal ===")
+        admin_path = ROOT / "data/admin-clm/categorias.json"
+        if admin_path.is_file():
+            admin = json.loads(admin_path.read_text(encoding="utf-8"))
+            for e in admin:
+                if not e.get("pdfs"):
+                    print(f"  {e.get('categoria')} ({e.get('colectivo')})")
+
+        print("\n=== Facultativo sanidad ===")
+        cats_path = ROOT / "data/public/categorias_por_grupo.json"
+        if cats_path.is_file():
+            cats = json.loads(cats_path.read_text(encoding="utf-8"))
+            fac = cats.get("facultativo", {})
+            print(f"  categorias_pdf: {len(fac.get('categorias_pdf') or [])}")
+            if fac.get("nota"):
+                print(f"  nota: {fac.get('nota')[:80]}...")
+
+        print("\n" + "=" * 60)
+        print("0.4 - PARIDAD LOCAL <-> R2 (manifests)")
+        print("=" * 60)
+        for nombre, local_dir, r2_prefix, manifest_name in PARITY_SECTORS:
+            cmp = comparar_manifest(nombre, local_dir, r2_prefix, manifest_name)
+            comparisons.append(cmp)
+            print(f"\n[{cmp['sector']}]")
+            if cmp.get("error"):
+                print(f"  SKIP: {cmp['error']}")
+                continue
+            if cmp.get("r2_status") != 200:
+                print(f"  R2 manifest: FALTA ({cmp.get('r2_status')} {cmp.get('r2_error')})")
                 exit_code = 1
-                for f in (cmp["solo_local"])[:15]:
-                    print(f"      {f}")
-                if delta > 15:
-                    print(f"      ... y {delta - 15} más")
-            extra = len(cmp.get("solo_r2") or [])
-            if extra:
-                print(f"  Solo en R2 (obsoleto local): {extra}")
+            else:
+                print(f"  Local: {cmp['local_count']} archivos ({cmp.get('local_generado')})")
+                print(f"  R2:    {cmp['r2_count']} archivos ({cmp.get('r2_generado')})")
+                print(f"  En ambos: {cmp['en_ambos']}")
+                delta = len(cmp.get("solo_local") or [])
+                if delta:
+                    print(f"  [!] Solo en local (falta subir a R2): {delta}")
+                    exit_code = 1
+                    for f in (cmp["solo_local"])[:15]:
+                        print(f"      {f}")
+                    if delta > 15:
+                        print(f"      ... y {delta - 15} mas")
+                extra = len(cmp.get("solo_r2") or [])
+                if extra:
+                    print(f"  Solo en R2 (obsoleto local): {extra}")
 
     print("\n" + "=" * 60)
     print("0.5 - SMOKE TEST URLs (cargarDatos produccion)")
@@ -320,39 +344,49 @@ def main() -> int:
         if row.get("archivos") is not None:
             extra = f" | {row['archivos']} archivos | {row.get('generado', '?')}"
         print(f"  [{icon}] {row['sector']}: {row['url']} ({row.get('status')}){extra}")
-        if not row["ok"]:
+        if not row["ok"] and row["sector"] not in ("murcia", "madrid"):
             exit_code = 1
             if row.get("error"):
                 print(f"         {row['error']}")
 
     print("\n=== Verificacion muestras faltantes en R2 ===")
-    muestras = muestras_listado_r2(comparisons)
-    if not muestras:
-        print("  (sin faltantes locales vs R2 o R2 no accesible)")
-    ok_muestras = sum(1 for m in muestras if m["ok"])
-    for m in muestras:
-        icon = "OK" if m["ok"] else "404"
-        print(f"  [{icon}] {m['sector']}/{m['archivo']}")
-    if muestras and ok_muestras == len(muestras) and ok_muestras > 0:
-        print(
-            "\n  NOTA: los listados responden 200 pero el manifest R2 no los lista."
-            " Sube educacion-bolsa/manifest.json (y revisa generado)."
-        )
+    if args.smoke:
+        print("  (omitido en modo --smoke)")
+        muestras = []
+    else:
+        muestras = muestras_listado_r2(comparisons)
+        if not muestras:
+            print("  (sin faltantes locales vs R2 o R2 no accesible)")
+        ok_muestras = sum(1 for m in muestras if m["ok"])
+        for m in muestras:
+            icon = "OK" if m["ok"] else "404"
+            print(f"  [{icon}] {m['sector']}/{m['archivo']}")
+        if muestras and ok_muestras == len(muestras) and ok_muestras > 0:
+            print(
+                "\n  NOTA: los listados responden 200 pero el manifest R2 no los lista."
+                " Sube educacion-bolsa/manifest.json (y revisa generado)."
+            )
 
     print("\n" + "=" * 60)
     print("RESUMEN")
     print("=" * 60)
     smoke_ok = sum(1 for r in smoke if r["ok"])
-    print(f"Smoke bootstrap: {smoke_ok}/{len(smoke)} OK")
-    for cmp in comparisons:
-        if cmp.get("error"):
-            continue
-        delta = len(cmp.get("solo_local") or [])
-        if delta:
-            print(f"  {cmp['sector']}: subir {delta} archivo(s) a R2")
-        elif cmp.get("r2_count") == cmp.get("local_count"):
-            print(f"  {cmp['sector']}: paridad OK ({cmp['local_count']})")
+    # CLM core: sanidad + educacion + admin (murcia/madrid opcionales)
+    core = [r for r in smoke if r["sector"] not in ("murcia", "madrid")]
+    core_ok = sum(1 for r in core if r["ok"])
+    print(f"Smoke bootstrap: {smoke_ok}/{len(smoke)} OK (core CLM: {core_ok}/{len(core)})")
+    if not args.smoke:
+        for cmp in comparisons:
+            if cmp.get("error"):
+                continue
+            delta = len(cmp.get("solo_local") or [])
+            if delta:
+                print(f"  {cmp['sector']}: subir {delta} archivo(s) a R2")
+            elif cmp.get("r2_count") == cmp.get("local_count"):
+                print(f"  {cmp['sector']}: paridad OK ({cmp['local_count']})")
 
+    if core_ok < len(core):
+        exit_code = 1
     return exit_code
 
 
