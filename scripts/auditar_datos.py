@@ -22,6 +22,7 @@ from scraper import (  # noqa: E402
     HISTORICO_PATH,
     MANIFEST_PATH,
     _normalizar_clave,
+    ambitos_para_categoria,
     claves_listados,
     gerencias_de_categoria,
     gerencias_portal_faltantes,
@@ -101,7 +102,7 @@ def auditar_gerencias() -> dict:
                 claves = claves_listados(data.get("listados") or [])
                 pares_faltan = []
                 for g in portal_cache[cache_key]:
-                    for a in AMBITOS:
+                    for a in ambitos_para_categoria(cat):
                         if (_normalizar_clave(g), a) not in claves:
                             pares_faltan.append({"gerencia": g, "ambito": a})
                 faltantes_por_cat.append({

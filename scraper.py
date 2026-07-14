@@ -99,6 +99,81 @@ GERENCIAS = [
 
 AMBITOS = ["Atencion Primaria", "Atencion Especializada"]
 
+AE = "Atencion Especializada"
+AP = "Atencion Primaria"
+
+
+def categoria_debe_ser_ambito_primaria(categoria: str) -> bool:
+    """Categorías cuyo baremo en el portal es de Atención Primaria."""
+    c = _normalizar_clave(categoria)
+    if "ATENCION PRIMARIA" in c:
+        return True
+    if c.startswith("FARMACEUTICO/A DE ATENCION PRIMARIA"):
+        return True
+    if c.startswith("MEDICO/A DE FAMILIA"):
+        return True
+    if c.startswith("MEDICO/A P.E.A.C."):
+        return True
+    if c.startswith("PEDIATRA ATENCION PRIMARIA"):
+        return True
+    if c.startswith("ODONTOESTOMATOLOGO"):
+        return True
+    if c.startswith("TECNICO/A DE SALUD PUBLICA"):
+        return True
+    return False
+
+
+def categoria_debe_ser_ambito_especializada(categoria: str) -> bool:
+    """Categorías cuyo baremo en el portal es de Atención Especializada (no AP)."""
+    if categoria_debe_ser_ambito_primaria(categoria):
+        return False
+    c = _normalizar_clave(categoria)
+    if c.startswith("FEA "):
+        return True
+    if c.startswith("INSPECTOR/A"):
+        return True
+    if c.startswith("MEDICO/A DE EMERGENCIAS"):
+        return True
+    if "URGENCIAS HOSPITALARIAS" in c:
+        return True
+    if "ADMISION, ARCHIVOS Y DOCUMENTACION CLINICA" in c:
+        return True
+    return False
+
+
+def ambito_inferido_desde_url(url: str) -> str | None:
+    """Deduce AP/AE del nombre de archivo PDF cuando es explícito."""
+    u = _normalizar_clave(url)
+    if any(m in u for m in ("ATENCION ESPECIALIZADA", "ESPECIALIZADA", "_AE_", "-AE-", " AE ", "AE_")):
+        return AE
+    if any(m in u for m in ("ATENCION PRIMARIA", " PRIMARIA", "_AP_", "-AP-", " AP ", "AP_")):
+        if "ESPECIALIZADA" not in u:
+            return AP
+    return None
+
+
+def ambito_efectivo_para_pdf(categoria: str, ambito_solicitado: str, url: str | None) -> str:
+    """Ámbito con el que guardar el listado (coherente con categoría y URL)."""
+    if url:
+        desde_url = ambito_inferido_desde_url(url)
+        if desde_url:
+            return desde_url
+    if categoria_debe_ser_ambito_especializada(categoria):
+        return AE
+    if categoria_debe_ser_ambito_primaria(categoria):
+        return AP
+    return ambito_solicitado
+
+
+def ambitos_para_categoria(categoria: str) -> list[str]:
+    """Ámbitos que el portal publica para esta categoría."""
+    if categoria_debe_ser_ambito_especializada(categoria):
+        return [AE]
+    if categoria_debe_ser_ambito_primaria(categoria):
+        return [AP]
+    return list(AMBITOS)
+
+
 # data/public/ = espejo R2 (copiar su contenido a la raíz del bucket interino-data)
 # data/_local/ = logs, vigía, informes (no subir a R2)
 DATA_ROOT = "data"
@@ -268,7 +343,7 @@ class ClienteFormularioBaremo:
         return list(dict.fromkeys(urls))
 
     @staticmethod
-    def _elegir_pdf(urls: list[str], ambito: str) -> str | None:
+    def _elegir_pdf(urls: list[str], ambito: str, categoria: str | None = None) -> str | None:
         if not urls:
             return None
         amb = _normalizar_clave(ambito)
@@ -276,7 +351,17 @@ class ClienteFormularioBaremo:
         for url in candidatas:
             if amb in _normalizar_clave(url):
                 return url
-        return candidatas[0] if candidatas else urls[0]
+        for url in candidatas:
+            indicado = ambito_inferido_desde_url(url)
+            if indicado and _normalizar_clave(indicado) == amb:
+                return url
+        if categoria and len(candidatas) == 1:
+            url = candidatas[0]
+            if ambito == AE and categoria_debe_ser_ambito_especializada(categoria):
+                return url
+            if ambito == AP and categoria_debe_ser_ambito_primaria(categoria):
+                return url
+        return None
 
     def iniciar_categoria(self, categoria: str) -> _SesionCategoria:
         """GET + POST categoria (una vez por categoria scrapeada)."""
@@ -335,8 +420,9 @@ class ClienteFormularioBaremo:
         urls = self._urls_pdf(html_g)
         por_ambito: dict[str, str] = {}
 
+        cat = sesion.categoria
         for amb in AMBITOS:
-            u = self._elegir_pdf(urls, amb)
+            u = self._elegir_pdf(urls, amb, cat)
             if u:
                 por_ambito[amb] = u
 
@@ -353,7 +439,7 @@ class ClienteFormularioBaremo:
                         "form_id": fid2,
                     })
                     for amb in AMBITOS:
-                        u = self._elegir_pdf(self._urls_pdf(html_a), amb)
+                        u = self._elegir_pdf(self._urls_pdf(html_a), amb, cat)
                         if u:
                             por_ambito[amb] = u
                     html_g = html_a
@@ -376,7 +462,7 @@ class ClienteFormularioBaremo:
                 continue
 
             html_g = self._post_gerencia(html_estado, sesion.cat_id, gerencias[etiqueta_g])
-            url = self._elegir_pdf(self._urls_pdf(html_g), ambito)
+            url = self._elegir_pdf(self._urls_pdf(html_g), ambito, sesion.categoria)
             if url:
                 return url, html_g
 
@@ -391,7 +477,7 @@ class ClienteFormularioBaremo:
                     "form_build_id": fb2,
                     "form_id": fid2,
                 })
-                url = self._elegir_pdf(self._urls_pdf(html_a), ambito)
+                url = self._elegir_pdf(self._urls_pdf(html_a), ambito, sesion.categoria)
                 if url:
                     return url, html_a
             return None, html_g
@@ -693,8 +779,9 @@ def pares_portal_faltantes(cliente: ClienteFormularioBaremo, sesion: _SesionCate
     """Pares (gerencia, ámbito) del portal sin listado guardado."""
     claves = claves_listados(existentes)
     faltan: list[tuple[str, str]] = []
+    ambitos_cat = ambitos_para_categoria(sesion.categoria)
     for gerencia in gerencias_de_categoria(cliente, sesion):
-        for ambito in AMBITOS:
+        for ambito in ambitos_cat:
             if clave_listado(gerencia, ambito) not in claves:
                 faltan.append((gerencia, ambito))
     return faltan
@@ -752,24 +839,25 @@ def scrapear_listados_pares(
             if not url:
                 _log_listado(categoria, gerencia_norm, ambito, "sin_pdf", None)
                 continue
+            ambito_guardar = ambito_efectivo_para_pdf(categoria, ambito, url)
             if url in urls_descargadas:
                 continue
 
             contenido, estado = descargar_pdf(url)
             if estado != "ok":
-                _log_listado(categoria, gerencia_norm, ambito, estado, url)
+                _log_listado(categoria, gerencia_norm, ambito_guardar, estado, url)
                 continue
 
-            filas = parsear_pdf(contenido, categoria, gerencia_norm, ambito)
+            filas = parsear_pdf(contenido, categoria, gerencia_norm, ambito_guardar)
             if filas:
                 nuevos.append({
                     "categoria": categoria,
                     "gerencia": gerencia_norm,
-                    "ambito": ambito,
+                    "ambito": ambito_guardar,
                     "filas": [asdict(f) for f in filas],
                 })
             urls_descargadas.add(url)
-            _log_listado(categoria, gerencia_norm, ambito, "ok", url, len(filas))
+            _log_listado(categoria, gerencia_norm, ambito_guardar, "ok", url, len(filas))
             time.sleep(pausa)
 
         try:
@@ -950,22 +1038,23 @@ def scrapear_categoria(categoria: str, grupo: str = "diplomado", gerencias=GEREN
             if not url:
                 _log_listado(categoria, gerencia, ambito, "sin_pdf", None)
                 continue
+            ambito_guardar = ambito_efectivo_para_pdf(categoria, ambito, url)
             if url in urls_descargadas:
-                continue  # listado central: AP y AE apuntan al mismo PDF
+                continue
 
             contenido, estado = descargar_pdf(url)
             if estado != "ok":
-                _log_listado(categoria, gerencia, ambito, estado, url)
+                _log_listado(categoria, gerencia, ambito_guardar, estado, url)
                 continue
 
-            filas = parsear_pdf(contenido, categoria, gerencia, ambito)
+            filas = parsear_pdf(contenido, categoria, gerencia, ambito_guardar)
             if filas:
                 listados.append({
-                    "categoria": categoria, "gerencia": gerencia, "ambito": ambito,
+                    "categoria": categoria, "gerencia": gerencia, "ambito": ambito_guardar,
                     "filas": [asdict(f) for f in filas],
                 })
             urls_descargadas.add(url)
-            _log_listado(categoria, gerencia, ambito, "ok", url, len(filas))
+            _log_listado(categoria, gerencia, ambito_guardar, "ok", url, len(filas))
             time.sleep(pausa)
 
         try:
