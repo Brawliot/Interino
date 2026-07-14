@@ -3,6 +3,7 @@ import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, G
 import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
 import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria, MODOS_LISTADO_EDUCACION } from "./src/educacion.js";
+import { subBolsaLegible } from "./src/admin-clm.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
@@ -120,7 +121,10 @@ function leerModoListadoEducacion(datos) {
   return "disponibles";
 }
 
-function textoAyudaBusqueda(ccaaId, numGerencias, modoEducacion, modoListadoEducacion) {
+function textoAyudaBusqueda(ccaaId, numGerencias, modoEducacion, modoListadoEducacion, modoAdministracion) {
+  if (modoAdministracion) {
+    return "Busca solo por apellidos. Verás tu posición en cada provincia donde figure en la bolsa, con la sub-bolsa (definitiva, provisional, suspensos…). No hay puntuación ni DNI en estos listados.";
+  }
   if (modoEducacion) {
     if (modoListadoEducacion === "bolsa") {
       return "Busca por apellidos o DNI parcial. Verás tu posición en la bolsa ordinaria completa de tu especialidad (orden por puntuación, como en sanidad). No te pedimos ni guardamos tu DNI completo.";
@@ -216,7 +220,7 @@ function clavePersonaListado(f) {
 }
 
 /** Convierte fila(s) del listado completo al objeto candidato de PantallaResultado. */
-function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, grupoId, ccaaId, esEducacion, tipoListado }) {
+function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, grupoId, ccaaId, esEducacion, esAdministracion, tipoListado }) {
   const clave = clavePersonaListado(filaClickada);
   const filasPersona = (todasLasFilas || []).filter((f) => clavePersonaListado(f) === clave);
   const apariciones = (filasPersona.length ? filasPersona : [filaClickada]).map((f) => {
@@ -240,6 +244,22 @@ function candidatoDesdeFilasListado(filaClickada, todasLasFilas, { categoria, gr
         tipoListado: f.tipoListado || tipoListado,
         provincias: f.provincias || [],
         idiomas: f.idiomas,
+      };
+    }
+    if (esAdministracion) {
+      return {
+        sector: "administracion",
+        categoria,
+        grupoId,
+        ccaaId,
+        gerencia: f.provincia || f.gerencia,
+        provincia: f.provincia || f.gerencia,
+        ambito: f.sub_bolsa,
+        sub_bolsa: f.sub_bolsa,
+        posicion: f.pos,
+        num_bolsa: f.num_bolsa,
+        total: f.total,
+        delante: Math.max(0, (f.pos || 0) - 1),
       };
     }
     return {
@@ -698,8 +718,8 @@ function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
   );
 }
 
-function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva }) {
-  const sectores = sectoresParaCcaas(ccaas.map((c) => c.id), { educacionActiva }).map((s) => ({
+function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva }) {
+  const sectores = sectoresParaCcaas(ccaas.map((c) => c.id), { educacionActiva, administracionActiva }).map((s) => ({
     ...s,
     icono: ICONOS_SECTOR[s.id] || Stethoscope,
   }));
@@ -792,12 +812,12 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, educacionBolsaActiva, educacionDisponiblesActiva, modoEducacion, modoListadoEducacion, onModoListadoEducacionChange }) {
+function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
   const datos = useDatos();
   const capa = useCapaDatos();
   const multi = ccaas.length > 1;
   const ccaaIds = ccaas.map((c) => c.id);
-  const sectores = sectoresParaCcaas(ccaaIds, { educacionActiva });
+  const sectores = sectoresParaCcaas(ccaaIds, { educacionActiva, administracionActiva });
   const sectorActivo = sectores.find((s) => s.id === sectorId);
   const sectorDisponible = sectorActivo?.activo;
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
@@ -813,7 +833,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
   const tituloBarra = multi ? ccaas.map((c) => c.nombre).join(" · ") : (ccaas[0]?.nombre || "Castilla-La Mancha");
   const textoAyuda = multi
     ? TEXTO_AYUDA_BUSQUEDA_BASE.multi
-    : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm, modoEducacion, modoListadoEducacion);
+    : textoAyudaBusqueda(ccaaIds[0] || "clm", datos.numGerenciasClm, modoEducacion, modoListadoEducacion, modoAdministracion);
 
   const cambiarGrupo = (id) => {
     const g = gruposSanidad.find((x) => x.id === id);
@@ -889,6 +909,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           ccaas={ccaas}
           sectorId={sectorId}
           educacionActiva={educacionActiva}
+          administracionActiva={administracionActiva}
           onSectorChange={(s) => {
             onSectorChange?.(s);
             setSinResultados(false);
@@ -906,6 +927,15 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           />
         )}
 
+        {modoAdministracion && !gruposSanidad.length && (
+          <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
+            <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
+              No hay listados de administración cargados. En producción, sube la carpeta <strong>admin-clm/</strong> a R2.
+            </p>
+          </div>
+        )}
+
         {modoEducacion && !gruposSanidad.length && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -918,7 +948,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
         {gruposSanidad.length > 0 && (
         <div>
           <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
-            {modoEducacion ? "Cuerpo docente" : "Grupo profesional"}
+            {modoEducacion ? "Cuerpo docente" : modoAdministracion ? "Colectivo" : "Grupo profesional"}
           </label>
           <select
             value={grupoId}
@@ -957,11 +987,13 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
 
         {gruposSanidad.length > 0 && (
         <div>
-          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>Apellidos o DNI parcial</label>
+          <label style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}>
+            {modoAdministracion ? "Apellidos" : "Apellidos o DNI parcial"}
+          </label>
           <input
             value={consulta}
             onChange={(e) => { setConsulta(e.target.value); setSinResultados(false); setSinResultadosGlobal(false); setSinDatosCategoria(false); }}
-            placeholder="Apellidos, DNI parcial o ambos — ej. García 4208"
+            placeholder={modoAdministracion ? "Apellidos — ej. García López" : "Apellidos, DNI parcial o ambos — ej. García 4208"}
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           />
@@ -1068,7 +1100,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No encontramos coincidencias para «{consulta.trim()}»{modoEducacion ? ` en la especialidad ${categoria}` : ` en ninguna gerencia de ${categoria}`}. Comprueba cómo lo has escrito, o puede que aún no estés incluido en esta bolsa.
+              No encontramos coincidencias para «{consulta.trim()}»{modoEducacion ? ` en la especialidad ${categoria}` : modoAdministracion ? ` en ${categoria}` : ` en ninguna gerencia de ${categoria}`}. Comprueba cómo lo has escrito, o puede que aún no estés incluido en esta bolsa.
             </p>
           </div>
         )}
@@ -1083,7 +1115,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
         )}
 
         <button
-          onClick={() => onVerListado(categoria, modoEducacion ? "" : undefined)}
+          onClick={() => onVerListado(categoria, modoEducacion || modoAdministracion ? "" : undefined)}
           disabled={!categoriaConDatos}
           className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
           style={{
@@ -1109,14 +1141,14 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
 // ---------------------------------------------------------------
 // PANTALLA 3B — elegir tu nombre en la lista de coincidencias
 // ---------------------------------------------------------------
-function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
+function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global, modoAdministracion }) {
   return (
     <div>
       <Barra titulo="¿Cuál eres tú?" atras={atras} />
       <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.inkSoft, padding: "0 20px 4px" }}>
         {global
-          ? `Encontramos ${candidatos.length} personas que coinciden con tu búsqueda en tus comunidades seleccionadas. Toca tu nombre — si dudas, el listado también muestra los últimos dígitos del DNI para confirmar.`
-          : `Encontramos ${candidatos.length} personas que coinciden con tu búsqueda en las listas de ${categoria}. Toca tu nombre — si dudas, el listado también muestra los últimos dígitos del DNI para confirmar.`}
+          ? `Encontramos ${candidatos.length} personas que coinciden con tu búsqueda en tus comunidades seleccionadas. Toca tu nombre${modoAdministracion ? "." : " — si dudas, el listado también muestra los últimos dígitos del DNI para confirmar."}`
+          : `Encontramos ${candidatos.length} personas que coinciden con tu búsqueda en las listas de ${categoria}. Toca tu nombre${modoAdministracion ? "." : " — si dudas, el listado también muestra los últimos dígitos del DNI para confirmar."}`}
       </p>
 
       <div className="px-5 mt-4 flex flex-col gap-3">
@@ -1131,7 +1163,8 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
             <div>
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>{c.nombreCompleto}</p>
               <p style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: C.inkSoft }}>
-                En {(c.apariciones || []).length} lista{(c.apariciones || []).length > 1 ? "s" : ""} · mejor posición #{(c.apariciones || []).length ? Math.min(...c.apariciones.map((a) => a.posicion)) : "—"} · DNI {c.dniParcial}
+                En {(c.apariciones || []).length} provincia{(c.apariciones || []).length !== 1 ? "s" : ""} · mejor posición #{(c.apariciones || []).length ? Math.min(...c.apariciones.map((a) => a.posicion)) : "—"}
+                {!modoAdministracion && c.dniParcial ? ` · DNI ${c.dniParcial}` : ""}
               </p>
             </div>
           </button>
@@ -1139,7 +1172,9 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
       </div>
 
       <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, padding: "16px 20px 0" }}>
-        Si no te encuentras, vuelve atrás y prueba con más apellidos, con los dígitos del DNI o con una combinación de ambos.
+        {modoAdministracion
+          ? "Si no te encuentras, vuelve atrás y prueba con más apellidos."
+          : "Si no te encuentras, vuelve atrás y prueba con más apellidos, con los dígitos del DNI o con una combinación de ambos."}
       </p>
     </div>
   );
@@ -1148,17 +1183,35 @@ function PantallaConfirmar({ categoria, candidatos, atras, onElegir, global }) {
 // ---------------------------------------------------------------
 // PANTALLA 3C — listado completo de la categoría
 // ---------------------------------------------------------------
-function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion, modoListadoEducacion, onAbrirPersona }) {
+function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion, modoAdministracion, modoListadoEducacion, onAbrirPersona }) {
   const capa = useCapaDatos();
   const esEducacion = modoEducacion || capa.sector === "educacion";
+  const esAdministracion = modoAdministracion || capa.sector === "administracion";
   const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(capa.tipoListado));
   const [filas, setFilas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState("");
   const [errorDatos, setErrorDatos] = useState(false);
+  const [provincias, setProvincias] = useState([]);
+  const [provinciaActiva, setProvinciaActiva] = useState(gerencia || "");
   const LIMITE_FILAS = 100;
   const esReal = grupoActivo && capa.tieneDatosReales(categoria, grupoId);
-  const tituloListado = esEducacion ? categoria : etiquetaLista(categoria, gerencia, ambito);
+  const tituloListado = esAdministracion
+    ? `${categoria}${provinciaActiva ? ` · ${provinciaActiva}` : ""}`
+    : esEducacion
+      ? categoria
+      : etiquetaLista(categoria, gerencia, ambito);
+
+  useEffect(() => {
+    let cancel = false;
+    if (!esAdministracion || !esReal) return;
+    capa.gerenciasDeCategoria(grupoId, categoria).then((provs) => {
+      if (cancel) return;
+      setProvincias(provs);
+      setProvinciaActiva((prev) => prev || gerencia || provs[0] || "");
+    });
+    return () => { cancel = true; };
+  }, [capa, categoria, grupoId, esAdministracion, esReal, gerencia]);
 
   useEffect(() => {
     let cancel = false;
@@ -1167,7 +1220,8 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
     const cargar = async () => {
       if (esReal) {
         try {
-          const f = await capa.obtenerListadoCompleto(grupoId, categoria, gerencia, ambito || "");
+          const prov = esAdministracion ? provinciaActiva : gerencia;
+          const f = await capa.obtenerListadoCompleto(grupoId, categoria, prov, ambito || "");
           if (!cancel) setFilas(f);
         } catch {
           if (!cancel) { setFilas([]); setErrorDatos(true); }
@@ -1179,7 +1233,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
     };
     cargar();
     return () => { cancel = true; };
-  }, [capa, categoria, gerencia, ambito, grupoId, esReal]);
+  }, [capa, categoria, gerencia, ambito, grupoId, esReal, esAdministracion, provinciaActiva]);
 
   const visibles = filtro ? filas.filter((f) => coincideBusqueda(f, filtro)) : filas;
   const mostradas = visibles.slice(0, LIMITE_FILAS);
@@ -1190,10 +1244,23 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
       <div className="px-5">
         <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} />
 
+        {esAdministracion && provincias.length > 1 && (
+          <select
+            value={provinciaActiva}
+            onChange={(e) => setProvinciaActiva(e.target.value)}
+            className="w-full mt-3 focus:outline-none"
+            style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "11px 14px", fontFamily: FONT_BODY, fontSize: 14, color: C.ink }}
+          >
+            {provincias.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+        )}
+
         <input
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          placeholder="Apellidos, DNI parcial o ambos…"
+          placeholder={esAdministracion ? "Filtrar por apellidos…" : "Apellidos, DNI parcial o ambos…"}
           className="w-full mt-3 focus:outline-none"
           style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "11px 14px", fontFamily: FONT_BODY, fontSize: 13.5, color: C.ink }}
         />
@@ -1222,6 +1289,8 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
               ) : (
                 <span style={{ flex: "0 0 72px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, textAlign: "right" }}>PROV.</span>
               )
+            ) : esAdministracion ? (
+              <span style={{ flex: "0 0 110px", fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, textAlign: "right" }}>SUB-BOLSA</span>
             ) : (
               <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
             )}
@@ -1250,6 +1319,9 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
                 {esEducacion && f.tipo_bolsa && (
                   <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: C.inkSoft }}> · {tipoBolsaLegible(f.tipo_bolsa)}</span>
                 )}
+                {esAdministracion && f.sub_bolsa && (
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: C.inkSoft }}> · nº bolsa {f.num_bolsa}</span>
+                )}
               </span>
               {esEducacion ? (
                 esBolsaCompleta ? (
@@ -1263,6 +1335,10 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
                       .join(" ")}
                   </span>
                 )
+              ) : esAdministracion ? (
+                <span style={{ flex: "0 0 110px", fontFamily: FONT_MONO, fontSize: 10, color: C.inkSoft, textAlign: "right" }}>
+                  {subBolsaLegible(f.sub_bolsa)}
+                </span>
               ) : (
                 <span style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: C.inkSoft }}>{f.puntos?.toFixed?.(2) ?? "—"}</span>
               )}
@@ -1724,11 +1800,104 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
   );
 }
 
+// Bloque de detalle administración CLM: posición por provincia + sub-bolsa
+function TarjetaAdmin({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado }) {
+  const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
+  const posicion = Number(r?.posicion ?? r?.pos ?? 0) || 0;
+  const total = Number(r?.total ?? 0) || 0;
+  const provincia = r?.provincia || r?.gerencia || "Provincia";
+  const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          background: C.navy,
+          backgroundImage: `radial-gradient(ellipse at 20% -10%, ${C.gold}22, transparent 55%), url("${GRAIN}")`,
+          padding: "22px 20px 20px",
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "22px 8px 22px 8px",
+        }}
+      >
+        <Sello>{provincia}</Sello>
+        <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.goldSoft, marginTop: 8 }}>{categoria}</p>
+        <p
+          style={{
+            fontFamily: FONT_DISPLAY, fontSize: 52, fontWeight: 700, color: "#fff",
+            lineHeight: 1, marginTop: 8,
+          }}
+        >
+          #{posicion}
+        </p>
+        <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
+          {total > 0
+            ? `de ${total.toLocaleString("es-ES")} personas en ${provincia} · por delante del ${percentil}%`
+            : `Posición en ${provincia}`}
+        </p>
+        {r?.sub_bolsa && (
+          <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6 }}>
+            {subBolsaLegible(r.sub_bolsa)}
+            {r.num_bolsa ? ` · nº bolsa ${r.num_bolsa}` : ""}
+          </p>
+        )}
+      </div>
+      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
+
+      {notifEstado === "inicial" && (
+        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "14px 5px 14px 5px", padding: 16, marginTop: 12 }}>
+          <div className="flex items-start gap-2">
+            <Bell size={16} color={C.navy} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>¿Quieres que te avisemos?</p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 4, lineHeight: 1.45 }}>
+                Te avisaremos cuando cambie tu posición en {categoria} ({provincia}). <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial</strong>.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => setNotifEstado("inicial")}
+              className="flex-1 font-bold focus:outline-none"
+              style={{ background: "transparent", color: C.inkSoft, padding: "10px", fontFamily: FONT_BODY, fontSize: 13, border: `1px solid ${C.line}`, borderRadius: 10 }}
+            >
+              Ahora no
+            </button>
+            <button
+              onClick={() => { setNotifEstado("activo"); onGuardar(); }}
+              className="flex-1 font-bold focus:outline-none"
+              style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
+            >
+              Permitir
+            </button>
+          </div>
+        </div>
+      )}
+
+      {notifEstado === "activo" && (
+        <div className="flex items-center gap-2 justify-center mt-3" style={{ background: C.paperDeep, borderRadius: "14px 5px 14px 5px", padding: "11px" }}>
+          <BellRing size={16} color={C.ok} />
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ok }}>Siguiendo {categoria} · {provincia}</p>
+        </div>
+      )}
+
+      <button
+        onClick={onVerListado}
+        className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-3"
+        style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 14px 5px 14px" }}
+      >
+        <ListIcon size={14} /> Ver listado de {provincia}
+      </button>
+    </div>
+  );
+}
+
 // Contenedor: tabla resumen de gerencias + detalle al tocar una fila.
-function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, modoEducacion, modoListadoEducacion }) {
+function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, modoEducacion, modoAdministracion, modoListadoEducacion }) {
   const capa = useCapaDatos();
   const apariciones = candidato?.apariciones ?? [];
   const esEducacion = modoEducacion || apariciones[0]?.sector === "educacion";
+  const esAdministracion = modoAdministracion || apariciones[0]?.sector === "administracion";
   const esBolsaCompleta = esEducacion && (modoListadoEducacion === "bolsa" || esBolsaOrdinaria(apariciones[0]?.tipoListado ?? capa.tipoListado));
   const [detalleFila, setDetalleFila] = useState(null);
   const [bulkSeguido, setBulkSeguido] = useState(false);
@@ -1776,6 +1945,49 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
             onInfoLlamamientos={onInfoLlamamientos}
             esBolsaCompleta={esBolsaCompleta}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (esAdministracion && apariciones.length > 0) {
+    const catAparicion = apariciones[0]?.categoria || categoriaMostrada || categoria;
+    const grupoAparicion = grupoIdParaCapa(capa, apariciones[0], grupoId);
+    const aparicionesOrd = [...apariciones]
+      .map(normalizarAparicion)
+      .sort((a, b) => (a.provincia || a.gerencia || "").localeCompare(b.provincia || b.gerencia || "", "es"));
+    return (
+      <div>
+        <Barra titulo="Resultado" atras={atras} />
+        <div className="px-5 pb-6">
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, marginBottom: 12 }}>
+            Mostrando a <strong style={{ color: C.navy }}>{candidato.nombreCompleto}</strong>
+          </p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.navy, fontWeight: 600, marginBottom: 16 }}>
+            {catAparicion}
+            <span style={{ color: C.inkSoft, fontWeight: 500 }}> · {aparicionesOrd.length} provincia{aparicionesOrd.length !== 1 ? "s" : ""}</span>
+          </p>
+          {aparicionesOrd.map((a) => (
+            <TarjetaAdmin
+              key={a.provincia || a.gerencia}
+              categoria={catAparicion}
+              grupoId={grupoAparicion}
+              grupoActivo={grupoActivo ?? true}
+              r={a}
+              guardado={estaGuardado(a.provincia || a.gerencia, "", candidato.nombreCompleto, catAparicion, a.ccaaId || "clm")}
+              onGuardar={() =>
+                onGuardar(
+                  a.provincia || a.gerencia,
+                  "",
+                  { ...a, nombreCompleto: candidato.nombreCompleto, dniParcial: "" },
+                  catAparicion,
+                  grupoAparicion,
+                  a.ccaaId || "clm"
+                )
+              }
+              onVerListado={() => onVerListado(a.provincia || a.gerencia, "", catAparicion, grupoAparicion)}
+            />
+          ))}
         </div>
       </div>
     );
@@ -2131,16 +2343,20 @@ export default function ListasApp() {
         datos.paraCcaa("clm")
       );
     }
+    if (sectorId === "administracion") {
+      return datos.paraSector?.(ccaaPrincipal, "administracion") || datos.administracionClm || datos.paraCcaa("clm");
+    }
     if (ids.length === 0) return datos.paraCcaa("clm");
     return datos.paraCcaas(ids);
   }, [datos, ccaas, sectorId, listadoEducacionModo]);
   const modoEducacion = sectorId === "educacion" || capaDatos.sector === "educacion";
+  const modoAdministracion = sectorId === "administracion" || capaDatos.sector === "administracion";
   const gruposSanidad = useMemo(() => {
     const g = capaDatos.gruposSanidad;
     if (g?.length) return g;
-    if (modoEducacion) return [];
+    if (modoEducacion || modoAdministracion) return [];
     return GRUPOS_SANIDAD_FALLBACK;
-  }, [capaDatos, modoEducacion]);
+  }, [capaDatos, modoEducacion, modoAdministracion]);
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");
@@ -2384,13 +2600,13 @@ export default function ListasApp() {
             ccaas={ccaas.length ? ccaas : [ccaaPorId("clm")]}
             atras={() => setPaso("inicio")}
             onBuscar={iniciarBusqueda}
-            onBuscarGlobal={!modoEducacion && capaDatos.multi ? iniciarBusquedaGlobal : undefined}
+            onBuscarGlobal={!modoEducacion && !modoAdministracion && capaDatos.multi ? iniciarBusquedaGlobal : undefined}
             onVerListado={(categoria, gerencia) => {
               const g = grupoDeCategoria(categoria, gruposSanidad);
               setListadoCategoria(categoria);
               setListadoGerencia(gerencia || "");
               setListadoAmbito("");
-              setListadoGrupoId(g?.id || (modoEducacion ? "secundaria" : "diplomado"));
+              setListadoGrupoId(g?.id || (modoEducacion ? "secundaria" : modoAdministracion ? "funcionario" : "diplomado"));
               setPantallaPrevia("buscar");
               setPaso("listado");
             }}
@@ -2398,9 +2614,11 @@ export default function ListasApp() {
             gruposSanidad={gruposSanidad}
             sectorId={sectorId}
             educacionActiva={datos.educacionActiva}
+            administracionActiva={datos.administracionActiva}
             educacionBolsaActiva={datos.educacionBolsaActiva}
             educacionDisponiblesActiva={datos.educacionDisponiblesActiva}
             modoEducacion={modoEducacion}
+            modoAdministracion={modoAdministracion}
             modoListadoEducacion={listadoEducacionModo}
             onModoListadoEducacionChange={setListadoEducacionModo}
             onSectorChange={(s) => setSectorId(s.id)}
@@ -2412,6 +2630,7 @@ export default function ListasApp() {
             categoria={categoriaActual}
             candidatos={candidatos}
             global={busquedaGlobal}
+            modoAdministracion={modoAdministracion}
             atras={() => setPaso("buscar")}
             onElegir={(persona) => {
               setCandidatoElegido(persona);
@@ -2434,6 +2653,7 @@ export default function ListasApp() {
             )?.activo}
             candidato={candidatoElegido}
             modoEducacion={modoEducacion}
+            modoAdministracion={modoAdministracion}
             modoListadoEducacion={listadoEducacionModo}
             atras={() => setPaso(pantallaPrevia || "buscar")}
             estaGuardado={(gerencia, ambito, nombre, cat, ccaaId) => estaGuardado(gerencia, ambito, nombre, cat, ccaaId)}
@@ -2462,10 +2682,12 @@ export default function ListasApp() {
             grupoId={listadoGrupoId}
             grupoActivo={(gruposSanidad.find((g) => g.id === listadoGrupoId) || grupoDeCategoria(listadoCategoria, gruposSanidad))?.activo}
             modoEducacion={modoEducacion}
+            modoAdministracion={modoAdministracion}
             modoListadoEducacion={listadoEducacionModo}
             atras={() => setPaso(pantallaPrevia)}
             onAbrirPersona={(fila, todasLasFilas) => {
               const esEducacionListado = modoEducacion || capaDatos.sector === "educacion";
+              const esAdministracionListado = modoAdministracion || capaDatos.sector === "administracion";
               setCategoriaActual(listadoCategoria);
               setGrupoIdActual(listadoGrupoId);
               setBusquedaGlobal(false);
@@ -2475,6 +2697,7 @@ export default function ListasApp() {
                   grupoId: listadoGrupoId,
                   ccaaId: capaDatos.ccaaId || "clm",
                   esEducacion: esEducacionListado,
+                  esAdministracion: esAdministracionListado,
                   tipoListado: capaDatos.tipoListado,
                 })
               );

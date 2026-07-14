@@ -38,9 +38,9 @@ const TITULO_BOLSA = {
   mad: "Sanidad · Bolsa SERMAS",
 };
 
-/** Solo sanidad activa en CLM, Murcia y Madrid. Educación CLM si hay manifest scrapeado. */
+/** Solo sanidad activa en CLM, Murcia y Madrid. Educación/admin si hay manifest scrapeado. */
 export function sectoresDeCcaa(ccaaId, opciones = {}) {
-  const { educacionActiva = false } = opciones;
+  const { educacionActiva = false, administracionActiva = false } = opciones;
   const fuente = FUENTE_SANIDAD[ccaaId] || "Próximamente";
   const sanidad = {
     id: "sanidad",
@@ -59,7 +59,14 @@ export function sectoresDeCcaa(ccaaId, opciones = {}) {
           ? "Educación CLM · Bolsas de sustitución"
           : "Próximamente",
       },
-      { id: "administracion", nombre: "Administración General", activo: false, fuente: "Próximamente" },
+      {
+        id: "administracion",
+        nombre: "Administración General",
+        activo: administracionActiva,
+        fuente: administracionActiva
+          ? "Administración General CLM · Bolsas por provincia"
+          : "Próximamente",
+      },
     ];
   }
   return [sanidad];

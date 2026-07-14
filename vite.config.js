@@ -26,6 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "data/public");
 const educacionDir = path.resolve(__dirname, "data/educacion");
 const educacionBolsaDir = path.resolve(__dirname, "data/educacion-bolsa");
+const adminClmDir = path.resolve(__dirname, "data/admin-clm");
 const politicaPath = path.resolve(__dirname, "politica-privacidad.md");
 
 function servirJsonEstatico(server, urlPrefix, rootDir) {
@@ -74,6 +75,9 @@ function dataStaticPlugin() {
       if (existsSync(educacionBolsaDir)) {
         servirJsonEstatico(server, "/data/educacion-bolsa", educacionBolsaDir);
       }
+      if (existsSync(adminClmDir)) {
+        servirJsonEstatico(server, "/data/admin-clm", adminClmDir);
+      }
     },
     closeBundle() {
       const distData = path.resolve(__dirname, "dist/data");
@@ -84,6 +88,9 @@ function dataStaticPlugin() {
       }
       if (existsSync(educacionBolsaDir)) {
         cpSync(educacionBolsaDir, path.resolve(distData, "educacion-bolsa"), { recursive: true });
+      }
+      if (existsSync(adminClmDir)) {
+        cpSync(adminClmDir, path.resolve(distData, "admin-clm"), { recursive: true });
       }
     },
   };
