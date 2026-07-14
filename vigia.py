@@ -1,12 +1,13 @@
 """
-Vigía ligero del portal de baremos SESCAM.
+Vigía ligero del portal de baremos SESCAM y bolsas de Administración CLM.
 
-Comprueba si la convocatoria vigente o el catálogo de categorías ha cambiado
-en cada grupo activo. No descarga ni parsea PDFs.
+Sanidad: comprueba convocatoria vigente o catálogo por grupo activo.
+Admin CLM: compara fecha_modificacion de cada bolsa con categorias.json.
+No descarga ni parsea PDFs.
 
 Salida:
   - exit 0: sin cambios
-  - exit 1: al menos un grupo cambió (ver data/_local/vigia_cambios.json)
+  - exit 1: al menos un grupo/bolsa cambió (ver data/_local/vigia_cambios.json)
 """
 
 from __future__ import annotations
@@ -24,6 +25,13 @@ from urllib.parse import unquote
 import requests
 
 from scraper import LOCAL_DATA_DIR, local_path
+
+ADMIN_CATEGORIAS_PATH = os.path.join("data", "admin-clm", "categorias.json")
+ADMIN_BASE = "https://empleopublico.castillalamancha.es"
+ADMIN_FECHA_MOD_RE = re.compile(
+    r"Fecha de [UÚ]ltima Modificaci[oó]n:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+    re.I,
+)
 
 # ---------------------------------------------------------------
 # Configuración (alineada con scraper.py)
@@ -202,6 +210,101 @@ def _comparar_grupo(anterior: dict | None, actual: dict) -> bool:
     return any(anterior.get(k) != actual.get(k) for k in claves)
 
 
+def _fecha_admin_iso(fecha_dmY: str) -> str | None:
+    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", fecha_dmY.strip())
+    if not m:
+        return None
+    d, mo, y = m.groups()
+    return f"{y}-{int(mo):02d}-{int(d):02d}"
+
+
+def _fecha_modificacion_admin(html: str) -> str | None:
+    plain = re.sub(r"<[^>]+>", " ", html)
+    m = ADMIN_FECHA_MOD_RE.search(plain)
+    if not m:
+        return None
+    return _fecha_admin_iso(m.group(1))
+
+
+def _cargar_catalogo_admin() -> list[dict]:
+    if not os.path.exists(ADMIN_CATEGORIAS_PATH):
+        return []
+    with open(ADMIN_CATEGORIAS_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data if isinstance(data, list) else []
+
+
+def _estado_admin_clm() -> dict:
+    """GET a cada página de bolsa; solo lee fecha_modificacion."""
+    catalogo = _cargar_catalogo_admin()
+    if not catalogo:
+        raise ValueError(f"Sin inventario admin en {ADMIN_CATEGORIAS_PATH}")
+
+    bolsas: dict[str, dict] = {}
+    errores: list[str] = []
+
+    for entry in catalogo:
+        if entry.get("error"):
+            continue
+        slug = entry.get("slug_pagina")
+        colectivo = entry.get("colectivo")
+        if not slug or not colectivo:
+            continue
+        clave = f"{colectivo}/{slug}"
+        url = entry.get("url_pagina") or f"{ADMIN_BASE}/bolsas/personal-{colectivo}/{slug}"
+        try:
+            r = requests.get(url, headers=REQUEST_HEADERS, timeout=HTTP_TIMEOUT)
+            r.raise_for_status()
+            r.encoding = r.apparent_encoding or "utf-8"
+            fecha = _fecha_modificacion_admin(r.text)
+            bolsas[clave] = {
+                "categoria": entry.get("categoria"),
+                "fecha_modificacion": fecha,
+                "url_pagina": url,
+                "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            }
+        except requests.RequestException as exc:
+            errores.append(f"{clave}: {exc}")
+        time.sleep(1.0)
+
+    if errores and not bolsas:
+        raise ValueError("; ".join(errores[:3]))
+
+    return {
+        "num_bolsas": len(bolsas),
+        "bolsas": bolsas,
+        "errores": errores,
+        "consultado": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def _comparar_admin(anterior: dict | None, actual: dict, catalogo: list[dict]) -> list[str]:
+    """Lista de bolsas con fecha_modificacion distinta a categorias.json."""
+    if not anterior:
+        return []
+
+    cambios: list[str] = []
+    fechas_guardadas = {
+        f"{e.get('colectivo')}/{e.get('slug_pagina')}": e.get("fecha_modificacion")
+        for e in catalogo
+        if e.get("slug_pagina") and not e.get("error")
+    }
+
+    for clave, info in actual.get("bolsas", {}).items():
+        prev_fecha = (anterior.get("bolsas") or {}).get(clave, {}).get("fecha_modificacion")
+        nueva = info.get("fecha_modificacion")
+        guardada = fechas_guardadas.get(clave)
+
+        if nueva and guardada and nueva != guardada:
+            cambios.append(clave)
+            continue
+        if prev_fecha and nueva and nueva != prev_fecha:
+            if clave not in cambios:
+                cambios.append(clave)
+
+    return cambios
+
+
 def main() -> int:
     inicio = time.time()
     anterior = _cargar_estado()
@@ -227,8 +330,8 @@ def main() -> int:
         actual = actual_por_grupo[grupo]
         prev = anterior.get(grupo)
         if _comparar_grupo(prev, actual):
-            cambios.append(grupo)
-            print(f"CAMBIO DETECTADO en {grupo}")
+            cambios.append(f"sanidad:{grupo}")
+            print(f"CAMBIO DETECTADO en sanidad/{grupo}")
             print(
                 f"  convocatoria: {prev.get('convocatoria')} -> {actual['convocatoria']}"
                 if prev
@@ -241,9 +344,39 @@ def main() -> int:
         else:
             etiqueta = "inicializado" if not prev else "sin cambio"
             print(
-                f"{grupo}: {actual['convocatoria']} "
+                f"sanidad/{grupo}: {actual['convocatoria']} "
                 f"({actual['num_categorias']} categorías, {etiqueta})"
             )
+
+    # --- Administración CLM ---
+    cambios_admin: list[str] = []
+    catalogo_admin = _cargar_catalogo_admin()
+    if catalogo_admin:
+        try:
+            actual_admin = _estado_admin_clm()
+            prev_admin = anterior.get("admin_clm")
+            cambios_admin = _comparar_admin(prev_admin, actual_admin, catalogo_admin)
+            n = actual_admin.get("num_bolsas", 0)
+            if cambios_admin:
+                for clave in cambios_admin:
+                    info = actual_admin["bolsas"].get(clave, {})
+                    prev_info = (prev_admin or {}).get("bolsas", {}).get(clave, {})
+                    print(f"CAMBIO DETECTADO en admin/{clave}")
+                    print(
+                        f"  fecha: {prev_info.get('fecha_modificacion')} -> "
+                        f"{info.get('fecha_modificacion')} ({info.get('categoria')})"
+                    )
+                    cambios.append(f"admin:{clave}")
+            else:
+                etiqueta = "inicializado" if not prev_admin else "sin cambio"
+                print(f"admin-clm: {n} bolsas consultadas ({etiqueta})")
+            if actual_admin.get("errores"):
+                print(f"  avisos admin: {len(actual_admin['errores'])} páginas con error")
+            actual_por_grupo["admin_clm"] = actual_admin
+        except Exception as exc:
+            print(f"ERROR vigía admin-clm: {exc}", file=sys.stderr)
+    else:
+        print("admin-clm: sin categorias.json — omitido")
 
     # Fusionar estado: conservar grupos previos no consultados + nuevos
     estado_nuevo = {**anterior, **actual_por_grupo}
@@ -256,7 +389,7 @@ def main() -> int:
     print(f"Vigía completado en {elapsed:.1f}s — estado en {ESTADO_PATH}")
 
     if cambios:
-        print(f"Grupos afectados: {', '.join(cambios)}")
+        print(f"Cambios detectados: {', '.join(cambios)}")
         return 1
 
     print("Sin cambios")

@@ -103,6 +103,12 @@ data/educacion-bolsa/**/*.json
 !data/educacion-bolsa/categorias.json
 data/educacion-bolsa/manifest.json
 
+# Administración CLM — listados por categoría/provincia (grandes)
+data/admin-clm/funcionario/**/*.json
+data/admin-clm/laboral/**/*.json
+data/admin-clm/manifest.json
+!data/admin-clm/categorias.json
+
 # Artefactos locales (no subir a R2)
 data/_local/
 
