@@ -1,7 +1,30 @@
+import { useState } from "react";
 import LogoInterino from "./LogoInterino.jsx";
 
-/** Overlay de bienvenida — solo primera visita. */
+const PASOS = [
+  {
+    titulo: "Tu posicion en la bolsa",
+    cuerpo:
+      "Consulta listados publicos de interinos en Castilla-La Mancha: sanidad (SESCAM), educacion y administracion general. Busca por apellidos o DNI parcial, como en el portal oficial.",
+  },
+  {
+    titulo: "Educacion: tres modos",
+    cuerpo:
+      "Disponibles (sustituciones semanales), bolsa ordinaria (puntuacion anual) y bolsas afines (titulaciones relacionadas, Orden 32/2018). Elige el tipo de listado antes de buscar.",
+  },
+  {
+    titulo: "Sobre el punto de corte",
+    cuerpo:
+      "En sanidad mostramos la puntuacion minima admitida actual, no quien fue la ultima persona llamada (dato que el SESCAM no publica). App no oficial: verifica siempre en los portales oficiales.",
+  },
+];
+
+/** Overlay de bienvenida / onboarding — primera visita (v2). */
 export default function OverlayBienvenida({ C, GRAIN, FONT_BODY, onEmpezar }) {
+  const [paso, setPaso] = useState(0);
+  const ultimo = paso >= PASOS.length - 1;
+  const actual = PASOS[paso];
+
   return (
     <div
       role="dialog"
@@ -23,32 +46,47 @@ export default function OverlayBienvenida({ C, GRAIN, FONT_BODY, onEmpezar }) {
       <div
         style={{
           width: "100%",
-          maxWidth: 340,
+          maxWidth: 360,
           background: C.card,
           border: `1.5px solid ${C.line}`,
           borderRadius: "20px 8px 20px 8px",
-          padding: "32px 28px 28px",
+          padding: "28px 24px 24px",
           boxShadow: `0 12px 40px ${C.navy}18, 0 2px 8px rgba(0,0,0,0.06)`,
           textAlign: "center",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-          <LogoInterino height={44} C={C} />
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <LogoInterino height={40} C={C} />
+        </div>
+
+        <div className="flex justify-center gap-1.5 mb-4">
+          {PASOS.map((_, i) => (
+            <span
+              key={i}
+              aria-hidden
+              style={{
+                width: i === paso ? 20 : 6,
+                height: 6,
+                borderRadius: 999,
+                background: i === paso ? C.navy : C.line,
+                transition: "width 0.2s",
+              }}
+            />
+          ))}
         </div>
 
         <p
           id="bienvenida-titulo"
           style={{
             fontFamily: FONT_BODY,
-            fontSize: 18,
-            fontWeight: 500,
+            fontSize: 17,
+            fontWeight: 600,
             color: C.ink,
             margin: "0 0 10px",
             lineHeight: 1.35,
-            letterSpacing: "-0.01em",
           }}
         >
-          Tu posición en la bolsa
+          {actual.titulo}
         </p>
 
         <p
@@ -56,22 +94,22 @@ export default function OverlayBienvenida({ C, GRAIN, FONT_BODY, onEmpezar }) {
             fontFamily: FONT_BODY,
             fontSize: 14,
             color: C.inkSoft,
-            margin: "0 0 28px",
-            lineHeight: 1.5,
+            margin: "0 0 24px",
+            lineHeight: 1.55,
+            textAlign: "left",
           }}
         >
-          Consulta dónde estás en las listas de interinos de sanidad. Toca tu comunidad en el mapa o usa{" "}
-          <span style={{ fontWeight: 600, color: C.navy }}>Buscar</span> si ya sabes dónde mirar.
+          {actual.cuerpo}
         </p>
 
         <button
           type="button"
-          onClick={onEmpezar}
+          onClick={() => (ultimo ? onEmpezar() : setPaso((p) => p + 1))}
           className="w-full font-bold focus:outline-none"
           style={{
             background: C.navy,
             color: "#fff",
-            padding: "16px",
+            padding: "15px",
             fontFamily: FONT_BODY,
             fontSize: 15,
             borderRadius: "16px 5px 16px 5px",
@@ -79,8 +117,25 @@ export default function OverlayBienvenida({ C, GRAIN, FONT_BODY, onEmpezar }) {
             boxShadow: `0 4px 14px ${C.navy}33`,
           }}
         >
-          Empezar
+          {ultimo ? "Empezar" : "Siguiente"}
         </button>
+
+        {!ultimo && (
+          <button
+            type="button"
+            onClick={onEmpezar}
+            className="w-full focus:outline-none mt-3"
+            style={{
+              background: "transparent",
+              color: C.inkSoft,
+              padding: "8px",
+              fontFamily: FONT_BODY,
+              fontSize: 13,
+            }}
+          >
+            Saltar
+          </button>
+        )}
       </div>
     </div>
   );

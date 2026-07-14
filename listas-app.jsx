@@ -6,6 +6,7 @@ import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria,
 import { viaBolsaLegible, TEXTO_AFIN_NORMATIVA } from "./src/educacion-afin.js";
 import { subBolsaLegible } from "./src/admin-clm.js";
 import { etiquetaFrescuraSector } from "./src/cobertura-clm.js";
+import { activarNotificacionesSeguimiento, notificacionesSoportadas } from "./src/notificaciones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
@@ -22,7 +23,9 @@ const GraficoHistoricoCorte = lazy(() => import("./src/components/GraficoHistori
 const LS_SEGUIMIENTOS = "interino_seguimientos_v1";
 const LS_RECIENTES = "interino_recientes_v1";
 const LS_LAST_CCAA = "interino_last_ccaa_v1";
-const LS_BIENVENIDA = "interino_bienvenida_v1";
+const LS_BIENVENIDA = "interino_bienvenida_v2";
+const CONTACTO_EMAIL = "fedebotija@gmail.com";
+const CONTACTO_FEEDBACK = `mailto:${CONTACTO_EMAIL}?subject=${encodeURIComponent("Feedback Interino")}`;
 
 function leerStorage(key, fallback) {
   try {
@@ -63,7 +66,29 @@ function bienvenidaVista() {
 function marcarBienvenidaVista() {
   try {
     localStorage.setItem(LS_BIENVENIDA, "1");
+    localStorage.setItem("interino_bienvenida_v1", "1");
   } catch { /* quota / modo privado */ }
+}
+
+async function confirmarNotificaciones(etiqueta, setNotifEstado, onGuardar) {
+  if (!notificacionesSoportadas()) {
+    setNotifEstado("activo");
+    onGuardar?.();
+    return;
+  }
+  const perm = await activarNotificacionesSeguimiento(etiqueta);
+  if (perm === "granted") setNotifEstado("activo");
+  else if (perm === "denied") setNotifEstado("denegado");
+  else setNotifEstado("activo");
+  onGuardar?.();
+}
+
+function AvisoNotifDenegada() {
+  return (
+    <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.clay, marginTop: 8, lineHeight: 1.4 }}>
+      Sin permiso de notificaciones. Activalas en ajustes del navegador para recibir avisos al abrir la app.
+    </p>
+  );
 }
 
 // ---------------------------------------------------------------
@@ -718,6 +743,33 @@ function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
               </button>
             );
           })}
+        </div>
+        <div style={{ marginTop: 28, padding: "14px 16px", background: C.card, border: `1px solid ${C.line}`, borderRadius: "12px 4px 12px 4px" }}>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 8 }}>
+            Feedback y contacto
+          </p>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, marginBottom: 12 }}>
+            Beta gratuita. Cuéntanos errores, datos desactualizados o ideas de mejora.
+          </p>
+          <a
+            href={CONTACTO_FEEDBACK}
+            style={{
+              display: "inline-block",
+              fontFamily: FONT_BODY,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#fff",
+              background: C.navy,
+              padding: "10px 16px",
+              borderRadius: "10px 4px 10px 4px",
+              textDecoration: "none",
+            }}
+          >
+            Enviar email
+          </a>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 10 }}>
+            {CONTACTO_EMAIL}
+          </p>
         </div>
         <div style={{ marginTop: 28 }}>
           <AvisoLegal onAbrirPrivacidad={onPrivacidad} />
@@ -1722,13 +1774,19 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
               Ahora no
             </button>
             <button
-              onClick={() => { setNotifEstado("activo"); onGuardar(); }}
+              onClick={() => confirmarNotificaciones(categoria, setNotifEstado, onGuardar)}
               className="flex-1 font-bold focus:outline-none"
               style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
             >
               Permitir
             </button>
           </div>
+        </div>
+      )}
+
+      {notifEstado === "denegado" && (
+        <div className="mt-4">
+          <AvisoNotifDenegada />
         </div>
       )}
 
@@ -1959,13 +2017,25 @@ function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, cc
               Ahora no
             </button>
             <button
-              onClick={() => { setNotifEstado("activo"); onGuardar(); }}
+              onClick={() =>
+                confirmarNotificaciones(
+                  etiquetaLista(categoria, gerencia, ambito || r.ambito, r),
+                  setNotifEstado,
+                  onGuardar,
+                )
+              }
               className="flex-1 font-bold focus:outline-none"
               style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
             >
               Permitir
             </button>
           </div>
+        </div>
+      )}
+
+      {notifEstado === "denegado" && (
+        <div className="mt-4">
+          <AvisoNotifDenegada />
         </div>
       )}
 
@@ -2060,7 +2130,7 @@ function TarjetaAdmin({ categoria, grupoId, grupoActivo, r, guardado, onGuardar,
               Ahora no
             </button>
             <button
-              onClick={() => { setNotifEstado("activo"); onGuardar(); }}
+              onClick={() => confirmarNotificaciones(`${categoria} · ${provincia}`, setNotifEstado, onGuardar)}
               className="flex-1 font-bold focus:outline-none"
               style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
             >
@@ -2069,6 +2139,8 @@ function TarjetaAdmin({ categoria, grupoId, grupoActivo, r, guardado, onGuardar,
           </div>
         </div>
       )}
+
+      {notifEstado === "denegado" && <AvisoNotifDenegada />}
 
       {notifEstado === "activo" && (
         <div className="flex items-center gap-2 justify-center mt-3" style={{ background: C.paperDeep, borderRadius: "14px 5px 14px 5px", padding: "11px" }}>

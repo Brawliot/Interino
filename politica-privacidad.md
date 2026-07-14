@@ -1,20 +1,22 @@
 # Política de privacidad
 
-**Última actualización:** 11 de julio de 2026
+**Última actualización:** 14 de julio de 2026
 
 ## Quién es el responsable
 
-Federico Botija Valcarcel, con correo de contacto fedebotija@gmail.com. Esta aplicación es un proyecto personal, no oficial, sin afiliación con el SESCAM ni con la Junta de Comunidades de Castilla-La Mancha.
+Federico Botija Valcarcel, con correo de contacto fedebotija@gmail.com. Esta aplicación es un proyecto personal, no oficial, sin afiliación con el SESCAM, Educación CLM, empleopúblico ni con la Junta de Comunidades de Castilla-La Mancha.
 
 ## Qué datos se tratan y de dónde salen
 
-La aplicación muestra información procedente de los **listados públicos de las bolsas de trabajo** que la propia administración publica en sus webs oficiales (nombre y apellidos, puntuación, posición, DNI parcialmente anonimizado tal y como aparece en el listado original, y disponibilidad por tipo de contrato). No añadimos, cruzamos ni enriquecemos estos datos con ninguna otra fuente.
+La aplicación muestra información procedente de los **listados públicos de las bolsas de trabajo** que la propia administración publica en sus webs oficiales (sanidad SESCAM, educación CLM, administración general en empleopúblico): nombre y apellidos, puntuación cuando existe, posición, DNI parcialmente anonimizado tal y como aparece en el listado original, y disponibilidad por tipo de contrato. No añadimos, cruzamos ni enriquecemos estos datos con ninguna otra fuente.
 
 La aplicación **no solicita ni almacena el DNI completo** de ninguna persona en ningún momento. Las búsquedas se realizan por apellidos, igual que en el listado público original.
 
 ## Qué datos se almacenan en tu dispositivo
 
 La aplicación utiliza el almacenamiento local de tu navegador (localStorage) para guardar tus búsquedas recientes y seguimientos. Estos datos se guardan **únicamente en tu dispositivo**, no se envían a ningún servidor ni son accesibles para nosotros. Puedes borrarlos en cualquier momento desde los ajustes de tu navegador.
+
+Si activas **notificaciones del navegador**, el permiso queda en tu dispositivo. Por ahora te avisamos al abrir la app cuando corresponda; no enviamos push en segundo plano desde servidores propios.
 
 Si utilizas un dispositivo compartido, ten en cuenta que otra persona con acceso al navegador podría ver tus búsquedas recientes.
 

@@ -1,0 +1,27 @@
+{
+  "name": "Interino — Bolsas de empleo publico CLM",
+  "short_name": "Interino",
+  "description": "Consulta tu posicion en bolsas de interinos: sanidad, educacion y administracion en Castilla-La Mancha.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F3F0E6",
+  "theme_color": "#233D30",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -59,11 +59,12 @@ Secrets GitHub: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
 
 ### Pendiente producto (no bloquea consulta básica)
 
-1. PWA (manifest, iconos) y dominio propio.
-2. Política de privacidad con contacto real.
-3. Notificaciones reales (ahora simuladas).
-4. Consulta legal antes de freemium / cobros.
-5. Murcia/Madrid en R2 si se promocionan esas CCAA.
+1. ~~PWA (manifest, iconos)~~ — hecho (`public/manifest.webmanifest`, `sw.js`).
+2. Dominio propio — ver `docs/DEPLOY.md`.
+3. ~~Feedback in-app~~ — email en pantalla Más.
+4. Push en segundo plano (requiere backend/VAPID; ahora notificaciones locales al activar seguimiento).
+5. Consulta legal antes de freemium / cobros.
+6. Murcia/Madrid en R2 si se promocionan esas CCAA.
 
 ## Legal
 
