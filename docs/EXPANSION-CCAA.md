@@ -21,11 +21,37 @@ Regla de oro (README): clasificar cada fuente en **maximo 1 hora**.
 | CLM | Sanidad | A | Si | Si | 4 grupos + facultativo B |
 | CLM | Educacion | A | Si | Parcial bolsa | 3 modos + AFIN |
 | CLM | Admin | A | Si | Si | 4 bolsas sin PDF |
-| Murcia | Sanidad SMS | A | `scraper_murcia.py` | Pendiente | HTML paginado |
+| Murcia | Sanidad SMS | A | `scraper_murcia.py` | Pendiente | HTML tablas; URL estable `id_listado` + letra A-Z |
+| Murcia | Educacion | A | No | No | CARM PDFs + indices `IDCONTENIDO`; scrape nuevo |
+| Murcia | Admin general | B | No | No | Autogestion/Cl@ve; PDFs impredecibles — fuera del sprint |
 | Madrid | Sanidad | ? | No | Solo inventario | Explorar SERMAS |
 | Resto | — | — | No | No | Mapa bloqueado en app |
 
-## Murcia — operacion
+Clasificacion Murcia (sep 2026): sanidad y educacion en sprint; admin solo inventario / no scrapear.
+
+## Murcia — detalle clasificacion
+
+### Sanidad (A)
+
+- Portal: `https://www.murciasalud.es/bolsas.php?idsec=39`
+- Categorias: `op=mostrar_categorias`
+- Listado: `op=mostrar_listado&id_listado=…&letra=…`
+- Sin login/captcha; HTML seleccionable; campos: nombre, DNI parcial, puntuacion, orden, areas
+
+### Educacion (A)
+
+- Indice: `https://www.carm.es/web/pagina?IDCONTENIDO=4088&IDTIPO=100&…`
+- Listados en PDF (texto seleccionable / tablas); sin login
+- Campos: nº lista, DNI parcial, nombre, puntos
+- Pendiente: scraper nuevo (parseo PDF)
+
+### Administracion general (B)
+
+- Portales: `empleopublico.carm.es`, `listasdeespera.carm.es` (login), sede procedimiento 2120
+- Listados completos no automatizables sin Cl@ve / PDFs con nombres no predecibles
+- Alternativa: dejar fuera; no pelear en sprint 15 dias
+
+## Murcia — operacion (sanidad)
 
 ```bash
 python scraper_murcia.py --inventario
