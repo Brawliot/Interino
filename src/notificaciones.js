@@ -2,12 +2,34 @@
 
 export const LS_NOTIF_HABILITADAS = "interino_notif_habilitadas_v1";
 
+/** `?nosw=1` desregistra SW y borra caches de Interino (recuperacion si el worker deja la app en blanco). */
 export function registrarServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("nosw")) {
+    Promise.all([
+      navigator.serviceWorker.getRegistrations().then((regs) => Promise.all(regs.map((r) => r.unregister()))),
+      caches.keys().then((keys) =>
+        Promise.all(keys.filter((k) => k.startsWith("interino-")).map((k) => caches.delete(k))),
+      ),
+    ])
+      .catch(() => undefined)
+      .then(() => {
+        params.delete("nosw");
+        const q = params.toString();
+        window.location.replace(`${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`);
+      });
+    return;
+  }
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* entorno sin SW o error silencioso */
-    });
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .then((reg) => reg.update().catch(() => undefined))
+      .catch(() => {
+        /* entorno sin SW o error silencioso */
+      });
   });
 }
 
