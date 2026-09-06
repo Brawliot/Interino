@@ -159,7 +159,6 @@ def inventariar(session: requests.Session) -> list[dict]:
                 url_listados = hm.group(1)
                 break
         if not url_listados:
-            print(f"  [sin listados] {cat}")
             continue
         grupo = GRUPOS_POR_CATEGORIA.get(cat, "otros")
         inventario.append(
