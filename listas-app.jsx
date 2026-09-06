@@ -707,7 +707,7 @@ function AvisoRegionSinListados({ ccaaId, murciaActiva, madridActiva }) {
       <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
         <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
         <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.45 }}>
-          Madrid (SERMAS) está en fase de exploración: solo hay inventario de categorías, sin listados scrapeados todavía. La búsqueda estará disponible cuando haya datos en R2.
+          Madrid (SERMAS): ya hay listados scrapeados en las categorías activas. El resto sigue en progreso.
         </p>
       </div>
     );

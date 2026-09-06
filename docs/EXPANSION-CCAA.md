@@ -24,10 +24,27 @@ Regla de oro (README): clasificar cada fuente en **maximo 1 hora**.
 | Murcia | Sanidad SMS | A | `scraper_murcia.py` | Pendiente | HTML tablas; URL estable `id_listado` + letra A-Z |
 | Murcia | Educacion | A | `scraper_educacion_murcia.py` | Si (Maestros) | App: sector Educación en Murcia |
 | Murcia | Admin general | B | No | No | Autogestion/Cl@ve; PDFs impredecibles — fuera del sprint |
-| Madrid | Sanidad | ? | No | Solo inventario | Explorar SERMAS |
+| Madrid | Sanidad SERMAS | A | `scraper_madrid.py` | Parcial | PDF Anexo I puntuacion; sede `oferta-empleo` |
+| Madrid | Educacion | A* | No | No | Condicionado: confirmar bolsa/orden (no solo asignacion) |
+| Madrid | Admin general | A | No | No | BOCM+sede; despues de sanidad |
 | Resto | — | — | No | No | Mapa bloqueado en app |
 
 Clasificacion Murcia (sep 2026): sanidad y educacion en sprint; admin solo inventario / no scrapear.
+Clasificacion Madrid (sep 2026): sanidad A prioridad; educacion A condicionado; admin A despues.
+
+## Pendiente — automatizar expansion (no CCAA a CCAA a mano)
+
+Objetivo: no repetir el proceso manual por cada comunidad.
+
+**Hacer (pendiente):**
+1. Clasificar A/B en lote (prompts / agente en paralelo) para varias CCAA×sector.
+2. Plantilla de scraper por tipo de fuente (HTML tablas / PDF / indice URLs), no un scraper unico de Espana.
+3. Misma forma JSON + subida R2 + vigia; adaptador por CCAA en la app.
+4. UI ya centralizada por flujo (buscar → confirmar → resultado); reforzar adaptadores, no pantallas nuevas por portal.
+
+**No hacer:** scraper unico que digiera todos los portales; pelear Cajon B.
+
+Estado: **pendiente** (apuntado 6 sep 2026). Seguir tras cerrar Murcia admin (B, solo UI si aplica) y antes/durante Madrid.
 
 ## Murcia — detalle clasificacion
 
@@ -63,11 +80,25 @@ python scripts/estado_regiones.py
 python scripts/subir_sectores_r2.py --sectores murcia --skip-existing
 ```
 
-## Madrid — siguiente paso
+## Madrid — sanidad (A)
 
-1. Localizar URLs de listados SERMAS (1h exploracion).
-2. Si cajon A: scraper similar a Murcia.
-3. Subir: `--sectores madrid` (solo metadatos hasta entonces).
+- Indice: `https://www.comunidad.madrid/salud/bolsas-contratacion-temporal-servicio-madrileno-salud`
+- Por categoria: enlace «Listados provisionales y definitivos» → sede → PDF `…puntuacion…/download`
+- Sin login; PDF texto seleccionable; campos: orden, DNI parcial, nombre, puntos, centro grabacion
+- Scraper: `scraper_madrid.py` → `data/public/madrid/` → R2 prefijo `madrid/`
+- UI inventario: `categorias_sanidad.json`; scrape inventario: `categorias.json`
+
+```bash
+python scraper_madrid.py --inventario
+python scraper_madrid.py --categoria "Técnico Auxiliar de Farmacia"
+python scraper_madrid.py --todas --presupuesto 7200
+python scripts/subir_sectores_r2.py --sectores madrid --skip-existing
+```
+
+## Madrid — educacion / admin
+
+- Educacion: solo si hay listados de bolsa/orden (no solo asignacion provisional).
+- Admin: BOCM (`www.bocm.es`) + sede listas espera; tras sanidad usable.
 
 ## Plantilla exploracion (1h)
 

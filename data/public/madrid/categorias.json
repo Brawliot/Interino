@@ -1,0 +1,162 @@
+[
+  {
+    "grupo": "a1",
+    "categoria": "Farmacéutico de Atención Primaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/farmaceutico-atencion-primaria-4"
+  },
+  {
+    "grupo": "a1",
+    "categoria": "Médico de Familia de Atención Primaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/medico-familia-atencion-primaria-2"
+  },
+  {
+    "grupo": "a1",
+    "categoria": "Médico de Urgencias SUMMA 112",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/medico-urgencias-summa-112-3"
+  },
+  {
+    "grupo": "a1",
+    "categoria": "Pediatra de Atención Primaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/pediatra-atencion-primaria-4"
+  },
+  {
+    "grupo": "a1",
+    "categoria": "Odontólogo de Atención Primaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/odontologo-atencion-primaria-1"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Enfermero/a de Atención Primaria y Atención Hospitalaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/bolsa-unica-enfermeria-0"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Especialista en Enfermería de Salud Mental",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/enfermeria-salud-mental"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Especialista en Enfermería del Trabajo",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/enfermeria-trabajo-0"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Especialista en Enfermería Familiar y Comunitaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/enfermeria-familiar-subsanacion"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Especialista en Enfermería Geriátrica",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/enfermeria-geriatrica-subsanacion"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Especialista en Enfermería Pediátrica",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/enfermeria-pediatrica-subsanacion"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Enfermero/a SUMMA 112",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/bolsa-unica-enfermeria-summa-112-0"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Fisioterapeuta",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/fisioterapeuta-5"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Logopeda",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/logopeda-0"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Matrona",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/matrona-6"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Nutricionista",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/nutricionista"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Óptico-Optometrista",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/optico-optomestrista"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Podólogo",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/podologo"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Técnico Prevención de Riesgos Laborales",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnicos-prevencion-riesgos-laborales"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Terapeuta Ocupacional",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/terapeuta-ocupacional-7"
+  },
+  {
+    "grupo": "a2",
+    "categoria": "Trabajador/a Social",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/bolsa-unica-trabajador-social-0"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior en Dietética y Nutrición",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-superior-dietetica-nutricion"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior en Documentación Sanitaria",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-superior-documentacion-sanitaria-0"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior en Imagen para el Diagnóstico y Medicina Nuclear",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tec-sup-imagen-diagnost-m-nuclear-3"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior de Anatomía Patológica",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-especialista-anatomia-patologica"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior en Higiene Bucodental",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/ts-higiene-bucodental-1"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior en Laboratorio",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-superior-laboratorio-2026"
+  },
+  {
+    "grupo": "c1",
+    "categoria": "Técnico Superior de Radioterapia y Dosimetría",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-superior-radioterapia-1"
+  },
+  {
+    "grupo": "c2",
+    "categoria": "Técnico Auxiliar de Farmacia",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-auxiliar-farmacia-5"
+  },
+  {
+    "grupo": "c2",
+    "categoria": "Técnico en Emergencias Sanitarias SUMMA 112",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-emergencias-sanitarias-summa-112"
+  },
+  {
+    "grupo": "c2",
+    "categoria": "Técnico Medio Sanitario en Cuidados Auxiliares de Enfermería",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/tecnico-cuidados-auxiliares-enfermeria-9"
+  },
+  {
+    "grupo": "e",
+    "categoria": "Celador",
+    "url_listados": "https://sede.comunidad.madrid/oferta-empleo/bolsa-sanidad-celador-0"
+  }
+]

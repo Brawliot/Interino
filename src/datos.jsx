@@ -664,14 +664,20 @@ function crearCapaDatosEducacionMurcia(manifest, opciones = {}) {
   });
 }
 
-function crearCapaDatosMadrid(inventario) {
-  const archivosDisponibles = new Set();
-  const gruposSanidad = (inventario?.grupos || []).map((g) => ({
-    id: g.id,
-    nombre: g.nombre,
-    activo: false,
-    categorias: g.categorias,
-  }));
+function crearCapaDatosMadrid(inventario, manifestMadrid = { archivos: [] }) {
+  const archivosDisponibles = new Set(manifestMadrid?.archivos || []);
+  const gruposSanidad = (inventario?.grupos || []).map((g) => {
+    const categorias = g.categorias || [];
+    const activo = categorias.some((c) =>
+      archivosDisponibles.has(`madrid/${slugArchivo(c)}.json`),
+    );
+    return {
+      id: g.id,
+      nombre: g.nombre,
+      activo,
+      categorias,
+    };
+  });
 
   return crearCapaBusqueda({
     ccaaId: "mad",
@@ -680,9 +686,16 @@ function crearCapaDatosMadrid(inventario) {
     historico: [],
     organismo: organismoCcaa("mad"),
     categoriaScraper: (categoriaUi) => claveCategoria(categoriaUi),
-    rutaListado: () => null,
-    rutaIndice: () => null,
-    listadosDeSnapshot: () => [],
+    rutaListado: (categoriaUi) => `madrid/${slugArchivo(claveCategoria(categoriaUi))}.json`,
+    rutaIndice: (categoriaUi) =>
+      `madrid/${slugArchivo(claveCategoria(categoriaUi))}.busqueda.json`,
+    listadosDeSnapshot: (snapshot, categoriaUi, _gerencia, ambitoFiltro) => {
+      let listados = snapshot?.listados ?? [];
+      if (ambitoFiltro) {
+        listados = listados.filter((l) => l.ambito === ambitoFiltro);
+      }
+      return listados;
+    },
   });
 }
 
@@ -1520,7 +1533,7 @@ export async function cargarDatos() {
   const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
   const eduMurBase = DATA_EDUCACION_MURCIA_BASE_URL;
   const adminBase = DATA_ADMIN_CLM_BASE_URL;
-  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes, eduMurManifestRes, adminManifestRes, adminCatsRes] =
+  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, madManifestRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes, eduMurManifestRes, adminManifestRes, adminCatsRes] =
     await Promise.all([
       fetch(`${base}historico.json`),
       fetch(`${base}manifest.json`),
@@ -1528,6 +1541,7 @@ export async function cargarDatos() {
       fetch(`${base}murcia/categorias.json`),
       fetch(`${base}murcia/manifest.json`),
       fetch(`${base}madrid/categorias_sanidad.json`),
+      fetch(`${base}madrid/manifest.json`),
       fetch(`${eduBase}manifest.json`),
       fetch(`${eduBase}categorias.json`),
       fetch(`${eduBolsaBase}manifest.json`),
@@ -1549,6 +1563,7 @@ export async function cargarDatos() {
     };
   }
   const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
+  const manifestMadrid = madManifestRes.ok ? await madManifestRes.json() : { archivos: [] };
   const manifestEducacion = eduManifestRes.ok ? await eduManifestRes.json() : { archivos: [] };
   const manifestEducacionBolsa = eduBolsaManifestRes.ok ? await eduBolsaManifestRes.json() : { archivos: [] };
   const categoriasEducacion = eduCatsRes.ok ? await eduCatsRes.json() : null;
@@ -1566,7 +1581,7 @@ export async function cargarDatos() {
   const murciaActiva = murCatsRes.ok && tieneArchivosListado(manifestMurcia);
   const madridActiva =
     madCatsRes.ok &&
-    (manifest.archivos || []).some((a) => a.startsWith("madrid/") && a.endsWith(".json") && !a.endsWith(".busqueda.json"));
+    tieneArchivosListado(manifestMadrid);
   const administracionActiva =
     tieneArchivosListado(manifestAdmin) &&
     Array.isArray(categoriasAdmin) &&
@@ -1633,7 +1648,7 @@ export async function cargarDatos() {
   const capas = {
     clm: crearCapaDatosClm(historico, manifest, categoriasPorGrupo),
     mur: crearCapaDatosMurcia(manifestMurcia, categoriasMurcia),
-    mad: crearCapaDatosMadrid(inventarioMadrid),
+    mad: crearCapaDatosMadrid(inventarioMadrid, manifestMadrid),
   };
   const clm = capas.clm;
 

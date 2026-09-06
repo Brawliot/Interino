@@ -81,6 +81,9 @@ data/public/gestion/*.json
 data/public/licenciados/*.json
 data/public/murcia/*.json
 !data/public/murcia/categorias.json
+data/public/madrid/*.json
+!data/public/madrid/categorias.json
+!data/public/madrid/categorias_sanidad.json
 data/public/**/*.busqueda.json
 
 # Manifest: se genera en build/dev según JSON presentes en disco (no commitear listado de R2)
