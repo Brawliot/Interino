@@ -7,7 +7,26 @@ export function registrarServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
   const params = new URLSearchParams(window.location.search);
-  if (params.has("nosw")) {
+  const forzarReset = params.has("nosw");
+
+  // En Vite el SW rompe HMR/modulos; en local solo permitir reset explicito.
+  if (import.meta.env.DEV && !forzarReset) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      if (!regs.length) return;
+      Promise.all(regs.map((r) => r.unregister()))
+        .then(() => caches.keys())
+        .then((keys) =>
+          Promise.all(keys.filter((k) => k.startsWith("interino-")).map((k) => caches.delete(k))),
+        )
+        .then(() => {
+          if (navigator.serviceWorker.controller) window.location.reload();
+        })
+        .catch(() => undefined);
+    });
+    return;
+  }
+
+  if (forzarReset) {
     Promise.all([
       navigator.serviceWorker.getRegistrations().then((regs) => Promise.all(regs.map((r) => r.unregister()))),
       caches.keys().then((keys) =>

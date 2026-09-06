@@ -36,6 +36,31 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      /* Recuperacion si un service worker deja la SPA en blanco (sobre todo en Vite). */
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search);
+          if (!q.has("nosw") || !("serviceWorker" in navigator)) return;
+          Promise.all([
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }),
+            caches.keys().then(function (keys) {
+              return Promise.all(
+                keys.filter(function (k) { return k.indexOf("interino-") === 0; }).map(function (k) {
+                  return caches.delete(k);
+                })
+              );
+            }),
+          ]).finally(function () {
+            q.delete("nosw");
+            var s = q.toString();
+            location.replace(location.pathname + (s ? "?" + s : "") + location.hash);
+          });
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
