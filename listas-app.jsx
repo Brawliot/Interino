@@ -133,7 +133,7 @@ const ICONOS_SECTOR = {
 
 const TEXTO_AYUDA_BUSQUEDA_BASE = {
   mur: "Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SMS) o por una combinación de ambos. No te pedimos ni guardamos tu DNI completo.",
-  mad: "Puedes buscar por apellidos o DNI parcial (como los publica el SERMAS). Los listados de Madrid aún no están scrapeados en esta app.",
+  mad: "Puedes buscar por apellidos o DNI parcial (como los publica el SERMAS). Solo las categorías con listado scrapeado están activas; el resto aparece como «sin datos».",
   multi: "Puedes buscar por apellidos o DNI parcial en todas tus comunidades seleccionadas, o elegir grupo y categoría concretos por región. No te pedimos ni guardamos tu DNI completo.",
 };
 

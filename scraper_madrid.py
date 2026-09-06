@@ -88,17 +88,53 @@ GRUPOS_POR_CATEGORIA = {
     "Celador": "e",
 }
 
-RE_FILA = re.compile(
-    r"^(?P<orden>\d+)\s+"
-    r"(?P<dni>\*{2,}\d{4})\s+"
-    r"(?P<nombre>.+?)\s+"
-    r"(?P<centro>\d{3,5})\s+"
-    r"(?P<disc>[NnSs])\s+"
-    r"(?P<form>[\d.,]+)\s+"
-    r"(?P<exp>[\d.,]+)\s+"
-    r"(?P<opos>[\d.,]+)\s+"
-    r"(?P<total>[\d.,]+)\s*$"
-)
+# Variantes de Anexo I SERMAS (columnas no uniformes entre categorías).
+RE_FILAS = [
+    # orden dni nombre CENTRO disc form exp opos total
+    re.compile(
+        r"^(?P<orden>\d+)\s+"
+        r"(?P<dni>\*{2,}\d{4})\s+"
+        r"(?P<nombre>.+?)\s+"
+        r"(?P<centro>\d{2,5})\s+"
+        r"(?P<disc>[NnSs])\s+"
+        r"(?P<form>[\d.,]+)\s+"
+        r"(?P<exp>[\d.,]+)\s+"
+        r"(?P<opos>[\d.,]+)\s+"
+        r"(?P<total>[\d.,]+)\s*$"
+    ),
+    # orden dni nombre CENTRO disc form exp total (sin oposición)
+    re.compile(
+        r"^(?P<orden>\d+)\s+"
+        r"(?P<dni>\*{2,}\d{4})\s+"
+        r"(?P<nombre>.+?)\s+"
+        r"(?P<centro>\d{2,5})\s+"
+        r"(?P<disc>[NnSs])\s+"
+        r"(?P<form>[\d.,]+)\s+"
+        r"(?P<exp>[\d.,]+)\s+"
+        r"(?P<total>[\d.,]+)\s*$"
+    ),
+    # orden dni nombre disc form exp opos total (sin centro)
+    re.compile(
+        r"^(?P<orden>\d+)\s+"
+        r"(?P<dni>\*{2,}\d{4})\s+"
+        r"(?P<nombre>.+?)\s+"
+        r"(?P<disc>[NnSs])\s+"
+        r"(?P<form>[\d.,]+)\s+"
+        r"(?P<exp>[\d.,]+)\s+"
+        r"(?P<opos>[\d.,]+)\s+"
+        r"(?P<total>[\d.,]+)\s*$"
+    ),
+    # orden dni nombre disc form exp total (sin centro ni oposición)
+    re.compile(
+        r"^(?P<orden>\d+)\s+"
+        r"(?P<dni>\*{2,}\d{4})\s+"
+        r"(?P<nombre>.+?)\s+"
+        r"(?P<disc>[NnSs])\s+"
+        r"(?P<form>[\d.,]+)\s+"
+        r"(?P<exp>[\d.,]+)\s+"
+        r"(?P<total>[\d.,]+)\s*$"
+    ),
+]
 
 
 def slug_archivo(nombre: str) -> str:
@@ -208,25 +244,29 @@ def parse_pdf_puntuacion(contenido: bytes) -> list[dict]:
             text = page.extract_text() or ""
             for line in text.splitlines():
                 line = re.sub(r"\s+", " ", line).strip()
-                m = RE_FILA.match(line)
+                m = None
+                for pat in RE_FILAS:
+                    m = pat.match(line)
+                    if m:
+                        break
                 if not m:
                     continue
                 nombre = m.group("nombre").strip()
-                # Normalizar espacios raros en nombres
                 nombre = re.sub(r"\s+,", ",", nombre)
                 nombre = re.sub(r",\s*", ", ", nombre)
+                gd = m.groupdict()
                 filas.append(
                     {
-                        "orden": int(m.group("orden")),
+                        "orden": int(gd["orden"]),
                         "apellidos_nombre": nombre,
-                        "dni_parcial": m.group("dni"),
-                        "comprobado_baremo": parse_puntos(m.group("total")),
-                        "formacion": parse_puntos(m.group("form")),
-                        "experiencia": parse_puntos(m.group("exp")),
-                        "oposicion": parse_puntos(m.group("opos")),
-                        "centro_grabacion": m.group("centro"),
-                        "grupo_preferente": m.group("disc").upper() == "S",
-                        "discapacidad": m.group("disc").upper() == "S",
+                        "dni_parcial": gd["dni"],
+                        "comprobado_baremo": parse_puntos(gd["total"]),
+                        "formacion": parse_puntos(gd["form"]),
+                        "experiencia": parse_puntos(gd["exp"]),
+                        "oposicion": parse_puntos(gd["opos"]) if gd.get("opos") else 0.0,
+                        "centro_grabacion": gd.get("centro") or "",
+                        "grupo_preferente": gd["disc"].upper() == "S",
+                        "discapacidad": gd["disc"].upper() == "S",
                         "tipos_contrato": {},
                     }
                 )
@@ -345,6 +385,11 @@ def main() -> int:
     ap.add_argument("--inventario", action="store_true")
     ap.add_argument("--categoria", help="Nombre exacto de categoría del inventario")
     ap.add_argument("--todas", action="store_true")
+    ap.add_argument(
+        "--faltantes",
+        action="store_true",
+        help="Como --todas pero omite categorías que ya tienen JSON con filas",
+    )
     ap.add_argument("--pdf", type=Path, help="PDF local (salta descarga)")
     ap.add_argument("--presupuesto", type=int, default=7200, help="Segundos máx. --todas")
     args = ap.parse_args()
@@ -386,13 +431,25 @@ def main() -> int:
         actualizar_manifest()
         return 0
 
-    if args.todas:
+    if args.todas or args.faltantes:
         inicio = time.time()
         ok = 0
         for item in inv:
             if time.time() - inicio > args.presupuesto:
                 print("Presupuesto agotado")
                 break
+            slug = slug_archivo(item["categoria"])
+            existente = DATA_DIR / f"{slug}.json"
+            if args.faltantes and existente.exists():
+                try:
+                    prev = json.loads(existente.read_text(encoding="utf-8"))
+                    n = sum(len(l.get("filas") or []) for l in prev.get("listados") or [])
+                    if n > 0:
+                        print(f"\n=== {item['categoria']} === (omitida, {n} filas)")
+                        ok += 1
+                        continue
+                except Exception:
+                    pass
             print(f"\n=== {item['categoria']} ===")
             try:
                 if scrape_categoria(session, item):
