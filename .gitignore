@@ -103,6 +103,11 @@ data/educacion-bolsa/**/*.json
 !data/educacion-bolsa/categorias.json
 data/educacion-bolsa/manifest.json
 
+# Educación Murcia — listados por especialidad (grandes)
+data/educacion-murcia/**/*.json
+!data/educacion-murcia/categorias.json
+data/educacion-murcia/manifest.json
+
 # Administración CLM — listados por categoría/provincia (grandes)
 data/admin-clm/funcionario/**/*.json
 data/admin-clm/laboral/**/*.json

@@ -22,7 +22,7 @@ Regla de oro (README): clasificar cada fuente en **maximo 1 hora**.
 | CLM | Educacion | A | Si | Parcial bolsa | 3 modos + AFIN |
 | CLM | Admin | A | Si | Si | 4 bolsas sin PDF |
 | Murcia | Sanidad SMS | A | `scraper_murcia.py` | Pendiente | HTML tablas; URL estable `id_listado` + letra A-Z |
-| Murcia | Educacion | A | No | No | CARM PDFs + indices `IDCONTENIDO`; scrape nuevo |
+| Murcia | Educacion | A | `scraper_educacion_murcia.py` | Si (Maestros) | App: sector Educación en Murcia |
 | Murcia | Admin general | B | No | No | Autogestion/Cl@ve; PDFs impredecibles — fuera del sprint |
 | Madrid | Sanidad | ? | No | Solo inventario | Explorar SERMAS |
 | Resto | — | — | No | No | Mapa bloqueado en app |
@@ -43,7 +43,10 @@ Clasificacion Murcia (sep 2026): sanidad y educacion en sprint; admin solo inven
 - Indice: `https://www.carm.es/web/pagina?IDCONTENIDO=4088&IDTIPO=100&…`
 - Listados en PDF (texto seleccionable / tablas); sin login
 - Campos: nº lista, DNI parcial, nombre, puntos
-- Pendiente: scraper nuevo (parseo PDF)
+- Scraper: `scraper_educacion_murcia.py` (MVP Maestros 2025/2026)
+- Salida: `data/educacion-murcia/` → R2 prefijo `educacion-murcia/`
+- Si Radware Captcha: descargar PDF a mano + `--pdf`
+- Pendiente app: sector Educación en Murcia; cuerpos no-Maestros
 
 ### Administracion general (B)
 

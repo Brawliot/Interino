@@ -820,8 +820,8 @@ function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
   );
 }
 
-function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva }) {
-  const sectores = sectoresParaCcaas(ccaas.map((c) => c.id), { educacionActiva, administracionActiva }).map((s) => ({
+function SelectorSectorInline({ ccaas, sectorId, onSectorChange, educacionActiva, educacionMurciaActiva, administracionActiva }) {
+  const sectores = sectoresParaCcaas(ccaas.map((c) => c.id), { educacionActiva, educacionMurciaActiva, administracionActiva }).map((s) => ({
     ...s,
     icono: ICONOS_SECTOR[s.id] || Stethoscope,
   }));
@@ -1020,12 +1020,14 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, educacionAfinActiva, murciaActiva, madridActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
+function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, educacionMurciaActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, educacionAfinActiva, murciaActiva, madridActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
   const datos = useDatos();
   const capa = useCapaDatos();
-  const multi = ccaas.length > 1;
   const ccaaIds = ccaas.map((c) => c.id);
-  const sectores = sectoresParaCcaas(ccaaIds, { educacionActiva, administracionActiva });
+  const multi = ccaaIds.length > 1;
+  const sectores = sectoresParaCcaas(ccaaIds, { educacionActiva, educacionMurciaActiva, administracionActiva });
+  const esEducacionMurcia = modoEducacion && ccaaIds[0] === "mur";
+  const esEducacionClm = modoEducacion && !esEducacionMurcia;
   const sectorActivo = sectores.find((s) => s.id === sectorId);
   const sectorDisponible = sectorActivo?.activo;
   const [grupoId, setGrupoId] = useState(gruposSanidad[0]?.id || "diplomado");
@@ -1117,6 +1119,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           ccaas={ccaas}
           sectorId={sectorId}
           educacionActiva={educacionActiva}
+          educacionMurciaActiva={educacionMurciaActiva}
           administracionActiva={administracionActiva}
           onSectorChange={(s) => {
             onSectorChange?.(s);
@@ -1138,7 +1141,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           />
         )}
 
-        {modoEducacion && (
+        {esEducacionClm && (
           <SelectorListadoEducacion
             modo={modoListadoEducacion}
             onModoChange={onModoListadoEducacionChange}
@@ -1149,11 +1152,17 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           />
         )}
 
-        {modoEducacion && datos.coberturaEducacion && (
+        {esEducacionClm && datos.coberturaEducacion && (
           <PanelHuecosEducacion
             cobertura={datos.coberturaEducacion}
             modoListadoEducacion={modoListadoEducacion}
           />
+        )}
+
+        {esEducacionMurcia && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.4, margin: 0 }}>
+            Listas definitivas de interinos (Cuerpo de Maestros). Incluye BLOQUE I y BLOQUE II cuando constan en el listado.
+          </p>
         )}
 
         {modoAdministracion && datos.adminSinPdf?.length > 0 && (
@@ -1173,7 +1182,9 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No hay listados de educación cargados para este modo. En producción, sube las carpetas <strong>educacion/</strong> y/o <strong>educacion-bolsa/</strong> a R2.
+              {esEducacionMurcia
+                ? <>No hay listados de educación Murcia. Sube la carpeta <strong>educacion-murcia/</strong> a R2.</>
+                : <>No hay listados de educación cargados para este modo. En producción, sube las carpetas <strong>educacion/</strong> y/o <strong>educacion-bolsa/</strong> a R2.</>}
             </p>
           </div>
         )}
@@ -3080,7 +3091,7 @@ export default function ListasApp() {
               setListadoCategoria(categoria);
               setListadoGerencia(gerencia || "");
               setListadoAmbito("");
-              setListadoGrupoId(g?.id || (modoEducacion ? "secundaria" : modoAdministracion ? "funcionario" : "diplomado"));
+              setListadoGrupoId(g?.id || (modoEducacion ? (ccaas[0]?.id === "mur" ? "maestros" : "secundaria") : modoAdministracion ? "funcionario" : "diplomado"));
               setPantallaPrevia("buscar");
               setPaso("listado");
             }}
@@ -3088,6 +3099,7 @@ export default function ListasApp() {
             gruposSanidad={gruposSanidad}
             sectorId={sectorId}
             educacionActiva={datos.educacionActiva}
+            educacionMurciaActiva={datos.educacionMurciaActiva}
             administracionActiva={datos.administracionActiva}
             educacionBolsaActiva={datos.educacionBolsaActiva}
             educacionDisponiblesActiva={datos.educacionDisponiblesActiva}

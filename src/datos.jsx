@@ -43,6 +43,15 @@ export const DATA_ADMIN_CLM_BASE_URL = (() => {
   return "/data/admin-clm/";
 })();
 
+/** Educación Murcia (CARM · Maestros). */
+export const DATA_EDUCACION_MURCIA_BASE_URL = (() => {
+  const explicit = import.meta.env.VITE_DATA_EDUCACION_MURCIA_URL;
+  if (explicit) return explicit.replace(/\/?$/, "/");
+  const sanidad = import.meta.env.VITE_DATA_CATEGORIAS_URL;
+  if (sanidad) return `${sanidad.replace(/\/?$/, "/")}educacion-murcia/`;
+  return "/data/educacion-murcia/";
+})();
+
 /** Nombre PDF → slug de archivo (debe coincidir con scraper.slug_archivo). */
 export function slugArchivo(categoriaScraper) {
   return categoriaScraper
@@ -217,6 +226,8 @@ function crearCapaBusqueda({
   categoriaScraper,
   listadosDeSnapshot,
   organismo,
+  baseUrl = DATA_CATEGORIAS_BASE_URL,
+  sector = "sanidad",
 }) {
   const cache = new Map();
 
@@ -235,7 +246,7 @@ function crearCapaBusqueda({
     if (!rel) return null;
     const key = `idx/${rel}`;
     if (cache.has(key)) return cache.get(key);
-    const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
+    const res = await fetch(`${baseUrl}${rel}`);
     if (!res.ok) return null;
     const data = await res.json();
     cache.set(key, data);
@@ -246,8 +257,8 @@ function crearCapaBusqueda({
     const rel = rutaListado(categoriaUi, grupoId);
     const key = rel;
     if (cache.has(key)) return cache.get(key);
-    const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
-    if (!res.ok) throw new Error(`No se pudo cargar ${DATA_CATEGORIAS_BASE_URL}${rel} (${res.status})`);
+    const res = await fetch(`${baseUrl}${rel}`);
+    if (!res.ok) throw new Error(`No se pudo cargar ${baseUrl}${rel} (${res.status})`);
     const data = await res.json();
     cache.set(key, data);
     return data;
@@ -322,22 +333,25 @@ function crearCapaBusqueda({
         });
       }
       porPersona.get(clave).apariciones.push({
+        sector,
+        ccaaId,
         gerencia: f.gerencia,
         ambito: f.ambito,
         posicion: f.pos,
         total: f.total,
         puntos: f.puntos,
-        delante: f.pos - 1,
-        nombreCompleto: f.nombreCompleto,
-        dniParcial: f.dniParcial,
-        tiposContrato: f.tiposContrato,
+        delante: Math.max(0, f.pos - 1),
+        categoria: categoriaUi,
+        grupoId,
       });
     });
-    const personas = [...porPersona.values()].map((p) => ({
-      ...p,
-      apariciones: deduplicarApariciones(p.apariciones),
-    }));
-    return { personas, gerencias: gerenciasEnDatos };
+    return {
+      personas: [...porPersona.values()].map((p) => ({
+        ...p,
+        apariciones: deduplicarApariciones(p.apariciones),
+      })),
+      gerencias: gerenciasEnDatos,
+    };
   }
 
   function historialCorte(categoriaUi, gerenciaCortaFiltro = "", ambitoFiltro = "") {
@@ -407,6 +421,7 @@ function crearCapaBusqueda({
 
   return {
     ccaaId,
+    sector,
     gruposSanidad,
     tieneDatosReales,
     tieneIndiceBusqueda,
@@ -586,6 +601,64 @@ function crearCapaDatosMurcia(manifest, categoriasMurcia) {
       if (ambitoFiltro) {
         listados = listados.filter((l) => l.ambito === ambitoFiltro);
       }
+      return listados;
+    },
+  });
+}
+
+function crearCapaDatosEducacionMurcia(manifest, opciones = {}) {
+  const baseUrl = opciones.baseUrl || DATA_EDUCACION_MURCIA_BASE_URL;
+  const archivosDisponibles = new Set(
+    (manifest?.archivos || []).map((a) => String(a).replace(/^educacion-murcia\//, ""))
+  );
+
+  const metaPorCategoria = new Map();
+  const categorias = [];
+
+  for (const rel of archivosDisponibles) {
+    if (!rel.startsWith("maestros/") || !rel.endsWith(".json") || rel.endsWith(".busqueda.json")) {
+      continue;
+    }
+    const file = rel.slice("maestros/".length, -".json".length);
+    const dash = file.indexOf("-");
+    if (dash < 0) continue;
+    const codigo = file.slice(0, dash).toUpperCase();
+    const nombreSlug = file.slice(dash + 1).replace(/-/g, " ");
+    const categoriaUi = portalAUi(nombreSlug);
+    categorias.push(categoriaUi);
+    metaPorCategoria.set(categoriaUi, { rel, codigo, categoriaUi });
+  }
+
+  const categoriasUnicas = [...new Set(categorias)].sort((a, b) => a.localeCompare(b, "es"));
+  const gruposSanidad = categoriasUnicas.length
+    ? [
+        {
+          id: "maestros",
+          nombre: "Maestros (Infantil y Primaria)",
+          activo: true,
+          categorias: categoriasUnicas,
+        },
+      ]
+    : [];
+
+  return crearCapaBusqueda({
+    ccaaId: "mur",
+    sector: "educacion",
+    gruposSanidad,
+    archivosDisponibles,
+    historico: [],
+    organismo: "CARM Educación",
+    baseUrl,
+    categoriaScraper: (categoriaUi) => claveCategoria(categoriaUi),
+    rutaListado: (categoriaUi) => metaPorCategoria.get(categoriaUi)?.rel || null,
+    rutaIndice: () => null,
+    listadosDeSnapshot: (snapshot, categoriaUi, _gerencia, ambitoFiltro) => {
+      let listados = snapshot?.listados ?? [];
+      if (ambitoFiltro) {
+        listados = listados.filter((l) => l.ambito === ambitoFiltro);
+      }
+      // Si no hay filtro, devolver todos los bloques
+      if (!listados.length && snapshot?.listados) listados = snapshot.listados;
       return listados;
     },
   });
@@ -1445,8 +1518,9 @@ export async function cargarDatos() {
   const base = DATA_CATEGORIAS_BASE_URL;
   const eduBase = DATA_EDUCACION_BASE_URL;
   const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
+  const eduMurBase = DATA_EDUCACION_MURCIA_BASE_URL;
   const adminBase = DATA_ADMIN_CLM_BASE_URL;
-  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes, adminManifestRes, adminCatsRes] =
+  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes, eduMurManifestRes, adminManifestRes, adminCatsRes] =
     await Promise.all([
       fetch(`${base}historico.json`),
       fetch(`${base}manifest.json`),
@@ -1458,6 +1532,7 @@ export async function cargarDatos() {
       fetch(`${eduBase}categorias.json`),
       fetch(`${eduBolsaBase}manifest.json`),
       fetch(`${eduBase}afinidad.json`),
+      fetch(`${eduMurBase}manifest.json`),
       fetch(`${adminBase}manifest.json`),
       fetch(`${adminBase}categorias.json`),
     ]);
@@ -1486,6 +1561,8 @@ export async function cargarDatos() {
   const educacionBolsaActiva = tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
   const educacionAfinActiva = educacionBolsaActiva && Boolean(afinidadEducacion);
   const educacionActiva = educacionDisponiblesActiva || educacionBolsaActiva;
+  const manifestEducacionMurcia = eduMurManifestRes.ok ? await eduMurManifestRes.json() : { archivos: [] };
+  const educacionMurciaActiva = tieneArchivosListado(manifestEducacionMurcia);
   const murciaActiva = murCatsRes.ok && tieneArchivosListado(manifestMurcia);
   const madridActiva =
     madCatsRes.ok &&
@@ -1538,6 +1615,9 @@ export async function cargarDatos() {
         })
       : null;
   const educacionClm = educacionBolsaClm || educacionAfinClm || educacionDisponiblesClm;
+  const educacionMurcia = educacionMurciaActiva
+    ? crearCapaDatosEducacionMurcia(manifestEducacionMurcia, { baseUrl: eduMurBase })
+    : null;
 
   let numGerenciasClm = null;
   try {
@@ -1561,10 +1641,12 @@ export async function cargarDatos() {
     regiones: CCAA_LIST,
     numGerenciasClm,
     educacionActiva,
+    educacionMurciaActiva,
     educacionBolsaActiva,
     educacionAfinActiva,
     educacionDisponiblesActiva,
     educacionClm,
+    educacionMurcia,
     educacionBolsaClm,
     educacionAfinClm,
     educacionDisponiblesClm,
@@ -1577,6 +1659,9 @@ export async function cargarDatos() {
     frescura,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
     paraSector: (ccaaId, sectorId, opciones = {}) => {
+      if (sectorId === "educacion" && ccaaId === "mur") {
+        return educacionMurcia || crearCapaEducacionVacia();
+      }
       if (sectorId === "educacion" && ccaaId === "clm") {
         const modo = opciones.modoListadoEducacion;
         if (modo === "disponibles" && educacionDisponiblesClm) return educacionDisponiblesClm;

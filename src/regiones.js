@@ -40,7 +40,11 @@ const TITULO_BOLSA = {
 
 /** Solo sanidad activa en CLM, Murcia y Madrid. Educación/admin si hay manifest scrapeado. */
 export function sectoresDeCcaa(ccaaId, opciones = {}) {
-  const { educacionActiva = false, administracionActiva = false } = opciones;
+  const {
+    educacionActiva = false,
+    educacionMurciaActiva = false,
+    administracionActiva = false,
+  } = opciones;
   const fuente = FUENTE_SANIDAD[ccaaId] || "Próximamente";
   const sanidad = {
     id: "sanidad",
@@ -65,6 +69,19 @@ export function sectoresDeCcaa(ccaaId, opciones = {}) {
         activo: administracionActiva,
         fuente: administracionActiva
           ? "Administración General CLM · Bolsas por provincia"
+          : "Próximamente",
+      },
+    ];
+  }
+  if (ccaaId === "mur") {
+    return [
+      sanidad,
+      {
+        id: "educacion",
+        nombre: "Educación",
+        activo: educacionMurciaActiva,
+        fuente: educacionMurciaActiva
+          ? "CARM · Listas interinos Maestros"
           : "Próximamente",
       },
     ];

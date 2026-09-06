@@ -31,6 +31,7 @@ MAPEO = {
     "madrid": ("data/public/madrid", "madrid"),
     "educacion": ("data/educacion", "educacion"),
     "educacion-bolsa": ("data/educacion-bolsa", "educacion-bolsa"),
+    "educacion-murcia": ("data/educacion-murcia", "educacion-murcia"),
     "admin-clm": ("data/admin-clm", "admin-clm"),
 }
 

@@ -1,0 +1,84 @@
+{
+  "ccaaId": "mur",
+  "sector": "educacion",
+  "cuerpo": "maestros",
+  "cuerpo_nombre": "Cuerpo de Maestros (Infantil y Primaria)",
+  "curso": "2025/2026",
+  "fuente": {
+    "portal": "CARM — Listas de Interinos",
+    "indice": "https://www.carm.es/web/pagina?IDCONTENIDO=4088&IDTIPO=100",
+    "curso_url": "https://www.carm.es/web/pagina?IDCONTENIDO=74801&IDTIPO=100",
+    "definitivo_url": "https://www.carm.es/web/pagina?IDCONTENIDO=74803&IDTIPO=100&RASTRO=c$m74801"
+  },
+  "generado": "2026-09-06T18:06:01",
+  "bloques": [
+    {
+      "bloque": "BLOQUE I",
+      "url_bloque": "https://www.carm.es/web/pagina?IDCONTENIDO=74914&IDTIPO=100&RASTRO=c$m74801,74803",
+      "pdfs": [
+        {
+          "titulo": "Relación definitiva de interinos de infantil y primaria en el curso 2025/2026 ordenada por número de lista",
+          "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20bloque%201%20n%C2%BAlista.pdf&ALIAS=ARCH&IDCONTENIDO=200225&IDTIPO=60&RASTRO=c$m74801,74803,74914",
+          "id_contenido": "200225",
+          "por_numero_lista": true,
+          "bloque": "BLOQUE I"
+        },
+        {
+          "titulo": "Relación definitiva de interinos de infantil y primaria en el curso 2025/2026 ordenada alfabéticamente",
+          "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20bloque%201%20alfab.pdf&ALIAS=ARCH&IDCONTENIDO=200226&IDTIPO=60&RASTRO=c$m74801,74803,74914",
+          "id_contenido": "200226",
+          "por_numero_lista": false,
+          "bloque": "BLOQUE I"
+        },
+        {
+          "titulo": "Relación definitiva de interinos de infantil y primaria excluidos definitivamente por la no aceptación de la oferta de trabajo en el curso 2024/2025",
+          "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20no%20presentados.pdf&ALIAS=ARCH&IDCONTENIDO=200230&IDTIPO=60&RASTRO=c$m74801,74803,74914",
+          "id_contenido": "200230",
+          "por_numero_lista": false,
+          "bloque": "BLOQUE I"
+        },
+        {
+          "titulo": "Relación definitiva de interinos de infantil y primaria excluidos por la renuncia injustificada del puesto de trabajo adjudicado en el curso 2024/2025",
+          "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20renuncias.pdf&ALIAS=ARCH&IDCONTENIDO=200228&IDTIPO=60&RASTRO=c$m74801,74803,74914",
+          "id_contenido": "200228",
+          "por_numero_lista": false,
+          "bloque": "BLOQUE I"
+        }
+      ],
+      "pdf_preferido": {
+        "titulo": "Relación definitiva de interinos de infantil y primaria en el curso 2025/2026 ordenada por número de lista",
+        "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20bloque%201%20n%C2%BAlista.pdf&ALIAS=ARCH&IDCONTENIDO=200225&IDTIPO=60&RASTRO=c$m74801,74803,74914",
+        "id_contenido": "200225",
+        "por_numero_lista": true,
+        "bloque": "BLOQUE I"
+      }
+    },
+    {
+      "bloque": "BLOQUE II",
+      "url_bloque": "https://www.carm.es/web/pagina?IDCONTENIDO=74915&IDTIPO=100&RASTRO=c$m74801,74803",
+      "pdfs": [
+        {
+          "titulo": "Relación definitiva de interinos de infantil y primaria en el curso 2025/2026 ordenada por número de lista",
+          "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20bloque%202%20n%C2%BA%20lista.pdf&ALIAS=ARCH&IDCONTENIDO=200234&IDTIPO=60&RASTRO=c$m74801,74803,74915",
+          "id_contenido": "200234",
+          "por_numero_lista": true,
+          "bloque": "BLOQUE II"
+        },
+        {
+          "titulo": "Relación definitiva de interinos de infantil y primaria en el curso 2025/2026 ordenada alfabéticamente",
+          "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20bloque%202%20alfab.pdf&ALIAS=ARCH&IDCONTENIDO=200232&IDTIPO=60&RASTRO=c$m74801,74803,74915",
+          "id_contenido": "200232",
+          "por_numero_lista": false,
+          "bloque": "BLOQUE II"
+        }
+      ],
+      "pdf_preferido": {
+        "titulo": "Relación definitiva de interinos de infantil y primaria en el curso 2025/2026 ordenada por número de lista",
+        "url": "https://www.carm.es/web/descarga?ARCHIVO=lista%20bloque%202%20n%C2%BA%20lista.pdf&ALIAS=ARCH&IDCONTENIDO=200234&IDTIPO=60&RASTRO=c$m74801,74803,74915",
+        "id_contenido": "200234",
+        "por_numero_lista": true,
+        "bloque": "BLOQUE II"
+      }
+    }
+  ]
+}
