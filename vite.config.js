@@ -47,7 +47,14 @@ function politicaStaticPlugin() {
   return {
     name: "politica-privacidad",
     configureServer(server) {
-      server.middlewares.use("/politica-privacidad.md", (req, res, next) => {
+      server.middlewares.use((req, res, next) => {
+        const rawUrl = req.url || "";
+        const pathOnly = rawUrl.split("?")[0];
+        // Solo servir el .md “en crudo” al navegador. Si hay query (?raw, ?import…), Vite lo transforma.
+        if (pathOnly !== "/politica-privacidad.md" || rawUrl.includes("?")) {
+          next();
+          return;
+        }
         if (!existsSync(politicaPath)) {
           next();
           return;
