@@ -9,6 +9,13 @@ import { etiquetaFrescuraSector } from "./src/cobertura-clm.js";
 import { activarNotificacionesSeguimiento, notificacionesSoportadas } from "./src/notificaciones.js";
 import { PLAN, limiteSeguimientos, puedeAnadirSeguimiento, mensajeLimiteSeguimientos, FEATURES_PREMIUM } from "./src/plan.js";
 import { LS_SEGUIMIENTOS, exportarSeguimientos, importarSeguimientosDesdeArchivo } from "./src/seguimientos-backup.js";
+import {
+  crearSeguimiento,
+  normalizarSeguimiento,
+  refrescarTodosSeguimientos,
+  notificarCambiosSeguimientos,
+} from "./src/seguimientos.js";
+import { notificacionesHabilitadasEnDispositivo } from "./src/notificaciones.js";
 import MapaEspanaCCAA from "./src/MapaEspanaCCAA.jsx";
 import LogoInterino from "./src/components/LogoInterino.jsx";
 import OverlayBienvenida from "./src/components/OverlayBienvenida.jsx";
@@ -2722,7 +2729,13 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad, onE
                   {e.tipo !== "ok" && <AlertTriangle size={14} color={C.clay} />}
                 </div>
                 <p style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: C.navy, marginTop: 4 }}>#{r.posicion}</p>
-                <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft }}>{r.puntos.toFixed(2)} puntos · {organismo}</p>
+                <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft }}>{Number(r.puntos || 0).toFixed(2)} puntos · {organismo}</p>
+                {s.ultimoCambio === "subio" && (
+                  <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.navy, marginTop: 6, fontWeight: 600 }}>Ha subido desde el último aviso</p>
+                )}
+                {s.ultimoCambio === "bajo" && (
+                  <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.clay, marginTop: 6, fontWeight: 600 }}>Ha bajado desde el último aviso</p>
+                )}
               </button>
             );
           })}
@@ -2835,9 +2848,33 @@ export default function ListasApp() {
   const [avisoLimite, setAvisoLimite] = useState("");
 
   useEffect(() => {
-    setSeguimientos(leerStorage(LS_SEGUIMIENTOS, []));
+    const raw = leerStorage(LS_SEGUIMIENTOS, []);
+    setSeguimientos(raw.map(normalizarSeguimiento).filter(Boolean));
     setRecientes(leerStorage(LS_RECIENTES, []));
   }, []);
+
+  useEffect(() => {
+    if (!datos) return undefined;
+    let cancelado = false;
+    (async () => {
+      const raw = leerStorage(LS_SEGUIMIENTOS, []);
+      const lista = raw.map(normalizarSeguimiento).filter(Boolean);
+      if (!lista.length) return;
+      try {
+        const resultados = await refrescarTodosSeguimientos(lista, { datos });
+        if (cancelado) return;
+        setSeguimientos(resultados.map((r) => r.seguimientoActualizado));
+        if (notificacionesHabilitadasEnDispositivo()) {
+          notificarCambiosSeguimientos(resultados);
+        }
+      } catch {
+        /* red / datos: se mantienen snapshots previos */
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [datos]);
 
   useEffect(() => {
     try {
@@ -2980,7 +3017,7 @@ export default function ListasApp() {
             s.gerencia === gerencia &&
             s.ambito === (ambito || "") &&
             (ccaaId ? s.ccaaId === ccaaId : true) &&
-            s.candidato.nombreCompleto === resultado.nombreCompleto
+            (s.persona?.nombreCompleto || s.candidato?.nombreCompleto) === resultado.nombreCompleto
         )
       ) {
         return prev;
@@ -2990,16 +3027,21 @@ export default function ListasApp() {
         return prev;
       }
       setAvisoLimite("");
+      const sector =
+        resultado?.sector ||
+        (sectorId === "educacion" || sectorId === "administracion" ? sectorId : "sanidad");
       return [
         ...prev,
-        {
+        crearSeguimiento({
           categoria,
           gerencia,
           ambito: ambito || "",
           grupoId,
           ccaaId: ccaaId || capaDatos.ccaaId,
-          candidato: resultado,
-        },
+          sector,
+          modoListado: sector === "educacion" ? listadoEducacionModo : null,
+          resultado,
+        }),
       ];
     });
   };
@@ -3009,10 +3051,10 @@ export default function ListasApp() {
       const lista = await importarSeguimientosDesdeArchivo(file);
       const max = limiteSeguimientos();
       if (lista.length > max) {
-        setSeguimientos(lista.slice(0, max));
+        setSeguimientos(lista.map(normalizarSeguimiento).filter(Boolean).slice(0, max));
         setAvisoLimite(`Importados ${max} de ${lista.length} (límite del plan).`);
       } else {
-        setSeguimientos(lista);
+        setSeguimientos(lista.map(normalizarSeguimiento).filter(Boolean));
         setAvisoLimite("");
       }
     } catch {
