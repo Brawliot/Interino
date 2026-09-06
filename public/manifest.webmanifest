@@ -1,7 +1,7 @@
 {
-  "name": "Interino — Bolsas de empleo publico CLM",
+  "name": "Interino — Bolsas de interinos",
   "short_name": "Interino",
-  "description": "Consulta tu posicion en bolsas de interinos: sanidad, educacion y administracion en Castilla-La Mancha.",
+  "description": "Consulta tu posición en bolsas de interinos. Principalmente Castilla-La Mancha; otras comunidades según disponibilidad. App no oficial.",
   "lang": "es",
   "start_url": "/",
   "scope": "/",

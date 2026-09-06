@@ -21,16 +21,16 @@ Regla de oro (README): clasificar cada fuente en **maximo 1 hora**.
 | CLM | Sanidad | A | Si | Si | 4 grupos + facultativo B |
 | CLM | Educacion | A | Si | Parcial bolsa | 3 modos + AFIN |
 | CLM | Admin | A | Si | Si | 4 bolsas sin PDF |
-| Murcia | Sanidad SMS | A | `scraper_murcia.py` | Pendiente | HTML tablas; URL estable `id_listado` + letra A-Z |
-| Murcia | Educacion | A | `scraper_educacion_murcia.py` | Si (Maestros) | App: sector Educación en Murcia |
-| Murcia | Admin general | B | No | No | Autogestion/Cl@ve; PDFs impredecibles — fuera del sprint |
-| Madrid | Sanidad SERMAS | A | `scraper_madrid.py` | Parcial | PDF Anexo I puntuacion; sede `oferta-empleo` |
-| Madrid | Educacion | A* | No | No | Condicionado: confirmar bolsa/orden (no solo asignacion) |
-| Madrid | Admin general | A | No | No | BOCM+sede; despues de sanidad |
+| Murcia | Sanidad SMS | A | `scraper_murcia.py` | Si | HTML; app sanidad Murcia |
+| Murcia | Educacion | A | `scraper_educacion_murcia.py` | Si (Maestros) | App Educación Murcia |
+| Murcia | Admin general | B | No | No | Fuera del sprint |
+| Madrid | Sanidad SERMAS | A | `scraper_madrid.py` | Si (32 cats) | Anexo I PDF multi-formato |
+| Madrid | Educacion | A débil | No | No | Hay puntuación pero índice fragmentado (~20h) — aparcar sprint |
+| Madrid | Admin general | A | No | No | BOCM+sede; tras sanidad |
 | Resto | — | — | No | No | Mapa bloqueado en app |
 
-Clasificacion Murcia (sep 2026): sanidad y educacion en sprint; admin solo inventario / no scrapear.
-Clasificacion Madrid (sep 2026): sanidad A prioridad; educacion A condicionado; admin A despues.
+Clasificacion Murcia (sep 2026): sanidad y educacion OK; admin B.
+Clasificacion Madrid (sep 2026): sanidad cerrada 32/32; educacion A aparcado (sin índice); admin pendiente.
 
 ## Pendiente — automatizar expansion (no CCAA a CCAA a mano)
 
@@ -97,8 +97,8 @@ python scripts/subir_sectores_r2.py --sectores madrid --skip-existing
 
 ## Madrid — educacion / admin
 
-- Educacion: solo si hay listados de bolsa/orden (no solo asignacion provisional).
-- Admin: BOCM (`www.bocm.es`) + sede listas espera; tras sanidad usable.
+- Educacion: hay listas con puntuación, pero índice fragmentado (BOCM + comunidad + educa2; PDFs de ejemplo a menudo 404). **Aparcar en sprint** (~20h). No scrapear hasta índice usable.
+- Admin: BOCM (`www.bocm.es`) + sede listas espera; siguiente celda de datos tras sanidad.
 
 ## Plantilla exploracion (1h)
 

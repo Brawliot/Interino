@@ -113,7 +113,7 @@ export async function activarNotificacionesSeguimiento(etiqueta) {
     marcarNotificacionesHabilitadas();
     notificarLocal(
       "Seguimiento activado",
-      `Te avisaremos al abrir la app si cambia tu posicion en ${etiqueta}. No sustituye la llamada oficial.`,
+      `Te avisaremos al abrir la app si cambia tu posición en ${etiqueta}. No sustituye la llamada oficial.`,
     );
   }
   return perm;

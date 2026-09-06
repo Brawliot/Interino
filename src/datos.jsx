@@ -381,10 +381,10 @@ function crearCapaBusqueda({
 
   async function estadoActualizacion(categoriaUi, grupoId, grupoActivo) {
     if (grupoActivo === false) {
-      return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
+      return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados disponibles. Sin datos todavía." };
     }
     if (!tieneDatosReales(categoriaUi, grupoId)) {
-      return { tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." };
+      return { tipo: "sin_datos", texto: "Aún no hay listado disponible para esta categoría." };
     }
     let generado = null;
     try {
@@ -401,11 +401,11 @@ function crearCapaBusqueda({
     if (dias > 14) {
       return {
         tipo: "desactualizado",
-        texto: `El snapshot más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). ${organismo} puede haber publicado cambios desde entonces.`,
+        texto: `El listado más reciente es del ${fecha.toLocaleDateString("es-ES")} (hace ${dias} días). ${organismo} puede haber publicado cambios desde entonces.`,
       };
     }
     const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
-    return { tipo: "ok", texto: `Snapshot del listado: ${fecha.toLocaleString("es-ES")} (${hace}).` };
+    return { tipo: "ok", texto: `Listado actualizado: ${fecha.toLocaleString("es-ES")} (${hace}).` };
   }
 
   async function gerenciasDeCategoria(grupoId, categoriaUi) {
@@ -1011,7 +1011,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
           ? "bolsas afines (posiciones en bolsa ordinaria)"
           : "aspirantes disponibles para sustituciones";
     if (grupoActivo === false) {
-      return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
+      return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados disponibles. Sin datos todavía." };
     }
     if (!tieneDatosReales(categoriaUi, grupoId)) {
       return { tipo: "sin_datos", texto: `Aún no tenemos ${etiquetaFuente} para esta especialidad.` };
@@ -1036,7 +1036,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
       const prefijo =
         tipoListado === "afin"
           ? "Posiciones en bolsa ordinaria (base para bolsas afines)"
-          : "Bolsa ordinaria scrapeada";
+          : "Bolsa ordinaria";
       return {
         tipo: dias > 60 ? "desactualizado" : "ok",
         texto: `${prefijo} ${fecha.toLocaleString("es-ES")} (${hace})${cursoTxt}. Se publica en junio/julio con la renovación anual.`,
@@ -1049,7 +1049,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
       };
     }
     const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
-    return { tipo: "ok", texto: `Disponibles scrapeados ${fecha.toLocaleString("es-ES")} (${hace}).` };
+    return { tipo: "ok", texto: `Disponibles actualizados ${fecha.toLocaleString("es-ES")} (${hace}).` };
   }
 
   return {
@@ -1249,7 +1249,7 @@ function crearCapaEducacionVacia() {
     async estadoActualizacion() {
       return {
         tipo: "sin_datos",
-        texto: "Aún no hay listados de educación en el servidor. Comprueba que educacion/ y educacion-bolsa/ estén subidos a R2.",
+        texto: "Aún no hay listados de educación disponibles. Vuelve más tarde o consulta el portal de Educación CLM.",
       };
     },
   };
@@ -1454,7 +1454,7 @@ export function crearCapaDatosAdminClm(manifest, categoriasList, opciones = {}) 
 
   async function estadoActualizacion(categoriaUi, grupoId, grupoActivo) {
     if (grupoActivo === false) {
-      return { tipo: "sin_activar", texto: "Este colectivo aún no tiene listados scrapeados." };
+      return { tipo: "sin_activar", texto: "Este colectivo aún no tiene listados disponibles." };
     }
     if (!tieneDatosReales(categoriaUi, grupoId)) {
       return { tipo: "sin_datos", texto: "Aún no tenemos listados para esta categoría." };
@@ -1475,7 +1475,7 @@ export function crearCapaDatosAdminClm(manifest, categoriasList, opciones = {}) 
     const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
     return {
       tipo: dias > 30 ? "desactualizado" : "ok",
-      texto: `Listado scrapeado ${fecha.toLocaleString("es-ES")} (${hace}). Fuente: Portal de Empleo Público de CLM.`,
+      texto: `Listado actualizado ${fecha.toLocaleString("es-ES")} (${hace}). Fuente: Portal de Empleo Público de CLM.`,
     };
   }
 
@@ -1521,92 +1521,129 @@ function crearCapaAdminVacia() {
     async estadoActualizacion() {
       return {
         tipo: "sin_datos",
-        texto: "Aún no hay listados de administración en el servidor. Comprueba que admin-clm/ esté subido a R2.",
+        texto: "Aún no hay listados de administración disponibles. Vuelve más tarde o consulta el portal de Empleo Público.",
       };
     },
   };
 }
 
-export async function cargarDatos() {
+function tieneArchivosListado(manifest) {
+  return (manifest?.archivos || []).some(
+    (a) => a.endsWith(".json") && !a.endsWith(".busqueda.json"),
+  );
+}
+
+const jsonMemo = new Map();
+const packLoaded = new Map();
+const packInflight = new Map();
+/** Flags/frescura descubiertos en segundo plano (sin montar capas pesadas). */
+let metaDescubierta = {
+  murciaActiva: false,
+  madridActiva: false,
+  educacionActiva: false,
+  educacionMurciaActiva: false,
+  educacionBolsaActiva: false,
+  educacionAfinActiva: false,
+  educacionDisponiblesActiva: false,
+  administracionActiva: false,
+  coberturaEducacion: null,
+  adminSinPdf: [],
+  frescura: { sanidad: null, educacionDisponibles: null, educacionBolsa: null, admin: null },
+  numGerenciasClm: null,
+  descubierto: false,
+};
+
+async function fetchJsonOptional(url) {
+  if (jsonMemo.has(url)) return jsonMemo.get(url);
+  const promise = (async () => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return { ok: false, status: res.status, data: null };
+      return { ok: true, status: res.status, data: await res.json() };
+    } catch {
+      return { ok: false, status: 0, data: null };
+    }
+  })();
+  jsonMemo.set(url, promise);
+  return promise;
+}
+
+async function fetchJsonRequired(url, label) {
+  const r = await fetchJsonOptional(url);
+  if (!r.ok) throw new Error(`No se pudo cargar ${label} (${r.status})`);
+  return r.data;
+}
+
+async function cargarPackSanidadClm() {
   const base = DATA_CATEGORIAS_BASE_URL;
-  const eduBase = DATA_EDUCACION_BASE_URL;
-  const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
-  const eduMurBase = DATA_EDUCACION_MURCIA_BASE_URL;
-  const adminBase = DATA_ADMIN_CLM_BASE_URL;
-  const [historicoRes, manifestRes, catsRes, murCatsRes, murManifestRes, madCatsRes, madManifestRes, eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes, eduMurManifestRes, adminManifestRes, adminCatsRes] =
-    await Promise.all([
-      fetch(`${base}historico.json`),
-      fetch(`${base}manifest.json`),
-      fetch(`${base}categorias_por_grupo.json`),
-      fetch(`${base}murcia/categorias.json`),
-      fetch(`${base}murcia/manifest.json`),
-      fetch(`${base}madrid/categorias_sanidad.json`),
-      fetch(`${base}madrid/manifest.json`),
-      fetch(`${eduBase}manifest.json`),
-      fetch(`${eduBase}categorias.json`),
-      fetch(`${eduBolsaBase}manifest.json`),
-      fetch(`${eduBase}afinidad.json`),
-      fetch(`${eduMurBase}manifest.json`),
-      fetch(`${adminBase}manifest.json`),
-      fetch(`${adminBase}categorias.json`),
-    ]);
-  if (!historicoRes.ok) throw new Error(`No se pudo cargar historico.json (${historicoRes.status})`);
-  const historico = await historicoRes.json();
-  const manifest = manifestRes.ok ? await manifestRes.json() : { archivos: [] };
-  const categoriasPorGrupo = catsRes.ok ? await catsRes.json() : null;
-  const categoriasMurcia = murCatsRes.ok ? await murCatsRes.json() : [];
-  let manifestMurcia = murManifestRes.ok ? await murManifestRes.json() : { archivos: [] };
-  if (!manifestMurcia.archivos?.length && manifest.archivos?.length) {
+  const [historico, manifestRes, catsRes] = await Promise.all([
+    fetchJsonRequired(`${base}historico.json`, "historico.json"),
+    fetchJsonOptional(`${base}manifest.json`),
+    fetchJsonOptional(`${base}categorias_por_grupo.json`),
+  ]);
+  const manifest = manifestRes.ok ? manifestRes.data : { archivos: [] };
+  const categoriasPorGrupo = catsRes.ok ? catsRes.data : null;
+  return {
+    capa: crearCapaDatosClm(historico, manifest, categoriasPorGrupo),
+    manifest,
+  };
+}
+
+async function cargarPackSanidadMur() {
+  const base = DATA_CATEGORIAS_BASE_URL;
+  const [catsRes, manRes, manRoot] = await Promise.all([
+    fetchJsonOptional(`${base}murcia/categorias.json`),
+    fetchJsonOptional(`${base}murcia/manifest.json`),
+    fetchJsonOptional(`${base}manifest.json`),
+  ]);
+  const categoriasMurcia = catsRes.ok ? catsRes.data : [];
+  let manifestMurcia = manRes.ok ? manRes.data : { archivos: [] };
+  if (!manifestMurcia.archivos?.length && manRoot.ok && manRoot.data?.archivos?.length) {
     manifestMurcia = {
       ...manifestMurcia,
-      archivos: manifest.archivos.filter((a) => a.startsWith("murcia/")),
+      archivos: manRoot.data.archivos.filter((a) => a.startsWith("murcia/")),
     };
   }
-  const inventarioMadrid = madCatsRes.ok ? await madCatsRes.json() : { grupos: [] };
-  const manifestMadrid = madManifestRes.ok ? await madManifestRes.json() : { archivos: [] };
-  const manifestEducacion = eduManifestRes.ok ? await eduManifestRes.json() : { archivos: [] };
-  const manifestEducacionBolsa = eduBolsaManifestRes.ok ? await eduBolsaManifestRes.json() : { archivos: [] };
-  const categoriasEducacion = eduCatsRes.ok ? await eduCatsRes.json() : null;
-  const afinidadEducacion = eduAfinidadRes.ok ? await eduAfinidadRes.json() : null;
-  const manifestAdmin = adminManifestRes.ok ? await adminManifestRes.json() : { archivos: [] };
-  const categoriasAdmin = adminCatsRes.ok ? await adminCatsRes.json() : [];
-  const tieneArchivosListado = (manifest) =>
-    (manifest.archivos || []).some((a) => a.endsWith(".json") && !a.endsWith(".busqueda.json"));
-  const educacionDisponiblesActiva = tieneArchivosListado(manifestEducacion) && Boolean(categoriasEducacion);
-  const educacionBolsaActiva = tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
+  return {
+    capa: crearCapaDatosMurcia(manifestMurcia, categoriasMurcia),
+    activa: catsRes.ok && tieneArchivosListado(manifestMurcia),
+    manifest: manifestMurcia,
+  };
+}
+
+async function cargarPackSanidadMad() {
+  const base = DATA_CATEGORIAS_BASE_URL;
+  const [catsRes, manRes] = await Promise.all([
+    fetchJsonOptional(`${base}madrid/categorias_sanidad.json`),
+    fetchJsonOptional(`${base}madrid/manifest.json`),
+  ]);
+  const inventario = catsRes.ok ? catsRes.data : { grupos: [] };
+  const manifest = manRes.ok ? manRes.data : { archivos: [] };
+  return {
+    capa: crearCapaDatosMadrid(inventario, manifest),
+    activa: catsRes.ok && tieneArchivosListado(manifest),
+    manifest,
+  };
+}
+
+async function cargarPackEducacionClm() {
+  const eduBase = DATA_EDUCACION_BASE_URL;
+  const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
+  const [eduManifestRes, eduCatsRes, eduBolsaManifestRes, eduAfinidadRes] = await Promise.all([
+    fetchJsonOptional(`${eduBase}manifest.json`),
+    fetchJsonOptional(`${eduBase}categorias.json`),
+    fetchJsonOptional(`${eduBolsaBase}manifest.json`),
+    fetchJsonOptional(`${eduBase}afinidad.json`),
+  ]);
+  const manifestEducacion = eduManifestRes.ok ? eduManifestRes.data : { archivos: [] };
+  const manifestEducacionBolsa = eduBolsaManifestRes.ok ? eduBolsaManifestRes.data : { archivos: [] };
+  const categoriasEducacion = eduCatsRes.ok ? eduCatsRes.data : null;
+  const afinidadEducacion = eduAfinidadRes.ok ? eduAfinidadRes.data : null;
+  const educacionDisponiblesActiva =
+    tieneArchivosListado(manifestEducacion) && Boolean(categoriasEducacion);
+  const educacionBolsaActiva =
+    tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
   const educacionAfinActiva = educacionBolsaActiva && Boolean(afinidadEducacion);
-  const educacionActiva = educacionDisponiblesActiva || educacionBolsaActiva;
-  const manifestEducacionMurcia = eduMurManifestRes.ok ? await eduMurManifestRes.json() : { archivos: [] };
-  const educacionMurciaActiva = tieneArchivosListado(manifestEducacionMurcia);
-  const murciaActiva = murCatsRes.ok && tieneArchivosListado(manifestMurcia);
-  const madridActiva =
-    madCatsRes.ok &&
-    tieneArchivosListado(manifestMadrid);
-  const administracionActiva =
-    tieneArchivosListado(manifestAdmin) &&
-    Array.isArray(categoriasAdmin) &&
-    categoriasAdmin.length > 0;
-
-  const coberturaEducacion =
-    categoriasEducacion
-      ? calcularCoberturaEducacion(
-          categoriasEducacion,
-          manifestEducacion,
-          manifestEducacionBolsa,
-          slugArchivo,
-        )
-      : null;
-  const adminSinPdf = adminBolsasSinPdf(categoriasAdmin);
-  const frescura = frescuraDesdeManifests({
-    sanidad: manifest,
-    educacion: manifestEducacion,
-    educacionBolsa: manifestEducacionBolsa,
-    admin: manifestAdmin,
-  });
-
-  const administracionClm = administracionActiva
-    ? crearCapaDatosAdminClm(manifestAdmin, categoriasAdmin, { baseUrl: adminBase })
-    : null;
   const educacionDisponiblesClm =
     educacionDisponiblesActiva && categoriasEducacion
       ? crearCapaDatosEducacionClm(manifestEducacion, categoriasEducacion, {
@@ -1629,32 +1666,191 @@ export async function cargarDatos() {
           afinidadDoc: afinidadEducacion,
         })
       : null;
-  const educacionClm = educacionBolsaClm || educacionAfinClm || educacionDisponiblesClm;
-  const educacionMurcia = educacionMurciaActiva
-    ? crearCapaDatosEducacionMurcia(manifestEducacionMurcia, { baseUrl: eduMurBase })
-    : null;
+  return {
+    educacionDisponiblesClm,
+    educacionBolsaClm,
+    educacionAfinClm,
+    educacionClm: educacionBolsaClm || educacionAfinClm || educacionDisponiblesClm,
+    educacionDisponiblesActiva,
+    educacionBolsaActiva,
+    educacionAfinActiva,
+    educacionActiva: educacionDisponiblesActiva || educacionBolsaActiva,
+    coberturaEducacion: categoriasEducacion
+      ? calcularCoberturaEducacion(
+          categoriasEducacion,
+          manifestEducacion,
+          manifestEducacionBolsa,
+          slugArchivo,
+        )
+      : null,
+    manifestEducacion,
+    manifestEducacionBolsa,
+  };
+}
 
-  let numGerenciasClm = null;
-  try {
-    const enfRes = await fetch(`${base}diplomado/enfermero-a.json`);
-    if (enfRes.ok) {
-      const snap = await enfRes.json();
-      numGerenciasClm = gerenciasUnicasDeSnapshot(snap).length;
+async function cargarPackEducacionMur() {
+  const eduMurBase = DATA_EDUCACION_MURCIA_BASE_URL;
+  const manRes = await fetchJsonOptional(`${eduMurBase}manifest.json`);
+  const manifest = manRes.ok ? manRes.data : { archivos: [] };
+  const activa = tieneArchivosListado(manifest);
+  return {
+    educacionMurcia: activa
+      ? crearCapaDatosEducacionMurcia(manifest, { baseUrl: eduMurBase })
+      : null,
+    educacionMurciaActiva: activa,
+    manifest,
+  };
+}
+
+async function cargarPackAdminClm() {
+  const adminBase = DATA_ADMIN_CLM_BASE_URL;
+  const [manRes, catsRes] = await Promise.all([
+    fetchJsonOptional(`${adminBase}manifest.json`),
+    fetchJsonOptional(`${adminBase}categorias.json`),
+  ]);
+  const manifestAdmin = manRes.ok ? manRes.data : { archivos: [] };
+  const categoriasAdmin = catsRes.ok ? catsRes.data : [];
+  const administracionActiva =
+    tieneArchivosListado(manifestAdmin) &&
+    Array.isArray(categoriasAdmin) &&
+    categoriasAdmin.length > 0;
+  return {
+    administracionClm: administracionActiva
+      ? crearCapaDatosAdminClm(manifestAdmin, categoriasAdmin, { baseUrl: adminBase })
+      : null,
+    administracionActiva,
+    adminSinPdf: adminBolsasSinPdf(categoriasAdmin),
+    manifestAdmin,
+  };
+}
+
+const PACK_LOADERS = {
+  "sanidad-clm": cargarPackSanidadClm,
+  "sanidad-mur": cargarPackSanidadMur,
+  "sanidad-mad": cargarPackSanidadMad,
+  "educacion-clm": cargarPackEducacionClm,
+  "educacion-mur": cargarPackEducacionMur,
+  "admin-clm": cargarPackAdminClm,
+};
+
+export function packSanidadDeCcaa(ccaaId) {
+  if (ccaaId === "mur") return "sanidad-mur";
+  if (ccaaId === "mad") return "sanidad-mad";
+  return "sanidad-clm";
+}
+
+/** Packs de metadatos/capas necesarios para un contexto de UI o seguimientos. */
+export function packsParaContexto({
+  ccaaIds = [],
+  sector = "sanidad",
+  seguimientos = [],
+} = {}) {
+  const packs = new Set();
+  const ids = [...new Set((ccaaIds || []).filter(Boolean))];
+  if (!ids.length) ids.push("clm");
+
+  const addSector = (ccaaId, sectorId) => {
+    if (sectorId === "educacion") {
+      packs.add(ccaaId === "mur" ? "educacion-mur" : "educacion-clm");
+      return;
     }
-  } catch {
-    numGerenciasClm = null;
+    if (sectorId === "administracion") {
+      packs.add("admin-clm");
+      return;
+    }
+    packs.add(packSanidadDeCcaa(ccaaId));
+  };
+
+  for (const id of ids) addSector(id, sector || "sanidad");
+
+  for (const s of seguimientos || []) {
+    addSector(s.ccaaId || "clm", s.sector || "sanidad");
   }
 
+  return [...packs];
+}
+
+async function asegurarPackId(packId) {
+  if (!PACK_LOADERS[packId]) return null;
+  if (packLoaded.has(packId)) return packLoaded.get(packId);
+  if (packInflight.has(packId)) return packInflight.get(packId);
+  const promise = PACK_LOADERS[packId]()
+    .then((payload) => {
+      packLoaded.set(packId, payload);
+      packInflight.delete(packId);
+      return payload;
+    })
+    .catch((err) => {
+      packInflight.delete(packId);
+      throw err;
+    });
+  packInflight.set(packId, promise);
+  return promise;
+}
+
+function ensamblarDatos({ listo = true, errorPack = null } = {}) {
+  const clmPack = packLoaded.get("sanidad-clm");
+  const murPack = packLoaded.get("sanidad-mur");
+  const madPack = packLoaded.get("sanidad-mad");
+  const eduPack = packLoaded.get("educacion-clm");
+  const eduMurPack = packLoaded.get("educacion-mur");
+  const adminPack = packLoaded.get("admin-clm");
+
   const capas = {
-    clm: crearCapaDatosClm(historico, manifest, categoriasPorGrupo),
-    mur: crearCapaDatosMurcia(manifestMurcia, categoriasMurcia),
-    mad: crearCapaDatosMadrid(inventarioMadrid, manifestMadrid),
+    clm: clmPack?.capa || crearCapaDatosClm({}, { archivos: [] }, null),
+    mur: murPack?.capa || crearCapaDatosMurcia({ archivos: [] }, []),
+    mad: madPack?.capa || crearCapaDatosMadrid({ grupos: [] }, { archivos: [] }),
   };
-  const clm = capas.clm;
+
+  const educacionDisponiblesClm = eduPack?.educacionDisponiblesClm || null;
+  const educacionBolsaClm = eduPack?.educacionBolsaClm || null;
+  const educacionAfinClm = eduPack?.educacionAfinClm || null;
+  const educacionClm = eduPack?.educacionClm || null;
+  const educacionMurcia = eduMurPack?.educacionMurcia || null;
+  const administracionClm = adminPack?.administracionClm || null;
+
+  const murciaActiva = murPack?.activa ?? metaDescubierta.murciaActiva;
+  const madridActiva = madPack?.activa ?? metaDescubierta.madridActiva;
+  const educacionDisponiblesActiva =
+    eduPack?.educacionDisponiblesActiva ?? metaDescubierta.educacionDisponiblesActiva;
+  const educacionBolsaActiva =
+    eduPack?.educacionBolsaActiva ?? metaDescubierta.educacionBolsaActiva;
+  const educacionAfinActiva =
+    eduPack?.educacionAfinActiva ?? metaDescubierta.educacionAfinActiva;
+  const educacionActiva =
+    eduPack?.educacionActiva ?? metaDescubierta.educacionActiva;
+  const educacionMurciaActiva =
+    eduMurPack?.educacionMurciaActiva ?? metaDescubierta.educacionMurciaActiva;
+  const administracionActiva =
+    adminPack?.administracionActiva ?? metaDescubierta.administracionActiva;
+
+  const frescura = {
+    sanidad:
+      clmPack?.manifest?.generado ||
+      metaDescubierta.frescura?.sanidad ||
+      null,
+    educacionDisponibles:
+      eduPack?.manifestEducacion?.generado ||
+      metaDescubierta.frescura?.educacionDisponibles ||
+      null,
+    educacionBolsa:
+      eduPack?.manifestEducacionBolsa?.generado ||
+      metaDescubierta.frescura?.educacionBolsa ||
+      null,
+    admin:
+      adminPack?.manifestAdmin?.generado || metaDescubierta.frescura?.admin || null,
+  };
+
+  const packsCargados = Object.fromEntries([...packLoaded.keys()].map((k) => [k, true]));
+  const packsCargando = [...packInflight.keys()];
 
   return {
+    listo,
+    errorPack,
+    packsCargados,
+    packsCargando,
     regiones: CCAA_LIST,
-    numGerenciasClm,
+    numGerenciasClm: metaDescubierta.numGerenciasClm,
     educacionActiva,
     educacionMurciaActiva,
     educacionBolsaActiva,
@@ -1669,8 +1865,8 @@ export async function cargarDatos() {
     administracionClm,
     murciaActiva,
     madridActiva,
-    coberturaEducacion,
-    adminSinPdf,
+    coberturaEducacion: eduPack?.coberturaEducacion ?? metaDescubierta.coberturaEducacion,
+    adminSinPdf: adminPack?.adminSinPdf ?? metaDescubierta.adminSinPdf,
     frescura,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
     paraSector: (ccaaId, sectorId, opciones = {}) => {
@@ -1693,17 +1889,177 @@ export async function cargarDatos() {
       const ids = [...new Set(ccaaIds)].filter((id) => capas[id]);
       if (ids.length === 0) return capas.clm;
       if (ids.length === 1) return capas[ids[0]];
-      return crearCapaDatosMulti(ids.map((id) => capas[id]), ids);
+      return crearCapaDatosMulti(
+        ids.map((id) => capas[id]),
+        ids,
+      );
     },
-    ...clm,
+    ...capas.clm,
   };
+}
+
+/** Shell inmediato para pintar la UI sin esperar a R2. */
+export function crearDatosPendientes() {
+  return ensamblarDatos({ listo: false });
+}
+
+/**
+ * Carga solo el pack de sanidad de la CCAA inicial (por defecto CLM).
+ * El resto se pide con fusionarPacks / descubrirDisponibilidad.
+ */
+export async function cargarDatosIniciales({ ccaaId = "clm" } = {}) {
+  const packId = packSanidadDeCcaa(ccaaId === "mur" || ccaaId === "mad" ? ccaaId : "clm");
+  await asegurarPackId(packId);
+  // Si la última CCAA no es CLM, CLM sigue siendo fallback de capas vacías hasta pedirlo.
+  if (packId !== "sanidad-clm") {
+    // no bloqueamos; se cargará al elegir CLM
+  }
+  return ensamblarDatos({ listo: true });
+}
+
+/** Compat: arranque mínimo (sanidad CLM). Preferir cargarDatosIniciales. */
+export async function cargarDatos() {
+  return cargarDatosIniciales({ ccaaId: "clm" });
+}
+
+/**
+ * Une packs que falten al estado actual y devuelve un nuevo objeto `datos`.
+ * Reutiliza JSON ya pedidos (p. ej. tras descubrirDisponibilidad).
+ */
+export async function fusionarPacks(_datosActuales, packIds = []) {
+  const ids = [...new Set(packIds)].filter((id) => PACK_LOADERS[id]);
+  if (!ids.length) return ensamblarDatos({ listo: _datosActuales?.listo !== false });
+  try {
+    await Promise.all(ids.map((id) => asegurarPackId(id)));
+    return ensamblarDatos({ listo: true });
+  } catch (e) {
+    return ensamblarDatos({
+      listo: _datosActuales?.listo === true,
+      errorPack: e.message || "Error al cargar listados",
+    });
+  }
+}
+
+/**
+ * En segundo plano: flags de sectores + frescura + numGerencias.
+ * Prefetch de JSON para que fusionarPacks monte capas sin red extra.
+ */
+export async function descubrirDisponibilidad(datosActuales) {
+  const base = DATA_CATEGORIAS_BASE_URL;
+  const eduBase = DATA_EDUCACION_BASE_URL;
+  const eduBolsaBase = DATA_EDUCACION_BOLSA_BASE_URL;
+  const eduMurBase = DATA_EDUCACION_MURCIA_BASE_URL;
+  const adminBase = DATA_ADMIN_CLM_BASE_URL;
+
+  const [
+    murCatsRes,
+    murManRes,
+    madCatsRes,
+    madManRes,
+    eduManRes,
+    eduCatsRes,
+    eduBolsaManRes,
+    eduAfinRes,
+    eduMurManRes,
+    adminManRes,
+    adminCatsRes,
+  ] = await Promise.all([
+    fetchJsonOptional(`${base}murcia/categorias.json`),
+    fetchJsonOptional(`${base}murcia/manifest.json`),
+    fetchJsonOptional(`${base}madrid/categorias_sanidad.json`),
+    fetchJsonOptional(`${base}madrid/manifest.json`),
+    fetchJsonOptional(`${eduBase}manifest.json`),
+    fetchJsonOptional(`${eduBase}categorias.json`),
+    fetchJsonOptional(`${eduBolsaBase}manifest.json`),
+    fetchJsonOptional(`${eduBase}afinidad.json`),
+    fetchJsonOptional(`${eduMurBase}manifest.json`),
+    fetchJsonOptional(`${adminBase}manifest.json`),
+    fetchJsonOptional(`${adminBase}categorias.json`),
+  ]);
+
+  let manifestMurcia = murManRes.ok ? murManRes.data : { archivos: [] };
+  if (!manifestMurcia.archivos?.length) {
+    const root = await fetchJsonOptional(`${base}manifest.json`);
+    if (root.ok && root.data?.archivos?.length) {
+      manifestMurcia = {
+        ...manifestMurcia,
+        archivos: root.data.archivos.filter((a) => a.startsWith("murcia/")),
+      };
+    }
+  }
+
+  const manifestEducacion = eduManRes.ok ? eduManRes.data : { archivos: [] };
+  const manifestEducacionBolsa = eduBolsaManRes.ok ? eduBolsaManRes.data : { archivos: [] };
+  const categoriasEducacion = eduCatsRes.ok ? eduCatsRes.data : null;
+  const afinidadEducacion = eduAfinRes.ok ? eduAfinRes.data : null;
+  const educacionDisponiblesActiva =
+    tieneArchivosListado(manifestEducacion) && Boolean(categoriasEducacion);
+  const educacionBolsaActiva =
+    tieneArchivosListado(manifestEducacionBolsa) && Boolean(categoriasEducacion);
+  const educacionAfinActiva = educacionBolsaActiva && Boolean(afinidadEducacion);
+  const manifestEducacionMurcia = eduMurManRes.ok ? eduMurManRes.data : { archivos: [] };
+  const manifestAdmin = adminManRes.ok ? adminManRes.data : { archivos: [] };
+  const categoriasAdmin = adminCatsRes.ok ? adminCatsRes.data : [];
+  const manifestMadrid = madManRes.ok ? madManRes.data : { archivos: [] };
+
+  let numGerenciasClm = metaDescubierta.numGerenciasClm;
+  try {
+    const enfRes = await fetchJsonOptional(`${base}diplomado/enfermero-a.json`);
+    if (enfRes.ok && enfRes.data) {
+      numGerenciasClm = gerenciasUnicasDeSnapshot(enfRes.data).length;
+    }
+  } catch {
+    /* opcional */
+  }
+
+  const clmMan = packLoaded.get("sanidad-clm")?.manifest;
+
+  metaDescubierta = {
+    murciaActiva: murCatsRes.ok && tieneArchivosListado(manifestMurcia),
+    madridActiva: madCatsRes.ok && tieneArchivosListado(manifestMadrid),
+    educacionDisponiblesActiva,
+    educacionBolsaActiva,
+    educacionAfinActiva,
+    educacionActiva: educacionDisponiblesActiva || educacionBolsaActiva,
+    educacionMurciaActiva: tieneArchivosListado(manifestEducacionMurcia),
+    administracionActiva:
+      tieneArchivosListado(manifestAdmin) &&
+      Array.isArray(categoriasAdmin) &&
+      categoriasAdmin.length > 0,
+    coberturaEducacion: categoriasEducacion
+      ? calcularCoberturaEducacion(
+          categoriasEducacion,
+          manifestEducacion,
+          manifestEducacionBolsa,
+          slugArchivo,
+        )
+      : null,
+    adminSinPdf: adminBolsasSinPdf(categoriasAdmin),
+    frescura: frescuraDesdeManifests({
+      sanidad: clmMan || { generado: null },
+      educacion: manifestEducacion,
+      educacionBolsa: manifestEducacionBolsa,
+      admin: manifestAdmin,
+    }),
+    numGerenciasClm,
+    descubierto: true,
+  };
+
+  return ensamblarDatos({ listo: datosActuales?.listo !== false });
 }
 
 const DatosContext = createContext(null);
 const CcaaCapaContext = createContext(null);
+const AsegurarPacksContext = createContext(null);
 
 export function DatosProvider({ datos, children }) {
   return <DatosContext.Provider value={datos}>{children}</DatosContext.Provider>;
+}
+
+export function AsegurarPacksProvider({ value, children }) {
+  return (
+    <AsegurarPacksContext.Provider value={value}>{children}</AsegurarPacksContext.Provider>
+  );
 }
 
 export function CcaaCapaProvider({ capa, children }) {
@@ -1714,6 +2070,10 @@ export function useDatos() {
   const ctx = useContext(DatosContext);
   if (!ctx) throw new Error("useDatos debe usarse dentro de DatosProvider");
   return ctx;
+}
+
+export function useAsegurarPacks() {
+  return useContext(AsegurarPacksContext);
 }
 
 /** Capa de datos de la CCAA activa (búsqueda/listados). Por defecto CLM. */

@@ -36,7 +36,16 @@ export function normalizarSeguimiento(raw) {
   const sector =
     raw.sector ||
     c.sector ||
-    (String(raw.categoria || "").toLowerCase().includes("maestro") ? "educacion" : null) ||
+    (raw.modoListado || c.tipoListado ? "educacion" : null) ||
+    (/educaci|maestro|primaria|secundaria|infantil|\bfp\b|eoii|ordenaria/i.test(
+      String(raw.categoria || c.categoria || ""),
+    )
+      ? "educacion"
+      : null) ||
+    (/educaci/i.test(String(raw.gerencia || c.gerencia || "")) ? "educacion" : null) ||
+    (/admin|funcionario|laboral/i.test(String(raw.categoria || c.categoria || ""))
+      ? "administracion"
+      : null) ||
     "sanidad";
 
   const base = {

@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
-import { Search, ChevronLeft, ChevronRight, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
-import { useDatos, useCapaDatos, CcaaCapaProvider, ambitoLegible, coincideBusqueda } from "./src/datos.jsx";
+import { Search, ChevronLeft, ChevronRight, ChevronDown, Bell, BellRing, Lock, Stethoscope, GraduationCap, Landmark, TrendingUp, Users, AlertTriangle, List as ListIcon, UserCheck, Smartphone, History, ShieldAlert, Info, PhoneCall, Calculator, ArrowLeftRight, Map as MapIcon, Banknote, Award, Pin, Settings } from "lucide-react";
+import { useDatos, useCapaDatos, useAsegurarPacks, CcaaCapaProvider, ambitoLegible, coincideBusqueda, packsParaContexto } from "./src/datos.jsx";
 import { CCAA_LIST, sectoresParaCcaas, organismoCcaa } from "./src/regiones.js";
 import { PROVINCIAS_CLM, tipoBolsaLegible, GERENCIA_EDUCACION, esBolsaOrdinaria, esModoAfin, MODOS_LISTADO_EDUCACION } from "./src/educacion.js";
 import { viaBolsaLegible, TEXTO_AFIN_NORMATIVA } from "./src/educacion-afin.js";
 import { subBolsaLegible } from "./src/admin-clm.js";
 import { etiquetaFrescuraSector } from "./src/cobertura-clm.js";
 import { activarNotificacionesSeguimiento, notificacionesSoportadas } from "./src/notificaciones.js";
-import { PLAN, limiteSeguimientos, puedeAnadirSeguimiento, mensajeLimiteSeguimientos, FEATURES_PREMIUM } from "./src/plan.js";
+import { PLAN, limiteSeguimientos, puedeAnadirSeguimiento, mensajeLimiteSeguimientos, FEATURES_HOY, FEATURES_PREVISTAS } from "./src/plan.js";
 import { LS_SEGUIMIENTOS, exportarSeguimientos, importarSeguimientosDesdeArchivo } from "./src/seguimientos-backup.js";
 import {
   crearSeguimiento,
@@ -80,22 +80,532 @@ function marcarBienvenidaVista() {
 
 async function confirmarNotificaciones(etiqueta, setNotifEstado, onGuardar) {
   if (!notificacionesSoportadas()) {
-    setNotifEstado("activo");
+    setNotifEstado("guardado");
     onGuardar?.();
     return;
   }
   const perm = await activarNotificacionesSeguimiento(etiqueta);
   if (perm === "granted") setNotifEstado("activo");
   else if (perm === "denied") setNotifEstado("denegado");
-  else setNotifEstado("activo");
+  else setNotifEstado("guardado");
   onGuardar?.();
 }
 
 function AvisoNotifDenegada() {
   return (
     <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.clay, marginTop: 8, lineHeight: 1.4 }}>
-      Sin permiso de notificaciones. Activalas en ajustes del navegador para recibir avisos al abrir la app.
+      Sin permiso de notificaciones. Actívalas en ajustes del navegador para recibir avisos al abrir la app.
     </p>
+  );
+}
+
+function AvisoSeguimientoSinNotif() {
+  return (
+    <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>
+      Seguimiento guardado en este dispositivo (sin avisos del sistema).
+    </p>
+  );
+}
+
+const TEXTO_AVISO_AL_ABRIR =
+  "Al abrir la app te avisaremos si ha cambiado tu posición. No es un aviso en tiempo real.";
+
+/** CTA seguir + estados de notificación (compartible en Fase B). */
+function BloqueSeguir({
+  ctaLabel = "Seguir",
+  etiquetaSeguimiento,
+  avisoOficial,
+  guardado = false,
+  onGuardar,
+}) {
+  const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
+
+  useEffect(() => {
+    if (guardado) {
+      setNotifEstado((s) => (s === "inicial" || s === "pidiendo" ? "activo" : s));
+    }
+  }, [guardado]);
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      {notifEstado === "inicial" && (
+        <button
+          type="button"
+          onClick={() => setNotifEstado("pidiendo")}
+          className="w-full font-bold focus:outline-none flex items-center justify-center gap-2"
+          style={{
+            background: C.gold,
+            color: "#fff",
+            padding: "14px",
+            fontFamily: FONT_BODY,
+            fontSize: 14,
+            borderRadius: "16px 5px 16px 5px",
+          }}
+        >
+          <Bell size={16} /> {ctaLabel}
+        </button>
+      )}
+
+      {notifEstado === "pidiendo" && (
+        <div
+          style={{
+            background: C.card,
+            border: `1.5px solid ${C.navy}`,
+            borderRadius: "10px 20px 10px 20px",
+            padding: 16,
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <Smartphone size={20} color={C.navy} />
+            <div>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>
+                Permitir notificaciones
+              </p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 2, lineHeight: 1.45 }}>
+                {TEXTO_AVISO_AL_ABRIR} {etiquetaSeguimiento ? `Lista: ${etiquetaSeguimiento}.` : ""}{" "}
+                {avisoOficial && (
+                  <strong style={{ color: C.clay }}>{avisoOficial}</strong>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button
+              type="button"
+              onClick={() => setNotifEstado("inicial")}
+              className="flex-1 font-bold focus:outline-none"
+              style={{
+                background: "transparent",
+                color: C.inkSoft,
+                padding: "10px",
+                fontFamily: FONT_BODY,
+                fontSize: 13,
+                border: `1px solid ${C.line}`,
+                borderRadius: 10,
+              }}
+            >
+              Ahora no
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                confirmarNotificaciones(etiquetaSeguimiento || ctaLabel, setNotifEstado, onGuardar)
+              }
+              className="flex-1 font-bold focus:outline-none"
+              style={{
+                background: C.navy,
+                color: "#fff",
+                padding: "10px",
+                fontFamily: FONT_BODY,
+                fontSize: 13,
+                borderRadius: 10,
+              }}
+            >
+              Permitir
+            </button>
+          </div>
+        </div>
+      )}
+
+      {notifEstado === "denegado" && <AvisoNotifDenegada />}
+
+      {notifEstado === "guardado" && (
+        <div
+          className="flex items-center gap-2 justify-center"
+          style={{ background: C.paperDeep, borderRadius: "16px 5px 16px 5px", padding: "13px" }}
+        >
+          <BellRing size={16} color={C.ok} />
+          <AvisoSeguimientoSinNotif />
+        </div>
+      )}
+
+      {notifEstado === "activo" && (
+        <div
+          className="flex items-center gap-2 justify-center"
+          style={{ background: C.paperDeep, borderRadius: "16px 5px 16px 5px", padding: "13px" }}
+        >
+          <BellRing size={16} color={C.ok} />
+          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok, margin: 0 }}>
+            Siguiendo {etiquetaSeguimiento || "lista"} — te avisaremos al abrir la app
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PanelCorteGerencia({ categoria, gerencia, ambito, puntos, historial }) {
+  if (historial.length === 0) {
+    return (
+      <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, margin: 0 }}>
+        Aún no hay histórico para {etiquetaLista(categoria, gerencia, ambito)}. Se irá completando con
+        más publicaciones del listado.
+      </p>
+    );
+  }
+  const hayTendencia = historial.length >= MIN_HISTORICO_TENDENCIA;
+  const ult = historial[historial.length - 1];
+  const diff = (puntos - ult.puntos).toFixed(2);
+  const yaLlamado = puntos >= ult.puntos;
+  const riesgo = zonaRiesgo(puntos, historial);
+  const rango = Math.max(Math.abs(diff) * 2, 1);
+  const pct = Math.min(100, Math.max(0, 50 + (diff / rango) * 50));
+  const RIESGO_TXT = {
+    llamado: { color: C.ok, texto: "Tu puntuación ya supera el punto de corte. Mantente localizable." },
+    alto: {
+      color: C.clay,
+      texto: `Estimación orientativa (no predicción de llamamiento): al ritmo reciente del corte, podrías acercarte en unas ${riesgo.convocatorias} convocatoria${riesgo.convocatorias > 1 ? "s" : ""}.`,
+    },
+    medio: {
+      color: C.gold,
+      texto: `Estimación orientativa: unas ${riesgo.convocatorias} convocatorias al ritmo reciente del corte. No garantiza llamamiento.`,
+    },
+    bajo: {
+      color: C.inkSoft,
+      texto: "El corte se mueve despacio en esta categoría. Todavía queda camino (estimación orientativa).",
+    },
+    sin_historico: { color: C.inkSoft, texto: null },
+  };
+  const info = RIESGO_TXT[riesgo.nivel];
+
+  return (
+    <div>
+      <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, margin: 0 }}>
+        Según el listado publicado · mínimo admitido: {ult.puntos.toFixed(2)} pts ({ult.fecha})
+      </p>
+      <div
+        style={{
+          height: 8,
+          background: C.paperDeep,
+          borderRadius: 6,
+          marginTop: 12,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: `${pct}%`,
+            background: yaLlamado ? C.ok : C.clay,
+            borderRadius: 6,
+          }}
+        />
+      </div>
+      <p
+        style={{
+          fontFamily: FONT_BODY,
+          fontSize: 13,
+          color: yaLlamado ? C.ok : C.clay,
+          fontWeight: 700,
+          marginTop: 10,
+          marginBottom: 0,
+        }}
+      >
+        {yaLlamado
+          ? `Superas el mínimo admitido por ${Math.abs(diff)} puntos.`
+          : `Te faltan ${Math.abs(diff)} puntos para el mínimo admitido.`}
+      </p>
+      {hayTendencia ? (
+        <>
+          <Suspense fallback={<div style={{ height: 52, marginTop: 14 }} />}>
+            <GraficoHistoricoCorte historial={historial} colors={C} />
+          </Suspense>
+          <p style={{ fontFamily: FONT_MONO, fontSize: 9, color: C.inkSoft, marginTop: 2 }}>
+            Punto de corte por convocatoria, últimas {historial.length} publicaciones
+          </p>
+          {info.texto && (
+            <div className="flex items-start gap-2" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
+              <TrendingUp size={14} color={info.color} style={{ flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: info.color, lineHeight: 1.4, fontWeight: 600, margin: 0 }}>
+                {info.texto}
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <p
+          style={{
+            fontFamily: FONT_BODY,
+            fontSize: 12,
+            color: C.inkSoft,
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: `1px solid ${C.line}`,
+            lineHeight: 1.45,
+          }}
+        >
+          Hace falta más historial de publicaciones para estimar tendencia.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Hero compartido del resultado (sanidad / educación / admin). */
+function ResultadoHero({
+  sello,
+  posicion,
+  subtitulo,
+  meta,
+  eyebrow,
+  compact = false,
+  decoracion = true,
+}) {
+  return (
+    <div
+      style={{
+        background: C.navy,
+        backgroundImage: `radial-gradient(ellipse at 20% -10%, ${C.gold}22, transparent 55%), url("${GRAIN}")`,
+        padding: compact ? "22px 20px 20px" : "28px 22px 24px",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: compact ? "22px 8px 22px 8px" : "26px 8px 26px 8px",
+      }}
+    >
+      {decoracion && (
+        <>
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: -22,
+              right: -18,
+              width: 110,
+              height: 110,
+              borderRadius: "48% 52% 51% 49% / 53% 47% 53% 47%",
+              border: `1.5px solid ${C.gold}`,
+              opacity: 0.35,
+              transform: "rotate(9deg)",
+            }}
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: -8,
+              right: 4,
+              width: 76,
+              height: 76,
+              borderRadius: "47% 53% 49% 51% / 51% 49% 53% 47%",
+              border: `1px dashed ${C.gold}`,
+              opacity: 0.4,
+              transform: "rotate(-6deg)",
+            }}
+          />
+        </>
+      )}
+      <Sello>{sello}</Sello>
+      {eyebrow && (
+        <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.goldSoft, marginTop: 8, marginBottom: 0 }}>
+          {eyebrow}
+        </p>
+      )}
+      <p
+        style={{
+          fontFamily: FONT_DISPLAY,
+          fontSize: compact ? 52 : 60,
+          fontWeight: 700,
+          color: "#fff",
+          lineHeight: 1,
+          marginTop: compact ? 8 : 14,
+          transform: compact ? "none" : "rotate(-1.2deg)",
+          display: "inline-block",
+        }}
+      >
+        #{posicion}
+      </p>
+      {subtitulo && (
+        <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8, marginBottom: 0 }}>
+          {subtitulo}
+        </p>
+      )}
+      {meta && (
+        <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6, marginBottom: 0 }}>
+          {meta}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ResultadoChips({ label, items }) {
+  if (!items?.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 12 }}>
+      {label && (
+        <span style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft }}>{label}</span>
+      )}
+      {items.map((item) => (
+        <span
+          key={item.key || item.label}
+          title={item.title}
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 11,
+            padding: "4px 10px",
+            borderRadius: 20,
+            background: C.okBg,
+            color: C.ok,
+            fontWeight: 700,
+          }}
+        >
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ResultadoColapsable({ label, children }) {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 focus:outline-none"
+        style={{
+          background: C.card,
+          border: `1px solid ${C.line}`,
+          borderRadius: "8px 18px 8px 18px",
+          padding: "12px 14px",
+          fontFamily: FONT_BODY,
+          fontSize: 13,
+          fontWeight: 700,
+          color: C.navy,
+          textAlign: "left",
+        }}
+        aria-expanded={abierto}
+      >
+        <span>{label}</span>
+        <ChevronDown
+          size={18}
+          color={C.navy}
+          style={{ transform: abierto ? "rotate(180deg)" : "none", transition: "transform .15s ease" }}
+        />
+      </button>
+      {abierto && (
+        <div
+          style={{
+            background: C.card,
+            border: `1px solid ${C.line}`,
+            borderTop: "none",
+            borderRadius: "0 0 8px 18px",
+            padding: "12px 14px 14px",
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultadoConsejoPortal({ titulo, texto }) {
+  return (
+    <div
+      className="flex items-start gap-2"
+      style={{
+        background: C.paperDeep,
+        borderRadius: "8px 14px 8px 14px",
+        padding: "10px 12px",
+        marginTop: 12,
+      }}
+    >
+      <Smartphone size={15} color={C.inkSoft} style={{ flexShrink: 0, marginTop: 1 }} />
+      <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4, margin: 0 }}>
+        <strong style={{ color: C.ink }}>{titulo}</strong> {texto}
+      </p>
+    </div>
+  );
+}
+
+function ResultadoPie({ onVerListado, onInfoLlamamientos, verListadoLabel = "Ver listado" }) {
+  if (!onVerListado && !onInfoLlamamientos) return null;
+  if (onVerListado && !onInfoLlamamientos) {
+    return (
+      <button
+        type="button"
+        onClick={onVerListado}
+        className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-3"
+        style={{
+          background: "transparent",
+          color: C.navy,
+          padding: "11px",
+          fontFamily: FONT_BODY,
+          fontSize: 12.5,
+          border: `1.5px solid ${C.line}`,
+          borderRadius: "5px 14px 5px 14px",
+        }}
+      >
+        <ListIcon size={14} /> {verListadoLabel}
+      </button>
+    );
+  }
+  return (
+    <div className="flex gap-2 mt-3">
+      <button
+        type="button"
+        onClick={onVerListado}
+        className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
+        style={{
+          background: "transparent",
+          color: C.navy,
+          padding: "11px",
+          fontFamily: FONT_BODY,
+          fontSize: 12.5,
+          border: `1.5px solid ${C.line}`,
+          borderRadius: "5px 14px 5px 14px",
+        }}
+      >
+        <ListIcon size={14} /> {verListadoLabel}
+      </button>
+      <button
+        type="button"
+        onClick={onInfoLlamamientos}
+        className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
+        style={{
+          background: "transparent",
+          color: C.navy,
+          padding: "11px",
+          fontFamily: FONT_BODY,
+          fontSize: 12.5,
+          border: `1.5px solid ${C.line}`,
+          borderRadius: "14px 5px 14px 5px",
+        }}
+      >
+        <Info size={14} /> Cómo llaman
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Shell de resultado: hero → seguir → fuente → secundario → colapsable → pie.
+ * Las tarjetas solo rellenan slots; no reordenan la jerarquía.
+ */
+function ResultadoShell({
+  hero,
+  seguir,
+  aviso,
+  secondary,
+  colapsable,
+  pie,
+  style,
+}) {
+  return (
+    <div style={style}>
+      {hero}
+      {seguir && <BloqueSeguir {...seguir} />}
+      {aviso}
+      {secondary}
+      {colapsable}
+      {pie}
+    </div>
   );
 }
 
@@ -140,7 +650,7 @@ const ICONOS_SECTOR = {
 
 const TEXTO_AYUDA_BUSQUEDA_BASE = {
   mur: "Puedes buscar por apellidos, por los últimos dígitos del DNI (como los publica el SMS) o por una combinación de ambos. No te pedimos ni guardamos tu DNI completo.",
-  mad: "Puedes buscar por apellidos o DNI parcial (como los publica el SERMAS). Solo las categorías con listado scrapeado están activas; el resto aparece como «sin datos».",
+  mad: "Puedes buscar por apellidos o DNI parcial (como los publica el SERMAS). Solo las categorías con listado disponible están activas; el resto aparece como «sin datos».",
   multi: "Puedes buscar por apellidos o DNI parcial en todas tus comunidades seleccionadas, o elegir grupo y categoría concretos por región. No te pedimos ni guardamos tu DNI completo.",
 };
 
@@ -404,9 +914,9 @@ function zonaRiesgo(puntosCandidato, historial) {
 function estadoActualizacionEjemplo(categoria, gruposSanidad) {
   const grupo = grupoDeCategoria(categoria, gruposSanidad);
   if (grupo && !grupo.activo) {
-    return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados scrapeados. Sin datos todavía." };
+    return { tipo: "sin_activar", texto: "Este grupo aún no tiene listados disponibles. Sin datos todavía." };
   }
-  return { tipo: "ok", texto: "Datos de ejemplo del prototipo." };
+  return { tipo: "ok", texto: "Datos orientativos de ejemplo." };
 }
 
 // ---------------------------------------------------------------
@@ -470,13 +980,13 @@ function AvisoActualizacion({ categoria, grupoId, grupoActivo, tieneResultado = 
       capa.estadoActualizacion(categoria, grupoId, true).then((est) => {
         if (cancel) return;
         if (tieneResultado && est.tipo === "sin_datos") {
-          setE({ tipo: "ok", texto: "Posición calculada con listados scrapeados." });
+          setE({ tipo: "ok", texto: "Posición según el listado público disponible." });
         } else {
           setE(est);
         }
       });
     } else if (grupoActivo) {
-      setE({ tipo: "sin_datos", texto: "Aún no tenemos listado scrapeado para esta categoría." });
+      setE({ tipo: "sin_datos", texto: "Aún no hay listado disponible para esta categoría." });
     } else {
       setE(estadoActualizacionEjemplo(categoria, capa.gruposSanidad));
     }
@@ -485,7 +995,7 @@ function AvisoActualizacion({ categoria, grupoId, grupoActivo, tieneResultado = 
   if (e.tipo === "ok") {
     return (
       <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.inkSoft, marginTop: 8, paddingLeft: 2 }}>
-        DATO OFICIAL · listado público {organismo}, orden por puntuación · {e.texto}
+        Fuente pública · {organismo}, orden por puntuación · {e.texto}
       </p>
     );
   }
@@ -493,7 +1003,7 @@ function AvisoActualizacion({ categoria, grupoId, grupoActivo, tieneResultado = 
     <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px", marginTop: 8 }}>
       <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
       <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-        <strong>{e.tipo === "sin_activar" ? "Sin scraping activo. " : e.tipo === "sin_datos" ? "Sin datos scrapeados. " : "Listado desactualizado. "}</strong>
+        <strong>{e.tipo === "sin_activar" ? "Sin listados aún. " : e.tipo === "sin_datos" ? "Sin listado disponible. " : "Listado desactualizado. "}</strong>
         {e.texto}
       </p>
     </div>
@@ -552,7 +1062,25 @@ function Barra({ titulo, atras }) {
 // ---------------------------------------------------------------
 // HOME — mapa como hero + barra inferior
 // ---------------------------------------------------------------
-function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
+function tabBarraInferior(paso) {
+  if (paso === "seguimientos") return "seguimientos";
+  if (
+    paso === "mas" ||
+    paso === "privacidad" ||
+    paso === "simulador-baremo" ||
+    paso === "simulador-gerencia" ||
+    paso === "mapa-oportunidades" ||
+    paso === "calculadora-nomina" ||
+    paso === "guia-llamamiento" ||
+    paso === "calculadora-meritos"
+  ) {
+    return "mas";
+  }
+  if (paso === "inicio") return null;
+  return "buscar";
+}
+
+function BarraInferior({ activo, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
   const items = [
     { id: "buscar", label: "Buscar", icon: Search, onClick: onBuscar },
     { id: "seguimientos", label: "Seguimientos", icon: Pin, onClick: onSeguimientos, badge: numSeguimientos },
@@ -570,21 +1098,25 @@ function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
         background: C.card,
         borderTop: `1px solid ${C.line}`,
         zIndex: 50,
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
       <div className="max-w-md mx-auto h-full flex items-stretch">
         {items.map((item) => {
           const Icono = item.icon;
+          const sel = activo === item.id;
+          const color = sel ? C.navy : C.inkSoft;
           return (
             <button
               key={item.id}
               type="button"
               onClick={item.onClick}
+              aria-current={sel ? "page" : undefined}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 focus:outline-none relative"
               style={{ background: "transparent", border: "none", padding: "6px 0" }}
             >
               <div className="relative">
-                <Icono size={16} color={C.inkSoft} strokeWidth={2.2} />
+                <Icono size={16} color={color} strokeWidth={sel ? 2.5 : 2.2} />
                 {item.badge > 0 && (
                   <span
                     style={{
@@ -609,7 +1141,7 @@ function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
                   </span>
                 )}
               </div>
-              <span style={{ fontFamily: FONT_BODY, fontSize: 10, fontWeight: 600, color: C.inkSoft }}>{item.label}</span>
+              <span style={{ fontFamily: FONT_BODY, fontSize: 10, fontWeight: sel ? 700 : 600, color }}>{item.label}</span>
             </button>
           );
         })}
@@ -618,7 +1150,7 @@ function BarraInferior({ onBuscar, onSeguimientos, onMas, numSeguimientos }) {
   );
 }
 
-function PantallaHome({ onConfirmCcaas, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
+function PantallaHome({ onConfirmCcaas, onSeguimientos, numSeguimientos }) {
   const [mostrarBienvenida, setMostrarBienvenida] = useState(() => !bienvenidaVista());
 
   const cerrarBienvenida = () => {
@@ -693,7 +1225,6 @@ function PantallaHome({ onConfirmCcaas, onBuscar, onSeguimientos, onMas, numSegu
           <MapaEspanaCCAA modo="hero" onConfirm={onConfirmCcaas} ccaaList={CCAA_LIST} colors={C} />
         </div>
       </div>
-      <BarraInferior onBuscar={onBuscar} onSeguimientos={onSeguimientos} onMas={onMas} numSeguimientos={numSeguimientos} />
     </>
   );
 }
@@ -704,7 +1235,7 @@ function AvisoRegionSinListados({ ccaaId, murciaActiva, madridActiva }) {
       <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
         <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
         <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.45 }}>
-          Los listados de sanidad de Murcia (SMS) aún no están en el servidor. Puedes ver el inventario de categorías, pero la búsqueda requiere subir los JSON scrapeados a R2 (<code style={{ fontSize: 11 }}>murcia/</code>).
+          Los listados de sanidad de Murcia (SMS) aún no están disponibles aquí. Puedes ver el inventario de categorías; la búsqueda se activará cuando haya listados publicados en la app.
         </p>
       </div>
     );
@@ -714,7 +1245,7 @@ function AvisoRegionSinListados({ ccaaId, murciaActiva, madridActiva }) {
       <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
         <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
         <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.45 }}>
-          Madrid (SERMAS): ya hay listados scrapeados en las categorías activas. El resto sigue en progreso.
+          Madrid (SERMAS): algunas categorías ya tienen listado; el resto aún no.
         </p>
       </div>
     );
@@ -784,10 +1315,18 @@ function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
             {mensajeLimiteSeguimientos()}
           </p>
           <p style={{ fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700, color: C.inkSoft, marginBottom: 6 }}>
-            Premium (próximamente, {PLAN.premiumPrecioEur} €)
+            Qué hace la app hoy
+          </p>
+          <ul style={{ margin: "0 0 12px", paddingLeft: 18, fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5 }}>
+            {FEATURES_HOY.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11, fontWeight: 700, color: C.inkSoft, marginBottom: 6 }}>
+            Previsto (aún no disponible)
           </p>
           <ul style={{ margin: 0, paddingLeft: 18, fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5 }}>
-            {FEATURES_PREMIUM.map((f) => (
+            {FEATURES_PREVISTAS.map((f) => (
               <li key={f}>{f}</li>
             ))}
           </ul>
@@ -915,7 +1454,7 @@ function PanelHuecosEducacion({ cobertura, modoListadoEducacion }) {
       >
         <Info size={15} color={C.navy} style={{ flexShrink: 0, marginTop: 1 }} />
         <span style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.ink, lineHeight: 1.45, flex: 1 }}>
-          <strong>{n}</strong> especialidad{n !== 1 ? "es" : ""} del catalogo sin datos de {tituloModo} en el servidor.
+          <strong>{n}</strong> especialidad{n !== 1 ? "es" : ""} del catálogo sin datos de {tituloModo} en el servidor.
           {modoListadoEducacion === "afin" && " AFIN usa la bolsa ordinaria como base."}
           {" "}
           <span style={{ color: C.navy, fontWeight: 600 }}>{abierto ? "Ocultar" : "Ver listado"}</span>
@@ -926,13 +1465,13 @@ function PanelHuecosEducacion({ cobertura, modoListadoEducacion }) {
           {faltantes.slice(0, 12).map((f) => (
             <li key={f.rel}>{f.cuerpo}: {f.especialidad.replace(/^\d{3}\s+/, "")}</li>
           ))}
-          {n > 12 && <li>… y {n - 12} mas (sin PDF publico en empleopublico/educacion)</li>}
+          {n > 12 && <li>… y {n - 12} más (sin PDF público en el portal)</li>}
         </ul>
       )}
       <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "8px 0 0", lineHeight: 1.4 }}>
-        Portal oficial:{" "}
+        Portal:{" "}
         <a href={cobertura.urlPortal} target="_blank" rel="noopener noreferrer" style={{ color: C.navy }}>
-          educacion CLM · bolsas
+          Educación CLM · bolsas
         </a>
       </p>
     </div>
@@ -964,7 +1503,7 @@ function PanelAdminSinPdf({ bolsas }) {
   );
 }
 
-function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva, afinActiva, cobertura }) {
+function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponiblesActiva, afinActiva }) {
   if (!bolsaActiva && !disponiblesActiva && !afinActiva) return null;
 
   const modos = [
@@ -1008,19 +1547,55 @@ function SelectorListadoEducacion({ modo, onModoChange, bolsaActiva, disponibles
           );
         })}
       </div>
-      {cobertura && (
-        <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 10, lineHeight: 1.45 }}>
-          Cobertura:{" "}
-          <span style={{ color: C.navy, fontWeight: 600 }}>
-            {cobertura.disponibles}/{cobertura.catalogo} disponibles
-          </span>
-          {" · "}
-          <span style={{ color: C.navy, fontWeight: 600 }}>
-            {cobertura.bolsa}/{cobertura.catalogo} bolsa
-          </span>
-        </p>
-      )}
     </div>
+  );
+}
+
+function InfoListadoBusqueda({
+  esEducacionClm,
+  esEducacionMurcia,
+  modoAdministracion,
+  modoListadoEducacion,
+  cobertura,
+  adminSinPdf,
+}) {
+  const faltantes =
+    cobertura &&
+    (modoListadoEducacion === "disponibles"
+      ? cobertura.faltantesDisponibles
+      : cobertura.faltantesBolsa);
+  const hayHuecos = Boolean(faltantes?.length);
+  const hayAdmin = Boolean(adminSinPdf?.length);
+  const hayCobertura = Boolean(esEducacionClm && cobertura);
+  if (!hayHuecos && !hayAdmin && !hayCobertura && !esEducacionMurcia) return null;
+
+  return (
+    <ResultadoColapsable label="Información del listado">
+      <div className="flex flex-col gap-3">
+        {hayCobertura && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, margin: 0, lineHeight: 1.45 }}>
+            Cobertura:{" "}
+            <span style={{ color: C.navy, fontWeight: 600 }}>
+              {cobertura.disponibles}/{cobertura.catalogo} disponibles
+            </span>
+            {" · "}
+            <span style={{ color: C.navy, fontWeight: 600 }}>
+              {cobertura.bolsa}/{cobertura.catalogo} bolsa
+            </span>
+          </p>
+        )}
+        {esEducacionMurcia && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.4, margin: 0 }}>
+            Listas definitivas de interinos (Cuerpo de Maestros). Incluye BLOQUE I y BLOQUE II cuando
+            constan en el listado.
+          </p>
+        )}
+        {hayHuecos && (
+          <PanelHuecosEducacion cobertura={cobertura} modoListadoEducacion={modoListadoEducacion} />
+        )}
+        {modoAdministracion && hayAdmin && <PanelAdminSinPdf bolsas={adminSinPdf} />}
+      </div>
+    </ResultadoColapsable>
   );
 }
 
@@ -1099,7 +1674,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
     <div>
       <Barra titulo={tituloBarra} atras={atras} />
 
-      <div className="px-5 flex flex-col gap-5 mt-2 pb-8">
+      <div className="px-5 flex flex-col gap-4 mt-2 pb-8">
         {multi && (
           <div className="flex flex-wrap gap-2">
             {ccaas.map((c) => (
@@ -1155,45 +1730,42 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             bolsaActiva={educacionBolsaActiva}
             disponiblesActiva={educacionDisponiblesActiva}
             afinActiva={educacionAfinActiva}
-            cobertura={datos.coberturaEducacion}
           />
         )}
 
-        {esEducacionClm && datos.coberturaEducacion && (
-          <PanelHuecosEducacion
-            cobertura={datos.coberturaEducacion}
-            modoListadoEducacion={modoListadoEducacion}
-          />
-        )}
+        <InfoListadoBusqueda
+          esEducacionClm={esEducacionClm}
+          esEducacionMurcia={esEducacionMurcia}
+          modoAdministracion={modoAdministracion}
+          modoListadoEducacion={modoListadoEducacion}
+          cobertura={datos.coberturaEducacion}
+          adminSinPdf={datos.adminSinPdf}
+        />
 
-        {esEducacionMurcia && (
-          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.4, margin: 0 }}>
-            Listas definitivas de interinos (Cuerpo de Maestros). Incluye BLOQUE I y BLOQUE II cuando constan en el listado.
-          </p>
-        )}
-
-        {modoAdministracion && datos.adminSinPdf?.length > 0 && (
-          <PanelAdminSinPdf bolsas={datos.adminSinPdf} />
-        )}
-
-        {modoAdministracion && !gruposSanidad.length && (
+        {modoAdministracion && datos.listo && !gruposSanidad.length && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No hay listados de administración cargados. En producción, sube la carpeta <strong>admin-clm/</strong> a R2.
+              No hay listados de administración disponibles por ahora. Vuelve más tarde o consulta el portal de Empleo Público.
             </p>
           </div>
         )}
 
-        {modoEducacion && !gruposSanidad.length && (
+        {modoEducacion && datos.listo && !gruposSanidad.length && (
           <div className="flex items-start gap-2" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
               {esEducacionMurcia
-                ? <>No hay listados de educación Murcia. Sube la carpeta <strong>educacion-murcia/</strong> a R2.</>
-                : <>No hay listados de educación cargados para este modo. En producción, sube las carpetas <strong>educacion/</strong> y/o <strong>educacion-bolsa/</strong> a R2.</>}
+                ? <>No hay listados de educación Murcia disponibles por ahora. Vuelve más tarde o consulta el portal de la CARM.</>
+                : <>No hay listados de educación disponibles para este modo. Vuelve más tarde o consulta Educación CLM.</>}
             </p>
           </div>
+        )}
+
+        {!datos.listo && !gruposSanidad.length && (
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, lineHeight: 1.45 }}>
+            Cargando categorías del listado…
+          </p>
         )}
 
         {gruposSanidad.length > 0 && (
@@ -1253,9 +1825,14 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             className="w-full mt-2 focus:outline-none"
             style={{ border: `1.5px solid ${C.line}`, background: C.card, padding: "13px 14px", fontFamily: FONT_BODY, fontSize: 15, color: C.ink }}
           />
-          <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 6 }}>
-            {textoAyuda}
+          <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 6, lineHeight: 1.4 }}>
+            {modoAdministracion ? "Busca por apellidos." : "Busca por apellidos o DNI parcial."}
           </p>
+          <ResultadoColapsable label="Ayuda de búsqueda">
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, margin: 0 }}>
+              {textoAyuda}
+            </p>
+          </ResultadoColapsable>
         </div>
         )}
 
@@ -1273,7 +1850,7 @@ function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recient
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
               {grupo?.activo
-                ? "Esta categoría aún no tiene listado scrapeado. Elige otra del mismo grupo o vuelve más tarde."
+                ? "Esta categoría aún no tiene listado disponible. Elige otra del mismo grupo o vuelve más tarde."
                 : "Este grupo profesional aún no tiene datos. Sin datos todavía."}
             </p>
           </div>
@@ -1529,7 +2106,7 @@ function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, at
           <div className="flex items-start gap-2 mt-3" style={{ background: "#F7E9D9", border: `1px solid ${C.gold}55`, borderRadius: "6px 14px 6px 14px", padding: "10px 12px" }}>
             <AlertTriangle size={15} color={C.clay} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.clay, lineHeight: 1.4 }}>
-              No hay listado scrapeado para esta {esEducacion ? "especialidad" : "categoría"}. No mostramos datos inventados.
+              No hay listado disponible para esta {esEducacion ? "especialidad" : "categoría"}. No inventamos resultados.
             </p>
           </div>
         )}
@@ -1629,7 +2206,6 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
   const bolsaCompleta = esBolsaCompleta ?? esBolsaOrdinaria(r?.tipoListado ?? capa.tipoListado);
   const viaBolsa = r?.viaBolsa || "propia";
   const viaTxt = viaBolsaLegible(viaBolsa);
-  const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const posicion = Number(r?.posicion ?? r?.pos ?? r?.bolsa_orden ?? 0) || 0;
   const total = Number(r?.total ?? 0) || 0;
   const ordenLista = Number(r?.orden_lista ?? 0) || 0;
@@ -1638,588 +2214,313 @@ function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, guardado, onGuar
   const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
   const idiomas = r?.idiomas || {};
   const idiomasActivos = Object.entries(idiomas).filter(([, v]) => v).map(([k]) => k);
+  const provinciasActivas = PROVINCIAS_CLM.filter((p) => provincias.has(p.codigo));
+
+  const subtitulo =
+    total > 0
+      ? bolsaCompleta
+        ? `de ${total.toLocaleString("es-ES")} en bolsa ordinaria · por delante del ${percentil}%`
+        : `de ${total.toLocaleString("es-ES")} en la bolsa · por delante del ${percentil}%`
+      : bolsaCompleta
+        ? "Posición en la bolsa ordinaria"
+        : "Posición en la bolsa de sustituciones";
+
+  let meta = viaTxt && viaBolsa !== "propia" ? viaTxt : null;
+  if (r?.tipo_bolsa) {
+    const tipo = tipoBolsaLegible(r.tipo_bolsa);
+    const extra =
+      !bolsaCompleta && bolsaGeneral > 0 && bolsaGeneral !== posicion
+        ? ` · bolsa general #${bolsaGeneral}`
+        : bolsaCompleta && ordenLista > 0 && ordenLista !== posicion
+          ? ` · orden listado ${ordenLista}`
+          : "";
+    meta = meta ? `${meta} · ${tipo}${extra}` : `${tipo}${extra}`;
+  }
 
   return (
-    <div>
-      <div
-        style={{
-          background: C.navy,
-          backgroundImage: `radial-gradient(ellipse at 20% -10%, ${C.gold}22, transparent 55%), url("${GRAIN}")`,
-          padding: "28px 22px 24px",
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "26px 8px 26px 8px",
-        }}
-      >
-        <Sello>{categoria}</Sello>
-        {viaTxt && viaBolsa !== "propia" && (
-          <p style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft, marginTop: 10, letterSpacing: 0.4 }}>
-            {viaTxt}
-          </p>
-        )}
-        <p
-          style={{
-            fontFamily: FONT_DISPLAY, fontSize: 60, fontWeight: 700, color: "#fff",
-            lineHeight: 1, marginTop: 14, transform: "rotate(-1.2deg)", display: "inline-block",
-          }}
-        >
-          #{posicion}
-        </p>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
-          {total > 0
-            ? bolsaCompleta
-              ? `de ${total.toLocaleString("es-ES")} personas en la bolsa ordinaria · por delante del ${percentil}%`
-              : `de ${total.toLocaleString("es-ES")} personas en la bolsa · por delante del ${percentil}%`
-            : bolsaCompleta
-              ? "Posición en la bolsa ordinaria completa"
-              : "Posición en la bolsa de sustituciones"}
-        </p>
-        {r?.tipo_bolsa && (
-          <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6 }}>
-            {tipoBolsaLegible(r.tipo_bolsa)}
-            {!bolsaCompleta && bolsaGeneral > 0 && bolsaGeneral !== posicion
-              ? ` · posición en bolsa general #${bolsaGeneral}`
-              : ""}
-            {bolsaCompleta && ordenLista > 0 && ordenLista !== posicion
-              ? ` · orden en listado ${ordenLista}`
-              : ""}
-          </p>
-        )}
-      </div>
-      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
-
-      {!bolsaCompleta && (
-      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
-        <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Provincias donde acepta sustituciones</p>
-        <div className="flex flex-wrap gap-2 mt-3">
-          {PROVINCIAS_CLM.map((prov) => {
-            const activa = provincias.has(prov.codigo);
-            return (
-              <span
-                key={prov.codigo}
-                title={prov.nombre}
-                style={{
-                  fontFamily: FONT_MONO,
-                  fontSize: 12,
-                  padding: "6px 12px",
-                  borderRadius: 20,
-                  background: activa ? C.okBg : C.paperDeep,
-                  color: activa ? C.ok : C.inkSoft,
-                  fontWeight: activa ? 700 : 400,
-                  border: `1px solid ${activa ? C.ok : C.line}`,
-                  textDecoration: activa ? "none" : "line-through",
-                }}
-              >
-                {prov.abrev}
-              </span>
-            );
-          })}
-        </div>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, marginTop: 10 }}>
-          AB = Albacete · CR = Ciudad Real · CU = Cuenca · GU = Guadalajara · TO = Toledo
-        </p>
-      </div>
-      )}
-
-      {bolsaCompleta && !esModoAfinEducacion && (
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Bolsa ordinaria</p>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
-            Listado por puntuación publicado en la renovación anual (junio/julio). Incluye a todas las personas admitidas en la bolsa, no solo quienes están disponibles para sustituciones.
-          </p>
-          {r?.bolsa_codigo != null && (
-            <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8 }}>
-              Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
-            </p>
+    <ResultadoShell
+      hero={
+        <ResultadoHero
+          sello={categoria}
+          posicion={posicion}
+          subtitulo={subtitulo}
+          meta={meta}
+          decoracion={false}
+        />
+      }
+      seguir={{
+        ctaLabel: "Seguir esta especialidad",
+        etiquetaSeguimiento: categoria,
+        avisoOficial: "Esto no sustituye la llamada oficial de Educación CLM.",
+        guardado,
+        onGuardar,
+      }}
+      aviso={
+        <AvisoActualizacion
+          categoria={categoria}
+          grupoId={grupoId}
+          grupoActivo={grupoActivo}
+          tieneResultado={posicion > 0}
+        />
+      }
+      secondary={
+        <>
+          {!bolsaCompleta && (
+            <ResultadoChips
+              label="Provincias:"
+              items={provinciasActivas.map((p) => ({
+                key: p.codigo,
+                label: p.abrev,
+                title: p.nombre,
+              }))}
+            />
           )}
-        </div>
-      )}
-
-      {bolsaCompleta && esModoAfinEducacion && viaBolsa === "propia" && (
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Tu bolsa de origen</p>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
-            Posición en la bolsa ordinaria de {categoria}. En adjudicaciones «a la carta» compites primero por plazas de propia bolsa; esta posición también cuenta para desempate entre afines.
-          </p>
-          {r?.bolsa_codigo != null && (
-            <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8 }}>
-              Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
-            </p>
+          {!bolsaCompleta && (
+            <ResultadoChips
+              label="Idiomas:"
+              items={idiomasActivos.map((id) => ({
+                key: id,
+                label: id.charAt(0).toUpperCase() + id.slice(1),
+              }))}
+            />
           )}
-        </div>
-      )}
-
-      {esModoAfinEducacion && viaBolsa === "propia" && plazasAfin.length > 0 && (
-        <div style={{ background: C.paperDeep, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16, marginTop: 12 }}>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Plazas afines (titulación)</p>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 6, lineHeight: 1.45 }}>
-            {TEXTO_AFIN_NORMATIVA}
-          </p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {plazasAfin.slice(0, 12).map((esp) => (
-              <span
-                key={esp}
-                style={{
-                  fontFamily: FONT_BODY,
-                  fontSize: 11,
-                  padding: "5px 10px",
-                  borderRadius: 16,
-                  background: C.card,
-                  color: C.navy,
-                  border: `1px solid ${C.line}`,
-                }}
-              >
-                {esp}
-              </span>
-            ))}
-            {plazasAfin.length > 12 && (
-              <span style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, alignSelf: "center" }}>
-                +{plazasAfin.length - 12} más
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {!bolsaCompleta && idiomasActivos.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16, marginTop: 12 }}>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Idiomas acreditados</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {idiomasActivos.map((id) => (
-              <span
-                key={id}
-                style={{
-                  fontFamily: FONT_MONO, fontSize: 11, padding: "4px 10px", borderRadius: 20,
-                  background: C.okBg, color: C.ok, fontWeight: 700,
-                }}
-              >
-                {id.charAt(0).toUpperCase() + id.slice(1)}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-start gap-2" style={{ background: C.paperDeep, borderRadius: "8px 18px 8px 18px", padding: 14, marginTop: 12 }}>
-        <Smartphone size={15} color={C.inkSoft} style={{ flexShrink: 0, marginTop: 1 }} />
-        <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4 }}>
-          <strong style={{ color: C.ink }}>Revisa tus datos en Educación CLM.</strong> Los llamamientos para sustituciones dependen de que tus datos de contacto estén actualizados en el portal oficial.
-        </p>
-      </div>
-
-      {notifEstado === "inicial" && (
-        <button
-          onClick={() => setNotifEstado("pidiendo")}
-          className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-4"
-          style={{ background: C.gold, color: "#fff", padding: "14px", fontFamily: FONT_BODY, fontSize: 14, borderRadius: "16px 5px 16px 5px" }}
-        >
-          <Bell size={16} /> Seguir esta especialidad
-        </button>
-      )}
-
-      {notifEstado === "pidiendo" && (
-        <div style={{ background: C.card, border: `1.5px solid ${C.navy}`, borderRadius: "10px 20px 10px 20px", padding: 16, marginTop: 16 }}>
-          <div className="flex items-center gap-3">
-            <Smartphone size={20} color={C.navy} />
-            <div>
-              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>Permitir notificaciones</p>
-              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 2 }}>
-                Te avisaremos cuando cambie tu posición en {categoria}. <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial de Educación CLM</strong>.
+        </>
+      }
+      colapsable={
+        <ResultadoColapsable label="Ver más detalles">
+          {!bolsaCompleta && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink, margin: "0 0 8px" }}>
+                Provincias donde acepta sustituciones
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {PROVINCIAS_CLM.map((prov) => {
+                  const activa = provincias.has(prov.codigo);
+                  return (
+                    <span
+                      key={prov.codigo}
+                      title={prov.nombre}
+                      style={{
+                        fontFamily: FONT_MONO,
+                        fontSize: 12,
+                        padding: "6px 12px",
+                        borderRadius: 20,
+                        background: activa ? C.okBg : C.paperDeep,
+                        color: activa ? C.ok : C.inkSoft,
+                        fontWeight: activa ? 700 : 400,
+                        border: `1px solid ${activa ? C.ok : C.line}`,
+                        textDecoration: activa ? "none" : "line-through",
+                      }}
+                    >
+                      {prov.abrev}
+                    </span>
+                  );
+                })}
+              </div>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, marginTop: 10, marginBottom: 0 }}>
+                AB = Albacete · CR = Ciudad Real · CU = Cuenca · GU = Guadalajara · TO = Toledo
               </p>
             </div>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={() => setNotifEstado("inicial")}
-              className="flex-1 font-bold focus:outline-none"
-              style={{ background: "transparent", color: C.inkSoft, padding: "10px", fontFamily: FONT_BODY, fontSize: 13, border: `1px solid ${C.line}`, borderRadius: 10 }}
-            >
-              Ahora no
-            </button>
-            <button
-              onClick={() => confirmarNotificaciones(categoria, setNotifEstado, onGuardar)}
-              className="flex-1 font-bold focus:outline-none"
-              style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
-            >
-              Permitir
-            </button>
-          </div>
-        </div>
-      )}
-
-      {notifEstado === "denegado" && (
-        <div className="mt-4">
-          <AvisoNotifDenegada />
-        </div>
-      )}
-
-      {notifEstado === "activo" && (
-        <div className="flex items-center gap-2 justify-center mt-4" style={{ background: C.paperDeep, borderRadius: "16px 5px 16px 5px", padding: "13px" }}>
-          <BellRing size={16} color={C.ok} />
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>Siguiendo {categoria} — te avisaremos</p>
-        </div>
-      )}
-
-      <div className="flex gap-2 mt-3">
-        <button
-          onClick={onVerListado}
-          className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 14px 5px 14px" }}
-        >
-          <ListIcon size={14} /> Ver listado
-        </button>
-        <button
-          onClick={onInfoLlamamientos}
-          className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "14px 5px 14px 5px" }}
-        >
-          <Info size={14} /> Cómo llaman
-        </button>
-      </div>
-    </div>
+          )}
+          {bolsaCompleta && !esModoAfinEducacion && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink, margin: "0 0 6px" }}>
+                Bolsa ordinaria
+              </p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, margin: 0 }}>
+                Listado por puntuación de la renovación anual (junio/julio). Incluye a todas las
+                personas admitidas, no solo quienes están disponibles para sustituciones.
+              </p>
+              {r?.bolsa_codigo != null && (
+                <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8, marginBottom: 0 }}>
+                  Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
+                </p>
+              )}
+            </div>
+          )}
+          {bolsaCompleta && esModoAfinEducacion && viaBolsa === "propia" && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink, margin: "0 0 6px" }}>
+                Tu bolsa de origen
+              </p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, margin: 0 }}>
+                Posición en la bolsa ordinaria de {categoria}. En adjudicaciones «a la carta» compites
+                primero por plazas de propia bolsa; esta posición también cuenta para desempate entre
+                afines.
+              </p>
+              {r?.bolsa_codigo != null && (
+                <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8, marginBottom: 0 }}>
+                  Código bolsa: {r.bolsa_codigo} · acceso {r.acceso ?? "—"}
+                </p>
+              )}
+            </div>
+          )}
+          {esModoAfinEducacion && viaBolsa === "propia" && plazasAfin.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink, margin: "0 0 6px" }}>
+                Plazas afines (titulación)
+              </p>
+              <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.45, margin: "0 0 8px" }}>
+                {TEXTO_AFIN_NORMATIVA}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {plazasAfin.slice(0, 12).map((esp) => (
+                  <span
+                    key={esp}
+                    style={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 11,
+                      padding: "5px 10px",
+                      borderRadius: 16,
+                      background: C.paperDeep,
+                      color: C.navy,
+                      border: `1px solid ${C.line}`,
+                    }}
+                  >
+                    {esp}
+                  </span>
+                ))}
+                {plazasAfin.length > 12 && (
+                  <span style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, alignSelf: "center" }}>
+                    +{plazasAfin.length - 12} más
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <ResultadoConsejoPortal
+            titulo="Revisa tus datos en Educación CLM."
+            texto="Los llamamientos dependen de que el contacto esté actualizado en el portal."
+          />
+        </ResultadoColapsable>
+      }
+      pie={<ResultadoPie onVerListado={onVerListado} onInfoLlamamientos={onInfoLlamamientos} />}
+    />
   );
 }
 
-// Bloque de detalle de UNA lista (gerencia + ámbito): posición, puntos, contratos, corte y avisos
+// Bloque de detalle de UNA lista (gerencia + ámbito)
 function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const capa = useCapaDatos();
   const regionId = ccaaId || r.ccaaId || capa.ccaaId;
   const organismo = organismoCcaa(regionId);
   const portalNombre = regionId === "clm" ? "Selecta" : organismo;
-  const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const posicion = Number(r?.posicion ?? r?.pos ?? 0) || 0;
   const total = Number(r?.total ?? 0) || 0;
   const puntos = Number(r?.puntos ?? 0) || 0;
   const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
-  const historial = grupoActivo && capa.tieneDatosReales(categoria, grupoId)
-    ? capa.historialCorte(categoria, gerencia, ambito || r.ambito || "", grupoId)
+  const etiqueta = etiquetaLista(categoria, gerencia, ambito || r.ambito, r);
+  const historial =
+    grupoActivo && capa.tieneDatosReales(categoria, grupoId)
+      ? capa.historialCorte(categoria, gerencia, ambito || r.ambito || "", grupoId)
+      : [];
+  const contratosActivos = r.tiposContrato
+    ? Object.entries(r.tiposContrato).filter(([, activo]) => activo).map(([tipo]) => tipo)
     : [];
 
   return (
-    <div>
-      <div
-        style={{
-          background: C.navy,
-          backgroundImage: `radial-gradient(ellipse at 20% -10%, ${C.gold}22, transparent 55%), url("${GRAIN}")`,
-          padding: "28px 22px 24px",
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "26px 8px 26px 8px",
-        }}
-      >
-        {/* sello de tinta, girado y con anillo doble irregular, como un matasellos real */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute", top: -22, right: -18, width: 110, height: 110,
-            borderRadius: "48% 52% 51% 49% / 53% 47% 53% 47%",
-            border: `1.5px solid ${C.gold}`, opacity: 0.35, transform: "rotate(9deg)",
-          }}
+    <ResultadoShell
+      hero={
+        <ResultadoHero
+          sello={etiquetaLista(categoria, gerencia, ambito || r.ambito)}
+          posicion={posicion}
+          subtitulo={`de ${total.toLocaleString("es-ES")} en la bolsa · por delante del ${percentil}%${
+            puntos > 0 ? ` · ${puntos.toFixed(1)} pts` : ""
+          }`}
         />
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute", top: -8, right: 4, width: 76, height: 76,
-            borderRadius: "47% 53% 49% 51% / 51% 49% 53% 47%",
-            border: `1px dashed ${C.gold}`, opacity: 0.4, transform: "rotate(-6deg)",
-          }}
+      }
+      seguir={{
+        ctaLabel: "Seguir esta gerencia",
+        etiquetaSeguimiento: etiqueta,
+        avisoOficial: `Esto no sustituye la llamada oficial de ${organismo} — esa te la hacen ellos directamente, y tienes horas contadas para responder.`,
+        guardado,
+        onGuardar,
+      }}
+      aviso={
+        <AvisoActualizacion
+          categoria={categoria}
+          grupoId={grupoId}
+          grupoActivo={grupoActivo}
+          tieneResultado={posicion > 0}
         />
-
-        <Sello>{etiquetaLista(categoria, gerencia, ambito || r.ambito)}</Sello>
-        <p
-          style={{
-            fontFamily: FONT_DISPLAY, fontSize: 60, fontWeight: 700, color: "#fff",
-            lineHeight: 1, marginTop: 14, transform: "rotate(-1.2deg)", display: "inline-block",
-          }}
-        >
-          #{posicion}
-        </p>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
-          de {total.toLocaleString("es-ES")} personas en la bolsa · por delante del {percentil}%
-        </p>
-      </div>
-      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
-
-      <div className="grid grid-cols-2 gap-3 mt-4">
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16 }}>
-          <Users size={16} color={C.navy} />
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: C.navy, marginTop: 6 }}>{r.delante}</p>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft }}>personas por delante</p>
-        </div>
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "6px 18px 6px 18px", padding: 16 }}>
-          <TrendingUp size={16} color={C.ok} />
-          <p style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: C.navy, marginTop: 6 }}>{puntos.toFixed(1)}</p>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft }}>puntos de baremo</p>
-        </div>
-      </div>
-
-      {r.tiposContrato && (
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "18px 6px 18px 6px", padding: 16, marginTop: 12 }}>
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Disponible para</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Object.entries(r.tiposContrato).map(([tipo, activo]) => (
-              <span
-                key={tipo}
-                style={{
-                  fontFamily: FONT_MONO, fontSize: 11, padding: "4px 10px", borderRadius: 20,
-                  background: activo ? C.okBg : C.paperDeep,
-                  color: activo ? C.ok : C.inkSoft,
-                  fontWeight: activo ? 700 : 400,
-                  textDecoration: activo ? "none" : "line-through",
-                }}
-              >
-                {tipo}
-              </span>
-            ))}
-          </div>
-          <p style={{ fontFamily: FONT_BODY, fontSize: 10.5, color: C.inkSoft, marginTop: 8 }}>
-            TC = Tiempo Completo · TP = Tiempo Parcial · C.U. = Cobertura Urgente
-          </p>
-        </div>
-      )}
-
-      {(() => {
-        if (historial.length === 0) {
-          return (
-            <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "8px 18px 8px 18px", padding: 16, marginTop: 12 }}>
-              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Distancia al punto de corte admitido</p>
-              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 8, lineHeight: 1.45 }}>
-                Aún no hay histórico guardado para esta lista ({etiquetaLista(categoria, gerencia, ambito || r.ambito)}). Se irá acumulando con cada actualización del scraper.
-              </p>
-            </div>
-          );
-        }
-        const hayTendencia = historial.length >= MIN_HISTORICO_TENDENCIA;
-        const ult = historial[historial.length - 1];
-        const diff = (puntos - ult.puntos).toFixed(2);
-        const yaLlamado = puntos >= ult.puntos;
-        const riesgo = zonaRiesgo(puntos, historial);
-        const rango = Math.max(Math.abs(diff) * 2, 1);
-        const pct = Math.min(100, Math.max(0, 50 + (diff / rango) * 50));
-        const RIESGO_TXT = {
-          llamado: { color: C.ok, texto: "Tu puntuación ya supera el punto de corte. Mantente localizable." },
-          alto: { color: C.clay, texto: `Zona de riesgo: al ritmo actual, podrías entrar en juego en ${riesgo.convocatorias} convocatoria${riesgo.convocatorias > 1 ? "s" : ""}.` },
-          medio: { color: C.gold, texto: `A este ritmo, calculamos unas ${riesgo.convocatorias} convocatorias para llegar al corte.` },
-          bajo: { color: C.inkSoft, texto: "El corte se mueve despacio en esta categoría. Todavía queda camino." },
-          sin_historico: { color: C.inkSoft, texto: null }, // se trata aparte, abajo
-        };
-        const info = RIESGO_TXT[riesgo.nivel];
-        return (
-          <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "8px 18px 8px 18px", padding: 16, marginTop: 12 }}>
-            <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>Distancia al punto mínimo admitido</p>
-            <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 2 }}>
-              DATO OFICIAL · punto mínimo admitido conocido: {ult.puntos.toFixed(2)} puntos ({ult.fecha})
-            </p>
-            <div style={{ height: 8, background: C.paperDeep, borderRadius: 6, marginTop: 12, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: yaLlamado ? C.ok : C.clay, borderRadius: 6 }} />
-            </div>
-            <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: yaLlamado ? C.ok : C.clay, fontWeight: 700, marginTop: 10 }}>
-              {yaLlamado
-                ? `Tu puntuación ya supera el punto mínimo admitido por ${Math.abs(diff)} puntos.`
-                : `Te faltan ${Math.abs(diff)} puntos para alcanzar el punto mínimo admitido.`}
-            </p>
-
-            {hayTendencia ? (
-              <>
-                <Suspense fallback={<div style={{ height: 52, marginTop: 14 }} />}>
-                  <GraficoHistoricoCorte historial={historial} colors={C} />
-                </Suspense>
-                <p style={{ fontFamily: FONT_MONO, fontSize: 9, color: C.inkSoft, marginTop: 2 }}>
-                  Punto de corte por convocatoria, últimas {historial.length} publicaciones
-                </p>
-                {info.texto && (
-                  <div className="flex items-start gap-2" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
-                    <TrendingUp size={14} color={info.color} style={{ flexShrink: 0, marginTop: 2 }} />
-                    <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: info.color, lineHeight: 1.4, fontWeight: 600 }}>{info.texto}</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.line}`, lineHeight: 1.45 }}>
-                Tendencia disponible próximamente.
-              </p>
-            )}
-          </div>
-        );
-      })()}
-
-      <div className="flex items-start gap-2" style={{ background: C.paperDeep, borderRadius: "8px 18px 8px 18px", padding: 14, marginTop: 12 }}>
-        <Smartphone size={15} color={C.inkSoft} style={{ flexShrink: 0, marginTop: 1 }} />
-        <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4 }}>
-          <strong style={{ color: C.ink }}>Revisa tus datos en {portalNombre}.</strong> Muchos llamamientos se pierden por un teléfono o email desactualizado, no por la posición en la bolsa.
-        </p>
-      </div>
-
-      {notifEstado === "inicial" && (
-        <button
-          onClick={() => setNotifEstado("pidiendo")}
-          className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-4"
-          style={{ background: C.gold, color: "#fff", padding: "14px", fontFamily: FONT_BODY, fontSize: 14, borderRadius: "16px 5px 16px 5px" }}
-        >
-          <Bell size={16} /> Seguir esta gerencia
-        </button>
-      )}
-
-      {notifEstado === "pidiendo" && (
-        <div style={{ background: C.card, border: `1.5px solid ${C.navy}`, borderRadius: "10px 20px 10px 20px", padding: 16, marginTop: 16 }}>
-          <div className="flex items-center gap-3">
-            <Smartphone size={20} color={C.navy} />
-            <div>
-              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>Permitir notificaciones</p>
-              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 2 }}>
-                Te avisaremos cuando cambie tu posición en {etiquetaLista(categoria, gerencia, ambito || r.ambito, r)}. <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial de {organismo}</strong> — esa te la hacen ellos directamente, y tienes horas contadas para responder.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={() => setNotifEstado("inicial")}
-              className="flex-1 font-bold focus:outline-none"
-              style={{ background: "transparent", color: C.inkSoft, padding: "10px", fontFamily: FONT_BODY, fontSize: 13, border: `1px solid ${C.line}`, borderRadius: 10 }}
-            >
-              Ahora no
-            </button>
-            <button
-              onClick={() =>
-                confirmarNotificaciones(
-                  etiquetaLista(categoria, gerencia, ambito || r.ambito, r),
-                  setNotifEstado,
-                  onGuardar,
-                )
-              }
-              className="flex-1 font-bold focus:outline-none"
-              style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
-            >
-              Permitir
-            </button>
-          </div>
-        </div>
-      )}
-
-      {notifEstado === "denegado" && (
-        <div className="mt-4">
-          <AvisoNotifDenegada />
-        </div>
-      )}
-
-      {notifEstado === "activo" && (
-        <div className="flex items-center gap-2 justify-center mt-4" style={{ background: C.paperDeep, borderRadius: "16px 5px 16px 5px", padding: "13px" }}>
-          <BellRing size={16} color={C.ok} />
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>Siguiendo {etiquetaLista(categoria, gerencia, ambito || r.ambito)} — te avisaremos</p>
-        </div>
-      )}
-
-      <div className="flex gap-2 mt-3">
-        <button
-          onClick={onVerListado}
-          className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 14px 5px 14px" }}
-        >
-          <ListIcon size={14} /> Ver listado
-        </button>
-        <button
-          onClick={onInfoLlamamientos}
-          className="flex-1 font-bold focus:outline-none flex items-center justify-center gap-2"
-          style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "14px 5px 14px 5px" }}
-        >
-          <Info size={14} /> Cómo llaman
-        </button>
-      </div>
-    </div>
+      }
+      secondary={
+        <ResultadoChips
+          label="Disponible:"
+          items={contratosActivos.map((tipo) => ({ key: tipo, label: tipo }))}
+        />
+      }
+      colapsable={
+        <ResultadoColapsable label="Ver distancia al corte">
+          <PanelCorteGerencia
+            categoria={categoria}
+            gerencia={gerencia}
+            ambito={ambito || r.ambito}
+            puntos={puntos}
+            historial={historial}
+          />
+          <ResultadoConsejoPortal
+            titulo={`Revisa tus datos en ${portalNombre}.`}
+            texto="Muchos llamamientos se pierden por un teléfono o email desactualizado."
+          />
+        </ResultadoColapsable>
+      }
+      pie={<ResultadoPie onVerListado={onVerListado} onInfoLlamamientos={onInfoLlamamientos} />}
+    />
   );
 }
 
 // Bloque de detalle administración CLM: posición por provincia + sub-bolsa
 function TarjetaAdmin({ categoria, grupoId, grupoActivo, r, guardado, onGuardar, onVerListado }) {
-  const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
   const posicion = Number(r?.posicion ?? r?.pos ?? 0) || 0;
   const total = Number(r?.total ?? 0) || 0;
   const provincia = r?.provincia || r?.gerencia || "Provincia";
   const percentil = total > 0 ? Math.round((1 - posicion / total) * 100) : 0;
+  const etiqueta = `${categoria} · ${provincia}`;
+  const meta = r?.sub_bolsa
+    ? `${subBolsaLegible(r.sub_bolsa)}${r.num_bolsa ? ` · nº bolsa ${r.num_bolsa}` : ""}`
+    : null;
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div
-        style={{
-          background: C.navy,
-          backgroundImage: `radial-gradient(ellipse at 20% -10%, ${C.gold}22, transparent 55%), url("${GRAIN}")`,
-          padding: "22px 20px 20px",
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "22px 8px 22px 8px",
-        }}
-      >
-        <Sello>{provincia}</Sello>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.goldSoft, marginTop: 8 }}>{categoria}</p>
-        <p
-          style={{
-            fontFamily: FONT_DISPLAY, fontSize: 52, fontWeight: 700, color: "#fff",
-            lineHeight: 1, marginTop: 8,
-          }}
-        >
-          #{posicion}
-        </p>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.goldSoft, marginTop: 8 }}>
-          {total > 0
-            ? `de ${total.toLocaleString("es-ES")} personas en ${provincia} · por delante del ${percentil}%`
-            : `Posición en ${provincia}`}
-        </p>
-        {r?.sub_bolsa && (
-          <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.goldSoft, marginTop: 6 }}>
-            {subBolsaLegible(r.sub_bolsa)}
-            {r.num_bolsa ? ` · nº bolsa ${r.num_bolsa}` : ""}
-          </p>
-        )}
-      </div>
-      <AvisoActualizacion categoria={categoria} grupoId={grupoId} grupoActivo={grupoActivo} tieneResultado={posicion > 0} />
-
-      {notifEstado === "inicial" && (
-        <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "14px 5px 14px 5px", padding: 16, marginTop: 12 }}>
-          <div className="flex items-start gap-2">
-            <Bell size={16} color={C.navy} style={{ flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ink }}>¿Quieres que te avisemos?</p>
-              <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 4, lineHeight: 1.45 }}>
-                Te avisaremos cuando cambie tu posición en {categoria} ({provincia}). <strong style={{ color: C.clay }}>Esto no sustituye la llamada oficial</strong>.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={() => setNotifEstado("inicial")}
-              className="flex-1 font-bold focus:outline-none"
-              style={{ background: "transparent", color: C.inkSoft, padding: "10px", fontFamily: FONT_BODY, fontSize: 13, border: `1px solid ${C.line}`, borderRadius: 10 }}
-            >
-              Ahora no
-            </button>
-            <button
-              onClick={() => confirmarNotificaciones(`${categoria} · ${provincia}`, setNotifEstado, onGuardar)}
-              className="flex-1 font-bold focus:outline-none"
-              style={{ background: C.navy, color: "#fff", padding: "10px", fontFamily: FONT_BODY, fontSize: 13, borderRadius: 10 }}
-            >
-              Permitir
-            </button>
-          </div>
-        </div>
-      )}
-
-      {notifEstado === "denegado" && <AvisoNotifDenegada />}
-
-      {notifEstado === "activo" && (
-        <div className="flex items-center gap-2 justify-center mt-3" style={{ background: C.paperDeep, borderRadius: "14px 5px 14px 5px", padding: "11px" }}>
-          <BellRing size={16} color={C.ok} />
-          <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13, color: C.ok }}>Siguiendo {categoria} · {provincia}</p>
-        </div>
-      )}
-
-      <button
-        onClick={onVerListado}
-        className="w-full font-bold focus:outline-none flex items-center justify-center gap-2 mt-3"
-        style={{ background: "transparent", color: C.navy, padding: "11px", fontFamily: FONT_BODY, fontSize: 12.5, border: `1.5px solid ${C.line}`, borderRadius: "5px 14px 5px 14px" }}
-      >
-        <ListIcon size={14} /> Ver listado de {provincia}
-      </button>
-    </div>
+    <ResultadoShell
+      style={{ marginBottom: 16 }}
+      hero={
+        <ResultadoHero
+          sello={provincia}
+          eyebrow={categoria}
+          posicion={posicion}
+          subtitulo={
+            total > 0
+              ? `de ${total.toLocaleString("es-ES")} en ${provincia} · por delante del ${percentil}%`
+              : `Posición en ${provincia}`
+          }
+          meta={meta}
+          compact
+          decoracion={false}
+        />
+      }
+      seguir={{
+        ctaLabel: "Seguir esta provincia",
+        etiquetaSeguimiento: etiqueta,
+        avisoOficial: "Esto no sustituye la llamada oficial.",
+        guardado,
+        onGuardar,
+      }}
+      aviso={
+        <AvisoActualizacion
+          categoria={categoria}
+          grupoId={grupoId}
+          grupoActivo={grupoActivo}
+          tieneResultado={posicion > 0}
+        />
+      }
+      pie={
+        <ResultadoPie
+          onVerListado={onVerListado}
+          verListadoLabel={`Ver listado de ${provincia}`}
+        />
+      }
+    />
   );
 }
 
@@ -2593,7 +2894,7 @@ function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, 
             >
               <BellRing size={16} color={C.ok} />
               <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok }}>
-                Siguiendo {numGerencias} gerencia{numGerencias !== 1 ? "s" : ""}
+                Siguiendo {numGerencias} gerencia{numGerencias !== 1 ? "s" : ""} en este dispositivo
               </p>
             </div>
           ) : (
@@ -2643,10 +2944,10 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad, onE
   return (
     <div>
       <Barra titulo="Mis seguimientos" atras={atras} />
-      <div className="px-5">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, margin: 0 }}>
-            {seguimientos.length} / {limiteMax} · {PLAN.nombre}
+      <div className="px-5 pb-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.navy, margin: 0 }}>
+            {seguimientos.length} / {limiteMax}
           </p>
           <div className="flex gap-2">
             <button
@@ -2696,46 +2997,111 @@ function PantallaSeguimientos({ seguimientos, atras, onAbrir, gruposSanidad, onE
             />
           </div>
         </div>
-        <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, lineHeight: 1.4, marginBottom: 8 }}>
-          {mensajeLimiteSeguimientos()}
-        </p>
+
+        <ResultadoColapsable label="Límite y copia de seguridad">
+          <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, margin: 0 }}>
+            {mensajeLimiteSeguimientos()} Exportar/importar guarda un archivo JSON en tu dispositivo; no hay sincronización entre móviles.
+          </p>
+        </ResultadoColapsable>
+
         {seguimientos.length === 0 && (
-          <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.inkSoft }}>
+          <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.inkSoft, marginTop: 12 }}>
             Todavía no guardas ninguna lista. Puedes seguir varias a la vez — por ejemplo, la general de Enfermería y la de Salud Mental.
           </p>
         )}
-        <div className="flex flex-col gap-3 mt-2">
+        <div className="flex flex-col gap-3 mt-3">
           {seguimientos.map((s, i) => {
             const r = s.candidato;
             const grupo = grupoDeCategoria(s.categoria, gruposSanidad, s.ccaaId);
-            const organismo = organismoCcaa(s.ccaaId || capa.ccaaId);
+            const sector = s.sector || r?.sector || "sanidad";
+            const ccaaNombre = CCAA_LIST.find((c) => c.id === s.ccaaId)?.nombre;
+            const organismo =
+              sector === "educacion"
+                ? s.ccaaId === "mur"
+                  ? "CARM Educación"
+                  : "Educación CLM"
+                : sector === "administracion"
+                  ? "Admin CLM"
+                  : organismoCcaa(s.ccaaId || capa.ccaaId);
+            const metaPuntos =
+              sector === "educacion"
+                ? r.total
+                  ? `${r.total} en bolsa`
+                  : null
+                : `${Number(r.puntos || 0).toFixed(2)} pts`;
             const e = grupo?.activo && capa.tieneDatosReales(s.categoria, grupo.id)
               ? { tipo: "ok", texto: "Datos reales disponibles." }
               : grupo?.activo
-                ? { tipo: "sin_datos", texto: "Sin listado scrapeado para esta categoría." }
+                ? { tipo: "sin_datos", texto: "Sin listado disponible para esta categoría." }
                 : estadoActualizacionEjemplo(s.categoria, gruposSanidad);
+            const cambioPill =
+              s.ultimoCambio === "subio"
+                ? { texto: "Subió", color: C.navy, bg: `${C.navy}12` }
+                : s.ultimoCambio === "bajo"
+                  ? { texto: "Bajó", color: C.clay, bg: "#F7E9D9" }
+                  : null;
             return (
               <button
-                key={i}
+                key={s.id || i}
                 onClick={() => onAbrir(s)}
-                className="text-left focus:outline-none focus:ring-2"
-                style={{ background: C.card, border: `1.5px solid ${C.line}`, borderRadius: i % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px", padding: "16px 18px" }}
+                className="text-left focus:outline-none focus:ring-2 w-full"
+                style={{
+                  background: C.card,
+                  border: `1.5px solid ${C.line}`,
+                  borderRadius: i % 2 === 0 ? "16px 6px 16px 6px" : "6px 16px 6px 16px",
+                  padding: "14px 16px",
+                }}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>{etiquetaLista(s.categoria, s.gerencia, s.ambito, { ccaaNombre: CCAA_LIST.find((c) => c.id === s.ccaaId)?.nombre })}</p>
-                    <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft }}>{r.nombreCompleto}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p
+                    style={{
+                      fontFamily: FONT_MONO,
+                      fontSize: 11,
+                      color: C.inkSoft,
+                      margin: 0,
+                      lineHeight: 1.35,
+                      flex: 1,
+                    }}
+                  >
+                    {etiquetaLista(s.categoria, s.gerencia, s.ambito, { ccaaNombre })}
+                  </p>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {cambioPill && (
+                      <span
+                        style={{
+                          fontFamily: FONT_BODY,
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          color: cambioPill.color,
+                          background: cambioPill.bg,
+                          padding: "3px 8px",
+                          borderRadius: 999,
+                        }}
+                      >
+                        {cambioPill.texto}
+                      </span>
+                    )}
+                    {e.tipo !== "ok" && <AlertTriangle size={14} color={C.clay} />}
                   </div>
-                  {e.tipo !== "ok" && <AlertTriangle size={14} color={C.clay} />}
                 </div>
-                <p style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: C.navy, marginTop: 4 }}>#{r.posicion}</p>
-                <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft }}>{Number(r.puntos || 0).toFixed(2)} puntos · {organismo}</p>
-                {s.ultimoCambio === "subio" && (
-                  <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.navy, marginTop: 6, fontWeight: 600 }}>Ha subido desde el último aviso</p>
-                )}
-                {s.ultimoCambio === "bajo" && (
-                  <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.clay, marginTop: 6, fontWeight: 600 }}>Ha bajado desde el último aviso</p>
-                )}
+                <p
+                  style={{
+                    fontFamily: FONT_DISPLAY,
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: C.navy,
+                    margin: "6px 0 2px",
+                    lineHeight: 1,
+                  }}
+                >
+                  #{r.posicion}
+                </p>
+                <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.ink, margin: "4px 0 0" }}>
+                  {r.nombreCompleto}
+                </p>
+                <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, margin: "4px 0 0" }}>
+                  {[metaPuntos, organismo].filter(Boolean).join(" · ")}
+                </p>
               </button>
             );
           })}
@@ -2799,6 +3165,7 @@ function PantallaInfoLlamamientos({ atras }) {
 // ---------------------------------------------------------------
 export default function ListasApp() {
   const datos = useDatos();
+  const asegurarPacks = useAsegurarPacks();
   const [ccaas, setCcaas] = useState([]);
   const [sectorId, setSectorId] = useState("sanidad");
   const [listadoEducacionModo, setListadoEducacionModo] = useState(() => leerModoListadoEducacion(datos));
@@ -2826,8 +3193,9 @@ export default function ListasApp() {
     const g = capaDatos.gruposSanidad;
     if (g?.length) return g;
     if (modoEducacion || modoAdministracion) return [];
+    if (!datos.listo) return [];
     return GRUPOS_SANIDAD_FALLBACK;
-  }, [capaDatos, modoEducacion, modoAdministracion]);
+  }, [capaDatos, modoEducacion, modoAdministracion, datos.listo]);
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");
@@ -2846,22 +3214,51 @@ export default function ListasApp() {
   const [pantallaPrevia, setPantallaPrevia] = useState("buscar");
   const [herramientasCtx, setHerramientasCtx] = useState({ puntos: null, categoria: "" });
   const [avisoLimite, setAvisoLimite] = useState("");
+  const [seguimientosListos, setSeguimientosListos] = useState(false);
+  const [cargandoSector, setCargandoSector] = useState(false);
 
   useEffect(() => {
     const raw = leerStorage(LS_SEGUIMIENTOS, []);
     setSeguimientos(raw.map(normalizarSeguimiento).filter(Boolean));
     setRecientes(leerStorage(LS_RECIENTES, []));
+    setSeguimientosListos(true);
   }, []);
 
+  // Carga bajo demanda del pack del sector/CCAA activos.
   useEffect(() => {
-    if (!datos) return undefined;
+    if (!datos.listo || typeof asegurarPacks !== "function") return undefined;
+    const packs = packsParaContexto({
+      ccaaIds: ccaas.map((c) => c.id),
+      sector: sectorId,
+      seguimientos: [],
+    });
+    const faltan = packs.filter((p) => !datos.packsCargados?.[p]);
+    if (!faltan.length) return undefined;
+    let cancelado = false;
+    setCargandoSector(true);
+    asegurarPacks(faltan).finally(() => {
+      if (!cancelado) setCargandoSector(false);
+    });
+    return () => {
+      cancelado = true;
+    };
+    // packsCargados no va en deps: evita bucles si un pack falla al cargar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional
+  }, [datos.listo, ccaas, sectorId, asegurarPacks]);
+
+  useEffect(() => {
+    if (!datos?.listo || !seguimientosListos || typeof asegurarPacks !== "function") {
+      return undefined;
+    }
     let cancelado = false;
     (async () => {
-      const raw = leerStorage(LS_SEGUIMIENTOS, []);
-      const lista = raw.map(normalizarSeguimiento).filter(Boolean);
+      const lista = (leerStorage(LS_SEGUIMIENTOS, [])).map(normalizarSeguimiento).filter(Boolean);
       if (!lista.length) return;
       try {
-        const resultados = await refrescarTodosSeguimientos(lista, { datos });
+        const packs = packsParaContexto({ seguimientos: lista });
+        const datosFresh = await asegurarPacks(packs);
+        if (cancelado) return;
+        const resultados = await refrescarTodosSeguimientos(lista, { datos: datosFresh });
         if (cancelado) return;
         setSeguimientos(resultados.map((r) => r.seguimientoActualizado));
         if (notificacionesHabilitadasEnDispositivo()) {
@@ -2874,13 +3271,14 @@ export default function ListasApp() {
     return () => {
       cancelado = true;
     };
-  }, [datos]);
+  }, [datos.listo, seguimientosListos, asegurarPacks]);
 
   useEffect(() => {
+    if (!seguimientosListos) return;
     try {
       localStorage.setItem(LS_SEGUIMIENTOS, JSON.stringify(seguimientos));
     } catch { /* quota / modo privado */ }
-  }, [seguimientos]);
+  }, [seguimientos, seguimientosListos]);
 
   useEffect(() => {
     try {
@@ -2895,7 +3293,19 @@ export default function ListasApp() {
   }, [listadoEducacionModo]);
 
   useEffect(() => {
-    if (sectorId !== "educacion") return;
+    if (!datos.listo || sectorId !== "educacion") return;
+    setListadoEducacionModo((prev) => {
+      const preferido = leerModoListadoEducacion(datos);
+      if (prev === preferido) return prev;
+      if (prev === "bolsa" && datos.educacionBolsaActiva) return prev;
+      if (prev === "disponibles" && datos.educacionDisponiblesActiva) return prev;
+      if (prev === "afin" && datos.educacionAfinActiva) return prev;
+      return preferido;
+    });
+  }, [datos.listo, datos.educacionBolsaActiva, datos.educacionDisponiblesActiva, datos.educacionAfinActiva, sectorId]);
+
+  useEffect(() => {
+    if (!datos.listo || sectorId !== "educacion") return;
     if (listadoEducacionModo === "bolsa" && !datos.educacionBolsaActiva) {
       if (datos.educacionDisponiblesActiva) setListadoEducacionModo("disponibles");
       else if (datos.educacionAfinActiva) setListadoEducacionModo("afin");
@@ -2906,7 +3316,7 @@ export default function ListasApp() {
       if (datos.educacionBolsaActiva) setListadoEducacionModo("bolsa");
       else if (datos.educacionDisponiblesActiva) setListadoEducacionModo("disponibles");
     }
-  }, [sectorId, listadoEducacionModo, datos.educacionBolsaActiva, datos.educacionDisponiblesActiva, datos.educacionAfinActiva]);
+  }, [sectorId, listadoEducacionModo, datos.listo, datos.educacionBolsaActiva, datos.educacionDisponiblesActiva, datos.educacionAfinActiva]);
 
   const abrirPrivacidad = () => {
     setPasoPrivacidadOrigen(paso);
@@ -2927,9 +3337,28 @@ export default function ListasApp() {
     irABuscarConCcaas([ccaa.activo ? ccaa : ccaaPorId("clm")]);
   };
 
+  const irABuscarDesdeMenu = () => {
+    if (paso === "buscar") return;
+    if (["confirmar", "resultado", "listado", "info-llamamientos"].includes(paso)) {
+      setPaso("buscar");
+      return;
+    }
+    if (ccaas.length) {
+      setPaso("buscar");
+      return;
+    }
+    irABuscarUltima();
+  };
+
   const irSeguimientos = () => {
+    if (paso === "seguimientos") return;
     setPasoSeguimientosOrigen(paso);
     setPaso("seguimientos");
+  };
+
+  const irMasDesdeMenu = () => {
+    if (paso === "mas") return;
+    setPaso("mas");
   };
 
   const irSimuladorGerencia = (puntos, categoria = herramientasCtx.categoria || categoriaActual) => {
@@ -2938,15 +3367,46 @@ export default function ListasApp() {
   };
 
   const iniciarBusqueda = async (categoria, consulta) => {
-    const grupo = grupoDeCategoria(categoria, gruposSanidad);
+    if (!datos.listo) return -1;
+    const packs = packsParaContexto({
+      ccaaIds: ccaas.map((c) => c.id),
+      sector: sectorId,
+    });
+    let datosNow = datos;
+    if (packs.some((p) => !datos.packsCargados?.[p]) && typeof asegurarPacks === "function") {
+      setCargandoSector(true);
+      try {
+        datosNow = await asegurarPacks(packs);
+      } finally {
+        setCargandoSector(false);
+      }
+    }
+    const ids = ccaas.map((c) => c.id);
+    const ccaaPrincipal = ids[0] || "clm";
+    const capa =
+      sectorId === "educacion"
+        ? datosNow.paraSector?.(ccaaPrincipal, "educacion", {
+            modoListadoEducacion: listadoEducacionModo,
+          }) || datosNow.paraCcaa("clm")
+        : sectorId === "administracion"
+          ? datosNow.paraSector?.(ccaaPrincipal, "administracion") || datosNow.paraCcaa("clm")
+          : ids.length
+            ? datosNow.paraCcaas(ids)
+            : datosNow.paraCcaa("clm");
+    const grupos = capa?.gruposSanidad?.length
+      ? capa.gruposSanidad
+      : modoEducacion || modoAdministracion
+        ? []
+        : GRUPOS_SANIDAD_FALLBACK;
+    const grupo = grupoDeCategoria(categoria, grupos);
     setBusquedaGlobal(false);
     setCategoriaActual(categoria);
     setGrupoIdActual(grupo?.id || "diplomado");
-    if (!grupo?.activo || !grupo?.id || !capaDatos.tieneDatosReales(categoria, grupo.id)) {
+    if (!grupo?.activo || !grupo?.id || !capa?.tieneDatosReales?.(categoria, grupo.id)) {
       return -1;
     }
     try {
-      const res = await capaDatos.buscarPersonas(grupo.id, categoria, consulta);
+      const res = await capa.buscarPersonas(grupo.id, categoria, consulta);
       const personas = res.personas;
       if (consulta.trim()) {
         setRecientes((prev) => {
@@ -2972,10 +3432,26 @@ export default function ListasApp() {
   };
 
   const iniciarBusquedaGlobal = async (consulta) => {
-    if (!capaDatos.buscarGlobal) return 0;
+    if (!datos.listo) return 0;
+    const packs = packsParaContexto({
+      ccaaIds: ccaas.map((c) => c.id),
+      sector: "sanidad",
+    });
+    let datosNow = datos;
+    if (packs.some((p) => !datos.packsCargados?.[p]) && typeof asegurarPacks === "function") {
+      setCargandoSector(true);
+      try {
+        datosNow = await asegurarPacks(packs);
+      } finally {
+        setCargandoSector(false);
+      }
+    }
+    const ids = ccaas.map((c) => c.id);
+    const capa = ids.length ? datosNow.paraCcaas(ids) : datosNow.paraCcaa("clm");
+    if (!capa?.buscarGlobal) return 0;
     setBusquedaGlobal(true);
     setCategoriaActual("");
-    const res = await capaDatos.buscarGlobal(consulta);
+    const res = await capa.buscarGlobal(consulta);
     const personas = res.personas;
     if (consulta.trim()) {
       setRecientes((prev) => {
@@ -3102,13 +3578,32 @@ export default function ListasApp() {
         @media (prefers-reduced-motion: reduce) { button { transition: none; } }
       `}</style>
 
-      <div className={`max-w-md mx-auto ${paso === "inicio" ? "" : "pb-10"}`}>
+      <div className={`max-w-md mx-auto ${paso === "inicio" ? "" : "pb-24"}`}>
+        {(!datos.listo || cargandoSector) && (
+          <div
+            role="status"
+            style={{
+              margin: paso === "inicio" ? "0 0 0" : "0 20px 0",
+              padding: "8px 14px",
+              background: C.paperDeep,
+              color: C.inkSoft,
+              fontFamily: FONT_BODY,
+              fontSize: 12.5,
+              textAlign: "center",
+              borderBottom: paso === "inicio" ? `1px solid ${C.line}` : "none",
+              borderRadius: paso === "inicio" ? 0 : "0 0 12px 12px",
+            }}
+          >
+            {!datos.listo
+              ? "Cargando listados en segundo plano…"
+              : "Cargando sector…"}
+          </div>
+        )}
+
         {paso === "inicio" && (
           <PantallaHome
             onConfirmCcaas={irABuscarConCcaas}
-            onBuscar={irABuscarUltima}
             onSeguimientos={irSeguimientos}
-            onMas={() => setPaso("mas")}
             numSeguimientos={seguimientos.length}
           />
         )}
@@ -3323,8 +3818,9 @@ export default function ListasApp() {
 
         {avisoLimite && (
           <div
-            className="fixed bottom-4 left-4 right-4 mx-auto max-w-md px-4 py-3 z-50"
+            className="fixed left-4 right-4 mx-auto max-w-md px-4 py-3 z-[60]"
             style={{
+              bottom: "calc(56px + 12px + env(safe-area-inset-bottom, 0px))",
               background: C.navy,
               color: "#fff",
               borderRadius: "12px 4px 12px 4px",
@@ -3347,6 +3843,14 @@ export default function ListasApp() {
           </div>
         )}
       </div>
+
+      <BarraInferior
+        activo={tabBarraInferior(paso)}
+        onBuscar={irABuscarDesdeMenu}
+        onSeguimientos={irSeguimientos}
+        onMas={irMasDesdeMenu}
+        numSeguimientos={seguimientos.length}
+      />
     </div>
     </CcaaCapaProvider>
   );

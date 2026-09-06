@@ -3,19 +3,19 @@ import LogoInterino from "./LogoInterino.jsx";
 
 const PASOS = [
   {
-    titulo: "Tu posicion en la bolsa",
+    titulo: "Tu posición en la bolsa",
     cuerpo:
-      "Consulta listados publicos de interinos en Castilla-La Mancha: sanidad (SESCAM), educacion y administracion general. Busca por apellidos o DNI parcial, como en el portal oficial.",
+      "Consulta listados públicos de interinos. Empieza por Castilla-La Mancha (sanidad SESCAM, educación y administración); Murcia y Madrid según disponibilidad. Busca por apellidos o DNI parcial, como en el portal.",
   },
   {
-    titulo: "Educacion: tres modos",
+    titulo: "Educación: tres modos",
     cuerpo:
-      "Disponibles (sustituciones semanales), bolsa ordinaria (puntuacion anual) y bolsas afines (titulaciones relacionadas, Orden 32/2018). Elige el tipo de listado antes de buscar.",
+      "Disponibles (sustituciones semanales), bolsa ordinaria (puntuación anual) y bolsas afines (titulaciones relacionadas, Orden 32/2018). Elige el tipo de listado antes de buscar.",
   },
   {
     titulo: "Sobre el punto de corte",
     cuerpo:
-      "En sanidad mostramos la puntuacion minima admitida actual, no quien fue la ultima persona llamada (dato que el SESCAM no publica). App no oficial: verifica siempre en los portales oficiales.",
+      "En sanidad mostramos la puntuación mínima admitida actual, no quién fue la última persona llamada (dato que el SESCAM no publica). App no oficial: verifica siempre en los portales oficiales.",
   },
 ];
 

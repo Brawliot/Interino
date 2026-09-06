@@ -90,7 +90,7 @@ export default function SimuladorGerencia({ C, Barra, gruposSanidad, grupoDeCate
         {cargando && <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 10 }}>Cargando listados…</p>}
 
         {!snapshot && !cargando && (
-          <AvisoEstimacion C={C}>Sin datos reales para esta categoría. El simulador necesita listados scrapeados del SESCAM.</AvisoEstimacion>
+          <AvisoEstimacion C={C}>Sin datos reales para esta categoría. El simulador necesita listados del SESCAM disponibles en la app.</AvisoEstimacion>
         )}
 
         {mejor && (

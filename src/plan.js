@@ -1,15 +1,15 @@
 /**
- * Plan freemium — beta: todo gratis; estructura lista para activar limites tras legal.
- * No integra pagos (Stripe) hasta consulta legal y validacion con usuarios.
+ * Plan freemium — beta: todo gratis con límite blando de seguimientos.
+ * No integra pagos (Stripe) hasta consulta legal y validación con usuarios.
  */
 
-/** Mientras true, no se aplican limites de pago (beta publica). */
+/** Mientras true, no se aplican cobros (beta pública). */
 export const BETA_GRATIS = true;
 
 export const PLAN = {
   id: BETA_GRATIS ? "beta" : "gratis",
   nombre: BETA_GRATIS ? "Beta gratuita" : "Gratis",
-  precioEur: BETA_GRATIS ? 0 : 0,
+  precioEur: 0,
   premiumPrecioEur: 2.99,
   maxSeguimientos: BETA_GRATIS ? 50 : 8,
   maxSeguimientosPremium: 999,
@@ -17,7 +17,7 @@ export const PLAN = {
 };
 
 export function esPremium() {
-  if (BETA_GRATIS) return true;
+  if (BETA_GRATIS) return false;
   try {
     return localStorage.getItem("interino_premium_v1") === "1";
   } catch {
@@ -26,6 +26,7 @@ export function esPremium() {
 }
 
 export function limiteSeguimientos() {
+  if (BETA_GRATIS) return PLAN.maxSeguimientos;
   return esPremium() ? PLAN.maxSeguimientosPremium : PLAN.maxSeguimientos;
 }
 
@@ -35,14 +36,24 @@ export function puedeAnadirSeguimiento(cantidadActual) {
 
 export function mensajeLimiteSeguimientos() {
   if (BETA_GRATIS) {
-    return `Beta: hasta ${PLAN.maxSeguimientos} seguimientos gratis. Premium (${PLAN.premiumPrecioEur} €) cuando activemos cobros tras consulta legal.`;
+    return `Beta gratuita: hasta ${PLAN.maxSeguimientos} seguimientos en este dispositivo. Aún no hay pagos.`;
   }
-  return `Plan gratis: max. ${PLAN.maxSeguimientos} seguimientos. Premium: ${PLAN.premiumPrecioEur} €/mes (proximamente).`;
+  return `Plan gratis: máximo ${PLAN.maxSeguimientos} seguimientos. Premium previsto (~${PLAN.premiumPrecioEur} €/mes): sin cobros activos ni fecha.`;
 }
 
-export const FEATURES_PREMIUM = [
-  "Seguimientos ilimitados",
-  "Notificaciones cuando cambie tu posicion (push en segundo plano)",
-  "Historico extendido de corte y tendencia",
-  "Sincronizacion en la nube entre dispositivos",
+/** Lo que la app hace hoy (pantalla Más). */
+export const FEATURES_HOY = [
+  "Seguimientos guardados en este dispositivo",
+  "Avisos al abrir la app si cambia tu posición (con permiso del navegador)",
+  "Exportar e importar una copia en archivo JSON",
 ];
+
+/** Ideas de producto — no disponibles aún. */
+export const FEATURES_PREVISTAS = [
+  "Avisos push en segundo plano",
+  "Sincronización en la nube entre dispositivos",
+  `Más seguimientos con un plan de pago (~${PLAN.premiumPrecioEur} €/mes)`,
+];
+
+/** @deprecated Preferir FEATURES_HOY / FEATURES_PREVISTAS */
+export const FEATURES_PREMIUM = FEATURES_PREVISTAS;
