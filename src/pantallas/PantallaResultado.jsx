@@ -233,7 +233,11 @@ export default function PantallaResultado({ categoria, grupoId, grupoActivo, can
             grupoId={grupoAparicion}
             grupoActivo={grupoActivoAparicion}
             ccaaId={a.ccaaId}
-            r={a}
+            r={{
+              ...a,
+              nombreCompleto: candidato.nombreCompleto,
+              dniParcial: candidato.dniParcial,
+            }}
             guardado={estaGuardado(a.gerencia, a.ambito, candidato.nombreCompleto, catAparicion, a.ccaaId)}
             onGuardar={() =>
               onGuardar(

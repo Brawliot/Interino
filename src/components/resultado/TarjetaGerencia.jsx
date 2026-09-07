@@ -11,6 +11,7 @@ import {
 } from "./ResultadoShell.jsx";
 import { etiquetaLista } from "../../utils/etiquetasLista.js";
 import PanelCorteGerencia from "./PanelCorteGerencia.jsx";
+import ComparativaPosicionFechas from "./ComparativaPosicionFechas.jsx";
 
 export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const capa = useCapaDatos();
@@ -29,6 +30,7 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
   const contratosActivos = r.tiposContrato
     ? Object.entries(r.tiposContrato).filter(([, activo]) => activo).map(([tipo]) => tipo)
     : [];
+  const mostrarComparativa = regionId === "clm" && !capa.modoHistorico;
 
   return (
     <ResultadoShell
@@ -49,12 +51,30 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
         onGuardar,
       }}
       aviso={
-        <AvisoActualizacion
-          categoria={categoria}
-          grupoId={grupoId}
-          grupoActivo={grupoActivo}
-          tieneResultado={posicion > 0}
-        />
+        <>
+          <AvisoActualizacion
+            categoria={categoria}
+            grupoId={grupoId}
+            grupoActivo={grupoActivo}
+            tieneResultado={posicion > 0}
+          />
+          {mostrarComparativa && (
+            <ComparativaPosicionFechas
+              categoria={categoria}
+              grupoId={grupoId}
+              gerencia={gerencia}
+              ambito={ambito || r.ambito || ""}
+              ccaaId={regionId}
+              candidato={{
+                nombreCompleto: r.nombreCompleto,
+                dniParcial: r.dniParcial,
+              }}
+              posicionActual={posicion}
+              puntosActual={puntos}
+              totalActual={total}
+            />
+          )}
+        </>
       }
       secondary={
         <ResultadoChips
