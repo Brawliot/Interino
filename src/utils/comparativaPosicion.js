@@ -81,3 +81,61 @@ export function etiquetaFechaOpcion(fecha, { esActual = false } = {}) {
   if (Number.isNaN(d.getTime())) return fecha;
   return d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 }
+
+/**
+ * Serie temporal de posiciones (solo puntos encontrados).
+ * @param {{ fecha: string, label?: string, posicion: number, puntos?: number, total?: number }[]} puntos
+ */
+export function normalizarSerieEvolucion(puntos) {
+  return (puntos || [])
+    .filter((p) => Number(p.posicion) > 0)
+    .sort((a, b) => {
+      if (a.fecha === "actual") return 1;
+      if (b.fecha === "actual") return -1;
+      return String(a.fecha).localeCompare(String(b.fecha));
+    });
+}
+
+/**
+ * Carga posiciones en varias fechas de archive (+ opcional punto actual).
+ */
+export async function construirSerieEvolucion({
+  datos,
+  opciones = [],
+  ctx,
+  live = null,
+  maxPuntos = 12,
+}) {
+  const fechas = [...(opciones || [])]
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .slice(-Math.max(1, maxPuntos));
+
+  const resultados = await Promise.all(
+    fechas.map(async (o) => {
+      const capa = datos?.paraSector?.("clm", "sanidad", { fechaSnapshot: o.fecha });
+      const r = await resolverPosicionEnCapa(capa, ctx);
+      if (!r.ok) return null;
+      return {
+        fecha: o.fecha,
+        label: etiquetaFechaOpcion(o.fecha),
+        curso: o.curso || null,
+        posicion: r.posicion,
+        puntos: r.puntos,
+        total: r.total,
+      };
+    }),
+  );
+
+  const serie = resultados.filter(Boolean);
+  if (live && Number(live.posicion) > 0) {
+    serie.push({
+      fecha: "actual",
+      label: "Actual",
+      curso: null,
+      posicion: Number(live.posicion),
+      puntos: Number(live.puntos) || 0,
+      total: Number(live.total) || 0,
+    });
+  }
+  return normalizarSerieEvolucion(serie);
+}

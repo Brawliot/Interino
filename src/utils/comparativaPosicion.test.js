@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deltaPosicion, textoDelta } from "./comparativaPosicion.js";
+import { deltaPosicion, normalizarSerieEvolucion, textoDelta } from "./comparativaPosicion.js";
 
 describe("comparativaPosicion", () => {
   it("delta: subir en ranking (número de puesto baja)", () => {
@@ -17,5 +17,15 @@ describe("comparativaPosicion", () => {
   it("delta inválido", () => {
     expect(deltaPosicion(0, 5)).toBe(null);
     expect(textoDelta(null)).toBe(null);
+  });
+
+  it("normalizarSerieEvolucion ordena y deja actual al final", () => {
+    const s = normalizarSerieEvolucion([
+      { fecha: "actual", posicion: 5 },
+      { fecha: "2026-09-01", posicion: 8 },
+      { fecha: "2026-08-01", posicion: 0 },
+      { fecha: "2026-07-01", posicion: 10 },
+    ]);
+    expect(s.map((p) => p.fecha)).toEqual(["2026-07-01", "2026-09-01", "actual"]);
   });
 });

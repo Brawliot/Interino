@@ -13,6 +13,7 @@ import { etiquetaLista } from "../../utils/etiquetasLista.js";
 import PanelCorteGerencia from "./PanelCorteGerencia.jsx";
 import ComparativaPosicionFechas from "./ComparativaPosicionFechas.jsx";
 import PosicionInicioVsActual from "./PosicionInicioVsActual.jsx";
+import EvolucionHistoricaCandidato from "./EvolucionHistoricaCandidato.jsx";
 
 export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const capa = useCapaDatos();
@@ -35,6 +36,17 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
   const candidato = {
     nombreCompleto: r.nombreCompleto,
     dniParcial: r.dniParcial,
+  };
+  const propsHist = {
+    categoria,
+    grupoId,
+    gerencia,
+    ambito: ambito || r.ambito || "",
+    ccaaId: regionId,
+    candidato,
+    posicionActual: posicion,
+    puntosActual: puntos,
+    totalActual: total,
   };
 
   return (
@@ -63,32 +75,9 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
             grupoActivo={grupoActivo}
             tieneResultado={posicion > 0}
           />
-          {mostrarHistorico && (
-            <PosicionInicioVsActual
-              categoria={categoria}
-              grupoId={grupoId}
-              gerencia={gerencia}
-              ambito={ambito || r.ambito || ""}
-              ccaaId={regionId}
-              candidato={candidato}
-              posicionActual={posicion}
-              puntosActual={puntos}
-              totalActual={total}
-            />
-          )}
-          {mostrarHistorico && (
-            <ComparativaPosicionFechas
-              categoria={categoria}
-              grupoId={grupoId}
-              gerencia={gerencia}
-              ambito={ambito || r.ambito || ""}
-              ccaaId={regionId}
-              candidato={candidato}
-              posicionActual={posicion}
-              puntosActual={puntos}
-              totalActual={total}
-            />
-          )}
+          {mostrarHistorico && <EvolucionHistoricaCandidato {...propsHist} />}
+          {mostrarHistorico && <PosicionInicioVsActual {...propsHist} />}
+          {mostrarHistorico && <ComparativaPosicionFechas {...propsHist} />}
         </>
       }
       secondary={
