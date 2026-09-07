@@ -14,6 +14,7 @@ import PanelCorteGerencia from "./PanelCorteGerencia.jsx";
 import ComparativaPosicionFechas from "./ComparativaPosicionFechas.jsx";
 import PosicionInicioVsActual from "./PosicionInicioVsActual.jsx";
 import EvolucionHistoricaCandidato from "./EvolucionHistoricaCandidato.jsx";
+import AnalisisTendenciaPredictivo from "./AnalisisTendenciaPredictivo.jsx";
 
 export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const capa = useCapaDatos();
@@ -76,6 +77,7 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
             tieneResultado={posicion > 0}
           />
           {mostrarHistorico && <EvolucionHistoricaCandidato {...propsHist} />}
+          {mostrarHistorico && <AnalisisTendenciaPredictivo {...propsHist} />}
           {mostrarHistorico && <PosicionInicioVsActual {...propsHist} />}
           {mostrarHistorico && <ComparativaPosicionFechas {...propsHist} />}
         </>
