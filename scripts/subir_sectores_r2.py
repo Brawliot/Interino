@@ -2,6 +2,8 @@
 """
 Sube carpetas de datos a Cloudflare R2 (S3-compatible). Script unificado para CI y local.
 
+Por defecto también archiva snapshots en archive/YYYY-MM-DD/ (histórico de listados).
+
 Variables de entorno:
   R2_ACCOUNT_ID
   R2_ACCESS_KEY_ID
@@ -12,6 +14,7 @@ Uso:
   python scripts/subir_sectores_r2.py
   python scripts/subir_sectores_r2.py --sectores educacion,educacion-bolsa
   python scripts/subir_sectores_r2.py --sectores educacion-bolsa --skip-existing
+  python scripts/subir_sectores_r2.py --no-archive
   python scripts/subir_r2.ps1 -Sectores educacion-bolsa -SkipExisting
 """
 from __future__ import annotations
@@ -21,6 +24,14 @@ import json
 import mimetypes
 import os
 from pathlib import Path
+
+from r2_archive import (
+    DEFAULT_RETENTION_DAYS,
+    archivar_carpeta,
+    actualizar_index_y_retencion,
+    fecha_hoy_utc,
+    leer_index,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SECTORES_R2_PATH = ROOT / "data" / "_local" / "vigia_sectores_r2.json"
@@ -35,7 +46,15 @@ MAPEO = {
     "admin-clm": ("data/admin-clm", "admin-clm"),
 }
 
-MANIFESTS = frozenset({"manifest.json", "afinidad.json", "categorias.json", "categorias_por_grupo.json", "categorias_sanidad.json"})
+MANIFESTS = frozenset(
+    {
+        "manifest.json",
+        "afinidad.json",
+        "categorias.json",
+        "categorias_por_grupo.json",
+        "categorias_sanidad.json",
+    }
+)
 
 
 def _cliente_s3():
@@ -52,13 +71,16 @@ def _cliente_s3():
         raise SystemExit("Faltan R2_ACCOUNT_ID, R2_ACCESS_KEY_ID o R2_SECRET_ACCESS_KEY")
 
     endpoint = f"https://{account}.r2.cloudflarestorage.com"
-    return boto3.client(
-        "s3",
-        endpoint_url=endpoint,
-        aws_access_key_id=key,
-        aws_secret_access_key=secret,
-        region_name="auto",
-    ), ClientError
+    return (
+        boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=key,
+            aws_secret_access_key=secret,
+            region_name="auto",
+        ),
+        ClientError,
+    )
 
 
 def _forzar_subida(nombre_archivo: str) -> bool:
@@ -105,7 +127,6 @@ def _subir_carpeta(
         ctype, _ = mimetypes.guess_type(path.name)
         extra = {
             "ContentType": ctype or "application/octet-stream",
-            # Sin esto el navegador puede cachear JSON de bolsas semanas.
             "CacheControl": "no-cache, max-age=0, must-revalidate",
         }
         try:
@@ -128,7 +149,7 @@ def _sectores_desde_vigia() -> list[str]:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Subir sectores CLM a R2 (boto3)")
+    p = argparse.ArgumentParser(description="Subir sectores a R2 (boto3) + archivo histórico")
     p.add_argument(
         "--sectores",
         help="Lista separada por comas (sanidad,murcia,madrid,educacion,educacion-bolsa,admin-clm). "
@@ -138,6 +159,27 @@ def main() -> int:
         "--skip-existing",
         action="store_true",
         help="Omite archivos ya en R2 con el mismo tamano (manifests siempre se suben)",
+    )
+    p.add_argument(
+        "--no-archive",
+        action="store_true",
+        help="No copiar snapshots a archive/YYYY-MM-DD/",
+    )
+    p.add_argument(
+        "--archive-only",
+        action="store_true",
+        help="Solo archivar (no subir latest)",
+    )
+    p.add_argument(
+        "--fecha",
+        default=None,
+        help="Fecha del snapshot UTC YYYY-MM-DD (default: hoy UTC)",
+    )
+    p.add_argument(
+        "--retention-days",
+        type=int,
+        default=DEFAULT_RETENTION_DAYS,
+        help=f"Borrar archive más antiguo (default {DEFAULT_RETENTION_DAYS})",
     )
     args = p.parse_args()
 
@@ -152,6 +194,11 @@ def main() -> int:
     bucket = os.environ.get("R2_BUCKET", "interino-data")
     s3, ClientError = _cliente_s3()
     totales = {"subidos": 0, "omitidos": 0, "fallos": 0}
+    arch_totales = {"subidos": 0, "omitidos": 0, "fallos": 0, "bytes": 0}
+    sector_arch: dict[str, dict[str, int]] = {}
+    fecha = args.fecha or fecha_hoy_utc()
+    hacer_archive = not args.no_archive
+    index_prev = leer_index(s3, bucket, ClientError) if hacer_archive else {}
 
     for sector in sectores:
         if sector not in MAPEO:
@@ -159,22 +206,69 @@ def main() -> int:
             continue
         local_rel, prefix = MAPEO[sector]
         local = ROOT / local_rel
-        print(f"\n=== {sector} -> s3://{bucket}/{prefix or '(raiz)'} ===")
-        stats = _subir_carpeta(
-            s3, bucket, local, prefix, skip_existing=args.skip_existing, ClientError=ClientError
-        )
-        for k in totales:
-            totales[k] += stats[k]
-        print(
-            f"Resumen {sector}: subidos={stats['subidos']} "
-            f"omitidos={stats['omitidos']} fallos={stats['fallos']}"
+
+        if not args.archive_only:
+            print(f"\n=== {sector} -> s3://{bucket}/{prefix or '(raiz)'} ===")
+            stats = _subir_carpeta(
+                s3,
+                bucket,
+                local,
+                prefix,
+                skip_existing=args.skip_existing,
+                ClientError=ClientError,
+            )
+            for k in totales:
+                totales[k] += stats[k]
+            print(
+                f"Resumen {sector}: subidos={stats['subidos']} "
+                f"omitidos={stats['omitidos']} fallos={stats['fallos']}"
+            )
+
+        if hacer_archive:
+            print(f"\n=== ARCHIVE {sector} -> s3://{bucket}/archive/{fecha}/ ===")
+            astats = archivar_carpeta(
+                s3,
+                bucket,
+                local,
+                prefix,
+                sector=sector,
+                fecha=fecha,
+                index=index_prev,
+                ClientError=ClientError,
+            )
+            sector_arch[sector] = astats
+            for k in arch_totales:
+                arch_totales[k] += astats[k]
+            print(
+                f"Archive {sector}: subidos={astats['subidos']} "
+                f"omitidos={astats['omitidos']} fallos={astats['fallos']}"
+            )
+
+    if hacer_archive and sector_arch:
+        print(f"\n=== INDEX / RETENCION ({args.retention_days} d) ===")
+        actualizar_index_y_retencion(
+            s3,
+            bucket,
+            fecha=fecha,
+            sector_stats=sector_arch,
+            retencion_dias=args.retention_days,
+            ClientError=ClientError,
+            purgar=True,
         )
 
-    print(
-        f"\nTotal R2: subidos={totales['subidos']} "
-        f"omitidos={totales['omitidos']} fallos={totales['fallos']}"
-    )
-    return 1 if totales["fallos"] else 0
+    if not args.archive_only:
+        print(
+            f"\nTotal live R2: subidos={totales['subidos']} "
+            f"omitidos={totales['omitidos']} fallos={totales['fallos']}"
+        )
+    if hacer_archive:
+        print(
+            f"Total archive: subidos={arch_totales['subidos']} "
+            f"omitidos={arch_totales['omitidos']} fallos={arch_totales['fallos']} "
+            f"bytes={arch_totales['bytes']}"
+        )
+    fallos = totales["fallos"] + arch_totales["fallos"]
+    return 1 if fallos else 0
 
 
 if __name__ == "__main__":

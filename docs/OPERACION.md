@@ -65,6 +65,8 @@ Workflow: `.github/workflows/daily_scraper.yml`
 2. Si hay cambios **o primera observación** de un sector → `ejecutar_vigia_scrapers.py`
 3. Si educacion cambio → regenera `data/educacion/afinidad.json`
 4. Sube sectores afectados a R2 (`subir_sectores_r2.py --skip-existing`)
+   y **archiva snapshots** en `archive/YYYY-MM-DD/` (histórico de listados;
+   ver sección siguiente).
 5. **Siempre** commit de `vigia_estado.json` (aunque no haya scrape). Sin esto,
    edu/admin se reinicializan cada día y nunca scrapean.
 
@@ -77,6 +79,36 @@ Secrets necesarios en GitHub → Settings → Secrets → Actions:
 - `R2_SECRET_ACCESS_KEY`
 
 Probar: Actions → **Vigia diario CLM** → Run workflow.
+
+## Histórico de snapshots (`archive/`)
+
+Cada subida a R2 (salvo `--no-archive`) copia los JSON del sector a:
+
+```
+archive/YYYY-MM-DD/{prefijo}/…mismos paths que live…
+archive/index.json
+```
+
+- Aplica a **todos** los sectores del `MAPEO` (sanidad, murcia, madrid, educacion, educacion-bolsa, educacion-murcia, admin-clm).
+- Si el fichero **ya está** en `archive/{hoy}/` con el mismo tamaño, se omite (re-run).
+- Cada día con scrape/subida guarda un snapshot completo de ese sector (retención limita el coste).
+- Retención por defecto: **730 días** (`--retention-days`).
+- El “latest” (URLs que usa la app hoy) no cambia.
+
+```bash
+# Solo archivar lo local (sin tocar latest)
+python scripts/subir_sectores_r2.py --sectores sanidad,educacion-bolsa --archive-only
+
+# Subir live sin histórico
+python scripts/subir_sectores_r2.py --sectores sanidad --no-archive
+
+# Tests de rutas/índice (sin red)
+python scripts/test_r2_archive.py
+```
+
+Índice público (cuando exista en el bucket): `{R2_PUBLIC_URL}/archive/index.json`
+
+La UI de comparar fechas / gráficas de posición **aún no** consume este archivo; es solo infra.
 
 ## Scrape manual
 
