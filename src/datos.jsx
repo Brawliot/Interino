@@ -9,7 +9,7 @@ import {
   calcularCoberturaEducacion,
   frescuraDesdeManifests,
 } from "./cobertura-clm.js";
-
+import { cursoDeFecha, urlBaseArchive } from "./cursosHistoricos.js";
 /** Evita que el navegador/PWA sirva JSON viejos de R2 tras un scrape. */
 const FETCH_DATOS = { cache: "no-store" };
 
@@ -442,7 +442,9 @@ function crearCapaBusqueda({
   };
 }
 
-export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
+export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo, opciones = {}) {
+  const baseUrl = String(opciones.baseUrl || DATA_CATEGORIAS_BASE_URL).replace(/\/?$/, "/");
+  const modoHistorico = opciones.modoHistorico || null;
   const { uiAScraper, scraperAUi } = construirMapasCategorias(categoriasPorGrupo);
   const archivosDisponibles = new Set(manifest?.archivos || []);
 
@@ -491,8 +493,9 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
     ccaaId: "clm",
     gruposSanidad,
     archivosDisponibles,
-    historico,
+    historico: modoHistorico ? [] : historico,
     organismo: organismoCcaa("clm"),
+    baseUrl,
     categoriaScraper,
     rutaListado: (categoriaUi) => {
       const cat = categoriaScraper(categoriaUi);
@@ -521,13 +524,14 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
     },
   });
 
-  // Corregir rutas CLM: resolver grupo real por categoría
   function grupoDeCategoriaUi(categoriaUi) {
     return gruposSanidad.find((g) => g.categorias.includes(categoriaUi))?.id || "diplomado";
   }
 
   return {
     ...capa,
+    baseUrl,
+    modoHistorico,
     uiAScraper,
     scraperAUi,
     categoriaUiDesdeScraper: (nombre) => scraperAUi[nombre] ?? portalAUi(nombre),
@@ -546,8 +550,8 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
       const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
       const cat = categoriaScraper(categoriaUi);
       const rel = `${gid}/${slugArchivo(cat)}.json`;
-      const res = await fetchDatos(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
-      if (!res.ok) throw new Error(`No se pudo cargar ${DATA_CATEGORIAS_BASE_URL}${rel} (${res.status})`);
+      const res = await fetchDatos(`${baseUrl}${rel}`);
+      if (!res.ok) throw new Error(`No se pudo cargar ${baseUrl}${rel} (${res.status})`);
       return res.json();
     },
     buscarPersonas: async (grupoId, categoriaUi, consulta) => {
@@ -561,6 +565,16 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
     gerenciasDeCategoria: async (grupoId, categoriaUi) => {
       const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
       return capa.gerenciasDeCategoria(gid, categoriaUi);
+    },
+    estadoActualizacion: async (categoriaUi, grupoId, grupoActivo) => {
+      if (modoHistorico?.fecha) {
+        const curso = modoHistorico.curso ? `curso ${modoHistorico.curso}` : "histórico";
+        return {
+          tipo: "ok",
+          texto: `Consulta histórica (${curso}, snapshot ${modoHistorico.fecha}). No es el listado en vivo; los seguimientos siguen anclados a datos actuales.`,
+        };
+      }
+      return capa.estadoActualizacion(categoriaUi, grupoId, grupoActivo);
     },
   };
 }
@@ -1557,6 +1571,7 @@ let metaDescubierta = {
   adminSinPdf: [],
   frescura: { sanidad: null, educacionDisponibles: null, educacionBolsa: null, admin: null },
   numGerenciasClm: null,
+  archiveIndex: null,
   descubierto: false,
 };
 
@@ -1593,6 +1608,8 @@ async function cargarPackSanidadClm() {
   return {
     capa: crearCapaDatosClm(historico, manifest, categoriasPorGrupo),
     manifest,
+    historico,
+    categoriasPorGrupo,
   };
 }
 
@@ -1877,6 +1894,18 @@ function ensamblarDatos({ listo = true, errorPack = null } = {}) {
     frescura,
     paraCcaa: (ccaaId) => capas[ccaaId] || capas.clm,
     paraSector: (ccaaId, sectorId, opciones = {}) => {
+      const fechaSnap = opciones.fechaSnapshot || null;
+      if (
+        fechaSnap &&
+        sectorId === "sanidad" &&
+        (ccaaId === "clm" || !ccaaId) &&
+        clmPack?.historico != null
+      ) {
+        return crearCapaDatosClm(clmPack.historico, clmPack.manifest, clmPack.categoriasPorGrupo, {
+          baseUrl: urlBaseArchive(DATA_CATEGORIAS_BASE_URL, fechaSnap, "sanidad"),
+          modoHistorico: { fecha: fechaSnap, curso: cursoDeFecha(fechaSnap) },
+        });
+      }
       if (sectorId === "educacion" && ccaaId === "mur") {
         return educacionMurcia || crearCapaEducacionVacia();
       }
@@ -1892,6 +1921,7 @@ function ensamblarDatos({ listo = true, errorPack = null } = {}) {
       }
       return capas[ccaaId] || capas.clm;
     },
+    archiveIndex: metaDescubierta.archiveIndex || null,
     paraCcaas: (ccaaIds) => {
       const ids = [...new Set(ccaaIds)].filter((id) => capas[id]);
       if (ids.length === 0) return capas.clm;
@@ -1916,11 +1946,11 @@ export function crearDatosPendientes() {
  */
 export async function cargarDatosIniciales({ ccaaId = "clm" } = {}) {
   const packId = packSanidadDeCcaa(ccaaId === "mur" || ccaaId === "mad" ? ccaaId : "clm");
-  await asegurarPackId(packId);
-  // Si la última CCAA no es CLM, CLM sigue siendo fallback de capas vacías hasta pedirlo.
-  if (packId !== "sanidad-clm") {
-    // no bloqueamos; se cargará al elegir CLM
-  }
+  const [archiveRes] = await Promise.all([
+    fetchJsonOptional(`${DATA_CATEGORIAS_BASE_URL}archive/index.json`),
+    asegurarPackId(packId),
+  ]);
+  if (archiveRes.ok) metaDescubierta = { ...metaDescubierta, archiveIndex: archiveRes.data };
   return ensamblarDatos({ listo: true });
 }
 
@@ -1970,6 +2000,7 @@ export async function descubrirDisponibilidad(datosActuales) {
     eduMurManRes,
     adminManRes,
     adminCatsRes,
+    archiveIdxRes,
   ] = await Promise.all([
     fetchJsonOptional(`${base}murcia/categorias.json`),
     fetchJsonOptional(`${base}murcia/manifest.json`),
@@ -1982,8 +2013,8 @@ export async function descubrirDisponibilidad(datosActuales) {
     fetchJsonOptional(`${eduMurBase}manifest.json`),
     fetchJsonOptional(`${adminBase}manifest.json`),
     fetchJsonOptional(`${adminBase}categorias.json`),
+    fetchJsonOptional(`${base}archive/index.json`),
   ]);
-
   let manifestMurcia = murManRes.ok ? murManRes.data : { archivos: [] };
   if (!manifestMurcia.archivos?.length) {
     const root = await fetchJsonOptional(`${base}manifest.json`);
@@ -2049,6 +2080,7 @@ export async function descubrirDisponibilidad(datosActuales) {
       admin: manifestAdmin,
     }),
     numGerenciasClm,
+    archiveIndex: archiveIdxRes.ok ? archiveIdxRes.data : metaDescubierta.archiveIndex,
     descubierto: true,
   };
 

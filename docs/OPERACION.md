@@ -108,7 +108,7 @@ python scripts/test_r2_archive.py
 
 Índice público (cuando exista en el bucket): `{R2_PUBLIC_URL}/archive/index.json`
 
-La UI de comparar fechas / gráficas de posición **aún no** consume este archivo; es solo infra.
+La UI de comparar fechas / gráficas de posición **aún no** consume comparativas; la app sí puede elegir **curso/snapshot** en Buscar (CLM sanidad) leyendo `archive/index.json`.
 
 ## Scrape manual
 

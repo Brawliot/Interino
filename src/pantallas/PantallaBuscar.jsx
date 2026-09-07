@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, Lock, Stethoscope, GraduationCap, Landmark, AlertTriangle, List as ListIcon, History, Info } from "lucide-react";
 import { useDatos, useCapaDatos } from "../datos.jsx";
 import { sectoresParaCcaas } from "../regiones.js";
 import { MODOS_LISTADO_EDUCACION } from "../educacion.js";
 import { etiquetaFrescuraSector } from "../cobertura-clm.js";
+import { opcionesDesdeIndex, resumirPorCurso } from "../cursosHistoricos.js";
 import Barra from "../components/Barra.jsx";
 import AvisoActualizacion from "../components/AvisoActualizacion.jsx";
 import { ResultadoColapsable } from "../components/resultado/ResultadoShell.jsx";
@@ -299,7 +300,32 @@ function InfoListadoBusqueda({
 // ---------------------------------------------------------------
 // PANTALLA 3 — buscar posición
 // ---------------------------------------------------------------
-export default function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerListado, recientes, gruposSanidad, ccaas, sectorId, onSectorChange, educacionActiva, educacionMurciaActiva, administracionActiva, educacionBolsaActiva, educacionDisponiblesActiva, educacionAfinActiva, murciaActiva, madridActiva, modoEducacion, modoAdministracion, modoListadoEducacion, onModoListadoEducacionChange }) {
+export default function PantallaBuscar({
+  atras,
+  onBuscar,
+  onBuscarGlobal,
+  onVerListado,
+  recientes,
+  gruposSanidad,
+  ccaas,
+  sectorId,
+  onSectorChange,
+  educacionActiva,
+  educacionMurciaActiva,
+  administracionActiva,
+  educacionBolsaActiva,
+  educacionDisponiblesActiva,
+  educacionAfinActiva,
+  murciaActiva,
+  madridActiva,
+  modoEducacion,
+  modoAdministracion,
+  modoListadoEducacion,
+  onModoListadoEducacionChange,
+  fechaSnapshot,
+  onFechaSnapshotChange,
+  archiveIndex,
+}) {
   const datos = useDatos();
   const capa = useCapaDatos();
   const ccaaIds = ccaas.map((c) => c.id);
@@ -317,6 +343,23 @@ export default function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerL
   const [sinResultados, setSinResultados] = useState(false);
   const [sinResultadosGlobal, setSinResultadosGlobal] = useState(false);
   const [sinDatosCategoria, setSinDatosCategoria] = useState(false);
+
+  const puedeHistorico =
+    !multi &&
+    !modoEducacion &&
+    !modoAdministracion &&
+    (ccaaIds[0] || "clm") === "clm" &&
+    sectorId === "sanidad";
+
+  const opcionesCurso = useMemo(() => {
+    if (!puedeHistorico) return [];
+    return resumirPorCurso(
+      opcionesDesdeIndex(archiveIndex || datos.archiveIndex, {
+        sectorApp: "sanidad",
+        ccaaId: "clm",
+      }),
+    );
+  }, [puedeHistorico, archiveIndex, datos.archiveIndex]);
 
   const categoriaConDatos = sectorDisponible && grupo?.activo && capa.tieneDatosReales(categoria, grupoId);
   const tituloBarra = multi ? ccaas.map((c) => c.nombre).join(" · ") : (ccaas[0]?.nombre || "Castilla-La Mancha");
@@ -407,6 +450,48 @@ export default function PantallaBuscar({ atras, onBuscar, onBuscarGlobal, onVerL
             setSinDatosCategoria(false);
           }}
         />
+
+        {puedeHistorico && (
+          <div>
+            <label
+              htmlFor="selector-curso-historico"
+              style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.ink }}
+            >
+              Datos del listado
+            </label>
+            <select
+              id="selector-curso-historico"
+              value={fechaSnapshot || ""}
+              onChange={(e) => onFechaSnapshotChange?.(e.target.value || null)}
+              className="w-full mt-2 focus:outline-none"
+              style={{
+                border: `1.5px solid ${fechaSnapshot ? C.navy : C.line}`,
+                background: C.card,
+                padding: "12px 14px",
+                fontFamily: FONT_BODY,
+                fontSize: 14,
+                color: C.ink,
+                borderRadius: "10px 4px 10px 4px",
+              }}
+            >
+              <option value="">Actual (en vivo)</option>
+              {opcionesCurso.map((o) => (
+                <option key={o.fecha} value={o.fecha}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {fechaSnapshot ? (
+              <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.clay, marginTop: 6, lineHeight: 1.4 }}>
+                Estás consultando un snapshot histórico. Los seguimientos siguen usando el listado actual.
+              </p>
+            ) : opcionesCurso.length === 0 ? (
+              <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 6, lineHeight: 1.4 }}>
+                Aún no hay cursos archivados. Irán apareciendo tras las subidas del vigía a R2.
+              </p>
+            ) : null}
+          </div>
+        )}
 
         {!multi && !modoEducacion && !modoAdministracion && (
           <AvisoRegionSinListados ccaaId={ccaaIds[0]} murciaActiva={murciaActiva} madridActiva={madridActiva} />

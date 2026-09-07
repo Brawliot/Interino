@@ -272,6 +272,25 @@ def actualizar_index_y_retencion(
             retencion_dias=retencion_dias,
         )
 
+    # Catálogo de cursos (derivado) para la app
+    cursos = {}
+    for f, meta in (index.get("fechas") or {}).items():
+        try:
+            y, m, _d = f.split("-")
+            y_i, m_i = int(y), int(m)
+            start = y_i if m_i >= 7 else y_i - 1
+            curso = f"{start}/{str((start + 1) % 100).zfill(2)}"
+        except ValueError:
+            continue
+        prev = cursos.get(curso)
+        if not prev or f > prev["fecha"]:
+            cursos[curso] = {
+                "curso": curso,
+                "fecha": f,
+                "sectores": meta.get("sectores") or [],
+            }
+    index["cursos"] = sorted(cursos.values(), key=lambda c: c["fecha"], reverse=True)
+
     if purgar:
         for vieja in fechas_a_purgar(index, hoy=fecha, retencion_dias=retencion_dias):
             pref = f"{ARCHIVE_ROOT}/{vieja}/"

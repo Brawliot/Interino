@@ -93,6 +93,7 @@ export default function ListasApp() {
   const [ccaas, setCcaas] = useState([]);
   const [sectorId, setSectorId] = useState("sanidad");
   const [listadoEducacionModo, setListadoEducacionModo] = useState(() => leerModoListadoEducacion(datos));
+  const [fechaSnapshot, setFechaSnapshot] = useState(null);
   const capaDatos = useMemo(() => {
     const ids = ccaas.map((c) => c.id);
     const ccaaPrincipal = ids[0] || "clm";
@@ -108,9 +109,17 @@ export default function ListasApp() {
     if (sectorId === "administracion") {
       return datos.paraSector?.(ccaaPrincipal, "administracion") || datos.administracionClm || datos.paraCcaa("clm");
     }
-    if (ids.length === 0) return datos.paraCcaa("clm");
+    if (ids.length === 0) {
+      return (
+        datos.paraSector?.("clm", "sanidad", { fechaSnapshot: fechaSnapshot || undefined }) ||
+        datos.paraCcaa("clm")
+      );
+    }
+    if (ids.length === 1 && ids[0] === "clm" && fechaSnapshot) {
+      return datos.paraSector?.("clm", "sanidad", { fechaSnapshot }) || datos.paraCcaa("clm");
+    }
     return datos.paraCcaas(ids);
-  }, [datos, ccaas, sectorId, listadoEducacionModo]);
+  }, [datos, ccaas, sectorId, listadoEducacionModo, fechaSnapshot]);
   const modoEducacion = sectorId === "educacion" || capaDatos.sector === "educacion";
   const modoAdministracion = sectorId === "administracion" || capaDatos.sector === "administracion";
   const gruposSanidad = useMemo(() => {
@@ -276,6 +285,12 @@ export default function ListasApp() {
       localStorage.setItem(LS_EDUCACION_LISTADO, listadoEducacionModo);
     } catch { /* quota / modo privado */ }
   }, [listadoEducacionModo]);
+
+  useEffect(() => {
+    if (sectorId !== "sanidad" || (ccaas.length && ccaas[0]?.id !== "clm") || ccaas.length > 1) {
+      setFechaSnapshot(null);
+    }
+  }, [sectorId, ccaas]);
 
   useEffect(() => {
     if (!datos.listo || sectorId !== "educacion") return;
@@ -653,6 +668,9 @@ export default function ListasApp() {
             modoListadoEducacion={listadoEducacionModo}
             onModoListadoEducacionChange={setListadoEducacionModo}
             onSectorChange={(s) => setSectorId(s.id)}
+            fechaSnapshot={fechaSnapshot}
+            onFechaSnapshotChange={setFechaSnapshot}
+            archiveIndex={datos.archiveIndex}
           />
         )}
 
