@@ -6,7 +6,7 @@ import {
   sessionCookie,
   sessionExpiresIso,
   sha256Hex,
-} from "../../lib/auth.js";
+} from "../../shared/auth.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;

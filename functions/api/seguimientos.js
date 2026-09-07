@@ -1,4 +1,4 @@
-import { getSessionUser, json } from "../lib/auth.js";
+import { getSessionUser, json } from "../shared/auth.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
