@@ -1,4 +1,4 @@
-import { Calculator, ArrowLeftRight, Map as MapIcon, Banknote, PhoneCall, Award, ShieldAlert, Lock } from "lucide-react";
+import { Calculator, ArrowLeftRight, Map as MapIcon, Banknote, PhoneCall, Award, ShieldAlert, Lock, UserRound } from "lucide-react";
 import { PLAN, mensajeLimiteSeguimientos, FEATURES_HOY, FEATURES_PREVISTAS } from "../plan.js";
 import Barra from "../components/Barra.jsx";
 import { C, FONT_BODY } from "../theme.js";
@@ -47,11 +47,42 @@ function AvisoLegal({ onAbrirPrivacidad }) {
   );
 }
 
-export default function PantallaMas({ onHerramienta, onPrivacidad, atras }) {
+export default function PantallaMas({ onHerramienta, onPrivacidad, onCuenta, user, atras }) {
   return (
     <div className="pb-8">
       <Barra titulo="Más" atras={atras} />
       <div className="px-5">
+        <button
+          type="button"
+          onClick={() => onCuenta?.()}
+          className="w-full text-left focus:outline-none focus:ring-2 flex items-center gap-3"
+          style={{
+            background: C.card,
+            border: `1.5px solid ${C.navy}`,
+            borderRadius: "12px 4px 12px 4px",
+            padding: "14px 14px",
+            marginBottom: 22,
+            cursor: "pointer",
+          }}
+        >
+          <div
+            className="rounded-lg flex items-center justify-center"
+            style={{ width: 40, height: 40, background: C.navy, flexShrink: 0 }}
+          >
+            <UserRound size={20} color={C.goldSoft} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.navy }}>
+              Cuenta
+            </p>
+            <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, marginTop: 2, lineHeight: 1.35 }}>
+              {user?.email
+                ? user.email
+                : "Entra con email para sincronizar seguimientos"}
+            </p>
+          </div>
+        </button>
+
         <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.inkSoft, marginBottom: 12 }}>
           Herramientas
         </p>

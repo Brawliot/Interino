@@ -1,6 +1,6 @@
 # Política de privacidad
 
-**Última actualización:** 14 de julio de 2026
+**Última actualización:** 7 de septiembre de 2026
 
 ## Quién es el responsable
 
@@ -14,32 +14,50 @@ La aplicación **no solicita ni almacena el DNI completo** de ninguna persona en
 
 ## Qué datos se almacenan en tu dispositivo
 
-La aplicación utiliza el almacenamiento local de tu navegador (localStorage) para guardar tus búsquedas recientes y seguimientos. Estos datos se guardan **únicamente en tu dispositivo**, no se envían a ningún servidor ni son accesibles para nosotros. Puedes borrarlos en cualquier momento desde los ajustes de tu navegador.
+La aplicación utiliza el almacenamiento local de tu navegador (localStorage) para guardar tus búsquedas recientes y seguimientos. Puedes borrarlos en cualquier momento desde los ajustes de tu navegador.
 
 Si activas **notificaciones del navegador**, el permiso queda en tu dispositivo. Por ahora te avisamos al abrir la app cuando corresponda; no enviamos push en segundo plano desde servidores propios.
 
 Si utilizas un dispositivo compartido, ten en cuenta que otra persona con acceso al navegador podría ver tus búsquedas recientes.
 
+## Cuenta opcional (email / magic link)
+
+Si decides **iniciar sesión**, tratamos:
+
+- Tu **dirección de email**, para enviarte un enlace de acceso (sin contraseña) y asociar una sesión.
+- Una **cookie de sesión** HttpOnly (`interino_session`) en tu navegador, para reconocerte en visitas posteriores.
+- Una **copia de tus seguimientos** en nuestros servidores (Cloudflare D1), sincronizada con la copia local, para poder recuperarlos en otro dispositivo.
+
+El acceso se basa en un enlace de un solo uso enviado por correo. El tratamiento de la cuenta se realiza al amparo del artículo 6.1.b) del RGPD (ejecución de medidas precontractuales / prestación del servicio que solicitas) y, en su caso, 6.1.f) (interés legítimo en mantener la seguridad de la sesión).
+
+Puedes **cerrar sesión** desde la app. Para solicitar la **supresión de la cuenta y de los seguimientos en la nube**, escribe a fedebotija@gmail.com.
+
+Sin iniciar sesión, los seguimientos **no se envían** a nuestros servidores de autenticación.
+
 ## Qué datos NO se recogen
 
-- No hay registro de usuarios ni cuentas.
-- No se almacenan las búsquedas en ningún servidor.
-- No se usan los datos con fines publicitarios ni se ceden a terceros.
-- No se utilizan cookies propias.
+- No hay contraseñas ni cobros en la app.
+- No se almacenan las búsquedas puntuales en ningún servidor (solo, si hay cuenta, el listado de seguimientos que tú guardas).
+- No se usan los datos con fines publicitarios ni se ceden a terceros con fines comerciales.
+- No se utilizan cookies de publicidad. La cookie de sesión solo existe si inicias sesión.
 
 ## Servicios de terceros
 
 La aplicación carga tipografías desde Google Fonts, lo que implica que tu navegador realiza una conexión a servidores de Google al visitar la página. Google puede recibir tu dirección IP y la URL de referencia como consecuencia de esta conexión. Puedes consultar la política de privacidad de Google en https://policies.google.com/privacy.
 
+El alojamiento y la base de datos de cuentas/seguimientos en nube usan **Cloudflare** (Pages, Functions, D1). El envío del correo con el enlace de acceso puede realizarse mediante **Resend**. Cada proveedor trata datos técnicos necesarios para prestar el servicio según su propia política.
+
 ## Base legal y finalidad
 
 Los datos mostrados proceden de fuentes de acceso público, publicadas por la administración en cumplimiento de sus obligaciones de transparencia en los procesos de selección de personal temporal. Esta aplicación los reproduce con la única finalidad de facilitar su consulta a las personas interesadas, sin alterar su contenido.
 
-El tratamiento se realiza al amparo del artículo 6.1.f) del RGPD (interés legítimo del responsable en facilitar el acceso a información pública) en relación con el artículo 9 de la LOPDGDD (tratamiento de datos accesibles al público).
+El tratamiento de listados públicos se realiza al amparo del artículo 6.1.f) del RGPD (interés legítimo del responsable en facilitar el acceso a información pública) en relación con el artículo 9 de la LOPDGDD (tratamiento de datos accesibles al público).
 
 ## Conservación
 
 Se conserva únicamente la copia del último listado publicado por cada categoría profesional (se sobrescribe con cada actualización) y un histórico agregado de puntos de corte que **no contiene datos personales**.
+
+Los datos de cuenta (email, sesiones, seguimientos en nube) se conservan mientras mantengas la cuenta o hasta que solicites su borrado, y las sesiones caducan automáticamente (aprox. 30 días de inactividad de cookie).
 
 ## Tus derechos
 

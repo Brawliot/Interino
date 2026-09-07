@@ -1,0 +1,17 @@
+# Cloudflare Pages + D1 (auth / seguimientos en nube)
+name = "interino"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "interino-auth"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "migrations"
+
+# Secrets / vars (Pages → Settings → Environment variables):
+# AUTH_SECRET          — string largo aleatorio (reserva futura)
+# APP_ORIGIN           — https://interino.pages.dev
+# AUTH_DEV_MODE        — "1" para devolver magic link en JSON (sin email)
+# RESEND_API_KEY       — opcional si AUTH_DEV_MODE=0
+# AUTH_FROM_EMAIL      — p.ej. Interino <onboarding@resend.dev>

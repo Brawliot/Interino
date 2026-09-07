@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { useDatos, useAsegurarPacks, CcaaCapaProvider, packsParaContexto } from "./src/datos.jsx";
 import { CCAA_LIST } from "./src/regiones.js";
 import { GERENCIA_EDUCACION } from "./src/educacion.js";
@@ -10,6 +10,13 @@ import {
   refrescarTodosSeguimientos,
   notificarCambiosSeguimientos,
 } from "./src/seguimientos.js";
+import {
+  consumirParamLogin,
+  fetchMe,
+  fetchSeguimientosNube,
+  fusionarSeguimientos,
+  putSeguimientosNube,
+} from "./src/auth.js";
 import { notificacionesHabilitadasEnDispositivo } from "./src/notificaciones.js";
 import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 import { C, GRAIN, FONT_BODY } from "./src/theme.js";
@@ -21,6 +28,7 @@ import { candidatoDesdeFilasListado, grupoIdParaCapa } from "./src/utils/candida
 import { LS_EDUCACION_LISTADO, leerModoListadoEducacion } from "./src/educacionListado.js";
 import PantallaHome from "./src/pantallas/PantallaHome.jsx";
 import PantallaMas from "./src/pantallas/PantallaMas.jsx";
+import PantallaCuenta from "./src/pantallas/PantallaCuenta.jsx";
 import PantallaBuscar from "./src/pantallas/PantallaBuscar.jsx";
 import PantallaSeguimientos from "./src/pantallas/PantallaSeguimientos.jsx";
 import PantallaConfirmar from "./src/pantallas/PantallaConfirmar.jsx";
@@ -115,6 +123,7 @@ export default function ListasApp() {
   const [paso, setPaso] = useState("inicio");
   const [pasoSeguimientosOrigen, setPasoSeguimientosOrigen] = useState("inicio");
   const [pasoPrivacidadOrigen, setPasoPrivacidadOrigen] = useState("inicio");
+  const [pasoCuentaOrigen, setPasoCuentaOrigen] = useState("mas");
   const [sector, setSector] = useState(null);
   const [categoriaActual, setCategoriaActual] = useState("");
   const [grupoIdActual, setGrupoIdActual] = useState("diplomado");
@@ -131,7 +140,13 @@ export default function ListasApp() {
   const [herramientasCtx, setHerramientasCtx] = useState({ puntos: null, categoria: "" });
   const [avisoLimite, setAvisoLimite] = useState("");
   const [seguimientosListos, setSeguimientosListos] = useState(false);
+  const [authListo, setAuthListo] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authConfigured, setAuthConfigured] = useState(false);
+  const [syncEstado, setSyncEstado] = useState("");
   const [cargandoSector, setCargandoSector] = useState(false);
+  const seguimientosRef = useRef(seguimientos);
+  seguimientosRef.current = seguimientos;
 
   useEffect(() => {
     const raw = leerStorage(LS_SEGUIMIENTOS, []);
@@ -139,6 +154,49 @@ export default function ListasApp() {
     setRecientes(leerStorage(LS_RECIENTES, []));
     setSeguimientosListos(true);
   }, []);
+
+  // Sesión + fusión local ↔ nube (antes del refresco de posiciones).
+  useEffect(() => {
+    if (!seguimientosListos) return undefined;
+    let cancelado = false;
+    (async () => {
+      const loginParam = consumirParamLogin();
+      try {
+        const me = await fetchMe();
+        if (cancelado) return;
+        setAuthConfigured(Boolean(me.authConfigured));
+        setUser(me.user || null);
+        if (me.user) {
+          try {
+            const cloud = await fetchSeguimientosNube();
+            if (cancelado) return;
+            if (!cloud.unauthorized) {
+              setSeguimientos((prev) => fusionarSeguimientos(prev, cloud.seguimientos || []));
+              setSyncEstado("Seguimientos sincronizados con la nube.");
+            }
+          } catch {
+            if (!cancelado) setSyncEstado("No se pudieron sincronizar los seguimientos.");
+          }
+        }
+        if (!cancelado && loginParam === "ok") {
+          setSyncEstado((s) => s || "Sesión iniciada.");
+          setPaso("cuenta");
+          setPasoCuentaOrigen("inicio");
+        } else if (!cancelado && (loginParam === "error" || loginParam === "expired")) {
+          setSyncEstado("El enlace de acceso no es válido o ha caducado. Pide otro.");
+          setPaso("cuenta");
+          setPasoCuentaOrigen("inicio");
+        }
+      } catch {
+        if (!cancelado) setAuthConfigured(false);
+      } finally {
+        if (!cancelado) setAuthListo(true);
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [seguimientosListos]);
 
   // Carga bajo demanda del pack del sector/CCAA activos.
   useEffect(() => {
@@ -163,12 +221,12 @@ export default function ListasApp() {
   }, [datos.listo, ccaas, sectorId, asegurarPacks]);
 
   useEffect(() => {
-    if (!datos?.listo || !seguimientosListos || typeof asegurarPacks !== "function") {
+    if (!datos?.listo || !authListo || typeof asegurarPacks !== "function") {
       return undefined;
     }
     let cancelado = false;
     (async () => {
-      const lista = (leerStorage(LS_SEGUIMIENTOS, [])).map(normalizarSeguimiento).filter(Boolean);
+      const lista = (seguimientosRef.current || []).map(normalizarSeguimiento).filter(Boolean);
       if (!lista.length) return;
       try {
         const packs = packsParaContexto({ seguimientos: lista });
@@ -187,7 +245,7 @@ export default function ListasApp() {
     return () => {
       cancelado = true;
     };
-  }, [datos.listo, seguimientosListos, asegurarPacks]);
+  }, [datos.listo, authListo, asegurarPacks]);
 
   useEffect(() => {
     if (!seguimientosListos) return;
@@ -195,6 +253,17 @@ export default function ListasApp() {
       localStorage.setItem(LS_SEGUIMIENTOS, JSON.stringify(seguimientos));
     } catch { /* quota / modo privado */ }
   }, [seguimientos, seguimientosListos]);
+
+  // Subida a la nube con debounce cuando hay sesión.
+  useEffect(() => {
+    if (!user || !authListo) return undefined;
+    const t = setTimeout(() => {
+      putSeguimientosNube(seguimientos).catch(() => {
+        setSyncEstado("No se pudo guardar en la nube (se mantiene la copia local).");
+      });
+    }, 700);
+    return () => clearTimeout(t);
+  }, [seguimientos, user, authListo]);
 
   useEffect(() => {
     try {
@@ -237,6 +306,11 @@ export default function ListasApp() {
   const abrirPrivacidad = () => {
     setPasoPrivacidadOrigen(paso);
     setPaso("privacidad");
+  };
+
+  const abrirCuenta = () => {
+    setPasoCuentaOrigen(paso === "cuenta" ? "mas" : paso);
+    setPaso("cuenta");
   };
 
   const irABuscarConCcaas = (lista) => {
@@ -528,7 +602,22 @@ export default function ListasApp() {
           <PantallaMas
             onHerramienta={(id) => setPaso(id)}
             onPrivacidad={abrirPrivacidad}
+            onCuenta={abrirCuenta}
+            user={user}
             atras={() => setPaso("inicio")}
+          />
+        )}
+
+        {paso === "cuenta" && (
+          <PantallaCuenta
+            user={user}
+            authConfigured={authConfigured}
+            syncEstado={syncEstado}
+            atras={() => setPaso(pasoCuentaOrigen)}
+            onSesionCambio={(u) => {
+              setUser(u);
+              if (!u) setSyncEstado("Sesión cerrada. Los seguimientos siguen en este dispositivo.");
+            }}
           />
         )}
 

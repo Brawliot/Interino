@@ -5,6 +5,7 @@ export function tabBarraInferior(paso) {
   if (paso === "seguimientos") return "seguimientos";
   if (
     paso === "mas" ||
+    paso === "cuenta" ||
     paso === "privacidad" ||
     paso === "simulador-baremo" ||
     paso === "simulador-gerencia" ||
