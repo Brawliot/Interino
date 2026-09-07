@@ -20,7 +20,14 @@ export function appOrigin(env) {
 
 export function isDevMode(env) {
   const v = env?.AUTH_DEV_MODE;
-  return v === "1" || v === 1 || v === true || String(v).trim().toLowerCase() === "true";
+  if (v === "0" || v === 0 || v === false || String(v).trim().toLowerCase() === "false") {
+    return false;
+  }
+  if (v === "1" || v === 1 || v === true || String(v).trim().toLowerCase() === "true") {
+    return true;
+  }
+  // Sin Resend configurado: modo desarrollo (devLink en la respuesta).
+  return !env?.RESEND_API_KEY;
 }
 
 export function randomId(bytes = 16) {
