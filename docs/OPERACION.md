@@ -69,6 +69,8 @@ Workflow: `.github/workflows/daily_scraper.yml`
    ver sección siguiente).
 5. **Siempre** commit de `vigia_estado.json` (aunque no haya scrape). Sin esto,
    edu/admin se reinicializan cada día y nunca scrapean.
+6. **Notificaciones push** — `POST /api/cron/push-check` (ver [PUSH.md](./PUSH.md)).
+   Requiere secrets `CRON_SECRET` (y opcional `PUSH_CRON_URL`).
 
 La 1ª observación de un sector marca cambios a propósito para alinear R2.
 
@@ -77,6 +79,8 @@ Secrets necesarios en GitHub → Settings → Secrets → Actions:
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
+- `CRON_SECRET` (Web Push; mismo valor que en Cloudflare Pages)
+- `PUSH_CRON_URL` (opcional)
 
 Probar: Actions → **Vigia diario CLM** → Run workflow.
 

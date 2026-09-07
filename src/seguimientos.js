@@ -60,6 +60,11 @@ export function normalizarSeguimiento(raw) {
     persona: { nombreCompleto, dniParcial },
     snapshot,
     ultimoCambio: raw.ultimoCambio || null,
+    /** Etiqueta libre: "Yo", "Compañera", etc. */
+    alias: String(raw.alias || "").trim().slice(0, 40),
+    /** Si false, no entra en push ni avisos locales de ese aspirante. */
+    avisos: raw.avisos !== false,
+    origen: raw.origen || "resultado",
   };
 
   return {
@@ -91,6 +96,9 @@ export function crearSeguimiento({
   sector = "sanidad",
   modoListado = null,
   resultado,
+  alias = "",
+  avisos = true,
+  origen = "resultado",
 }) {
   const nombreCompleto = String(resultado?.nombreCompleto || "").trim();
   const dniParcial = String(resultado?.dniParcial || "").trim();
@@ -112,7 +120,28 @@ export function crearSeguimiento({
     persona: { nombreCompleto, dniParcial },
     snapshot,
     candidato: resultado,
+    alias,
+    avisos,
+    origen,
   });
+}
+
+/** Clave de deduplicación de un favorito/seguimiento. */
+export function claveSeguimiento(s) {
+  const nombre = (s?.persona?.nombreCompleto || s?.candidato?.nombreCompleto || "").trim().toLowerCase();
+  const dni = (s?.persona?.dniParcial || s?.candidato?.dniParcial || "").trim().toLowerCase();
+  return [
+    s?.ccaaId || "clm",
+    s?.sector || "sanidad",
+    s?.categoria || "",
+    s?.gerencia || "",
+    s?.ambito || "",
+    dni || nombre,
+  ].join("\0");
+}
+
+export function mismoSeguimiento(a, b) {
+  return claveSeguimiento(a) === claveSeguimiento(b);
 }
 
 export function clasificarCambio(anterior, actual) {
@@ -224,6 +253,32 @@ export async function refrescarSeguimiento(seguimiento, ctx) {
 
   const cand = personas.find((p) => mismaPersona(s.persona, p));
   if (!cand) {
+    if (anterior.posicion > 0 && s.ultimoCambio !== "adjudicado") {
+      const ahora = new Date().toISOString();
+      const seguimientoActualizado = normalizarSeguimiento({
+        ...s,
+        snapshot: {
+          ...s.snapshot,
+          posicion: 0,
+          puntos: anterior.puntos,
+          actualizadoEn: ahora,
+          desaparecidoEn: ahora,
+        },
+        ultimoCambio: "adjudicado",
+        candidato: {
+          ...s.candidato,
+          posicion: 0,
+        },
+      });
+      return {
+        ok: true,
+        motivo: "adjudicado",
+        cambio: "adjudicado",
+        anterior,
+        actual: null,
+        seguimientoActualizado,
+      };
+    }
     return {
       ok: false,
       motivo: "no_encontrado",
@@ -248,6 +303,32 @@ export async function refrescarSeguimiento(seguimiento, ctx) {
     );
   }
   if (!hit) {
+    if (anterior.posicion > 0 && s.ultimoCambio !== "adjudicado") {
+      const ahora = new Date().toISOString();
+      const seguimientoActualizado = normalizarSeguimiento({
+        ...s,
+        snapshot: {
+          ...s.snapshot,
+          posicion: 0,
+          puntos: anterior.puntos,
+          actualizadoEn: ahora,
+          desaparecidoEn: ahora,
+        },
+        ultimoCambio: "adjudicado",
+        candidato: {
+          ...s.candidato,
+          posicion: 0,
+        },
+      });
+      return {
+        ok: true,
+        motivo: "adjudicado",
+        cambio: "adjudicado",
+        anterior,
+        actual: null,
+        seguimientoActualizado,
+      };
+    }
     return {
       ok: false,
       motivo: "no_encontrado",
@@ -300,25 +381,56 @@ export async function refrescarTodosSeguimientos(lista, ctx) {
   return out;
 }
 
-export function notificarCambiosSeguimientos(resultados) {
-  const relevantes = (resultados || []).filter(
-    (r) => r.ok && (r.cambio === "subio" || r.cambio === "bajo"),
-  );
-  if (!relevantes.length || !notificacionesHabilitadasEnDispositivo()) return 0;
+export function notificarCambiosSeguimientos(resultados, prefs) {
+  if (!notificacionesHabilitadasEnDispositivo()) return 0;
+  const avisosPosicion = prefs?.avisosPosicion !== false;
+  const avisosAdjudicacion = prefs?.avisosAdjudicacion !== false;
 
-  if (relevantes.length === 1) {
-    const r = relevantes[0];
+  const conAvisos = (resultados || []).filter((r) => r.seguimientoActualizado?.avisos !== false);
+
+  const pos = avisosPosicion
+    ? conAvisos.filter((r) => r.ok && (r.cambio === "subio" || r.cambio === "bajo"))
+    : [];
+  const adj = avisosAdjudicacion
+    ? conAvisos.filter((r) => r.ok && r.cambio === "adjudicado")
+    : [];
+
+  if (!pos.length && !adj.length) return 0;
+
+  if (adj.length && !pos.length) {
+    if (adj.length === 1) {
+      const s = adj[0].seguimientoActualizado;
+      notificarLocal(
+        "Ya no aparece en el listado",
+        `${s.persona.nombreCompleto} ha desaparecido de ${s.categoria} (posible adjudicación o desactivación).`,
+      );
+    } else {
+      notificarLocal(
+        "Seguimientos fuera del listado",
+        `${adj.length} personas ya no aparecen en sus listas.`,
+      );
+    }
+    return adj.length;
+  }
+
+  if (pos.length === 1 && !adj.length) {
+    const r = pos[0];
     const s = r.seguimientoActualizado;
     const verbo = r.cambio === "subio" ? "ha subido" : "ha bajado";
     notificarLocal(
       "Cambio en un seguimiento",
       `${s.persona.nombreCompleto}: posición ${verbo} de #${r.anterior.posicion} a #${r.actual.posicion} (${s.categoria}).`,
     );
-  } else {
+  } else if (!adj.length) {
     notificarLocal(
       "Cambios en seguimientos",
-      `${relevantes.length} listas han cambiado de posición. Ábrelas en Interino para ver el detalle.`,
+      `${pos.length} listas han cambiado de posición. Ábrelas en Interino para ver el detalle.`,
+    );
+  } else {
+    notificarLocal(
+      "Novedades en seguimientos",
+      `${pos.length} cambio${pos.length === 1 ? "" : "s"} de posición y ${adj.length} fuera del listado.`,
     );
   }
-  return relevantes.length;
+  return pos.length + adj.length;
 }

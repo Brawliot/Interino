@@ -23,7 +23,7 @@ export function tabBarraInferior(paso) {
 function BarraInferior({ activo, onBuscar, onSeguimientos, onMas, numSeguimientos }) {
   const items = [
     { id: "buscar", label: "Buscar", icon: Search, onClick: onBuscar },
-    { id: "seguimientos", label: "Seguimientos", icon: Pin, onClick: onSeguimientos, badge: numSeguimientos },
+    { id: "seguimientos", label: "Favoritos", icon: Pin, onClick: onSeguimientos, badge: numSeguimientos },
     { id: "mas", label: "Más", icon: Settings, onClick: onMas },
   ];
 

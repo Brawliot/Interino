@@ -73,4 +73,4 @@ Pide el enlace en **Más → Cuenta**; la respuesta JSON incluye `devLink`.
 - `src/pantallas/PantallaCuenta.jsx` — UI
 - Entrada desde **Más → Cuenta**
 
-Sin pagos ni Web Push en esta pasada.
+Web Push: ver [PUSH.md](./PUSH.md).

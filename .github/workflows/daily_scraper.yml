@@ -82,3 +82,18 @@ jobs:
             git commit -m "Actualizacion automatica CLM - $(date +'%Y-%m-%d')"
             git push
           fi
+
+      - name: Notificaciones push (seguimientos)
+        if: always() && (steps.vigia.outcome == 'success' || steps.vigia.outcome == 'failure')
+        continue-on-error: true
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PUSH_CRON_URL: ${{ secrets.PUSH_CRON_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Sin CRON_SECRET — se omite push"
+            exit 0
+          fi
+          URL="${PUSH_CRON_URL:-https://interino.pages.dev/api/cron/push-check}"
+          curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" "$URL"
+          echo

@@ -16,7 +16,7 @@ La aplicación **no solicita ni almacena el DNI completo** de ninguna persona en
 
 La aplicación utiliza el almacenamiento local de tu navegador (localStorage) para guardar tus búsquedas recientes y seguimientos. Puedes borrarlos en cualquier momento desde los ajustes de tu navegador.
 
-Si activas **notificaciones del navegador**, el permiso queda en tu dispositivo. Por ahora te avisamos al abrir la app cuando corresponda; no enviamos push en segundo plano desde servidores propios.
+Si activas **notificaciones del navegador**, el permiso queda en tu dispositivo. Con Web Push habilitado, guardamos en nuestro servidor la suscripción del navegador (endpoint y claves de cifrado), tus preferencias de avisos (frecuencia y tipos) y un resumen de tus favoritos/seguimientos (categoría, gerencia, identificador parcial público y posición, y alias opcionales) para avisarte en segundo plano cuando detectemos un cambio de posición o que alguien ya no aparece en el listado tras actualizar las listas públicas. Solo usamos el DNI parcial tal como aparece en listados públicos; si introduces un NIF completo al buscar, lo reducimos a esa forma enmascarada y no lo almacenamos completo. Puedes denegar o revocar el permiso en el navegador en cualquier momento.
 
 Si utilizas un dispositivo compartido, ten en cuenta que otra persona con acceso al navegador podría ver tus búsquedas recientes.
 

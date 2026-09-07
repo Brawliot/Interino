@@ -68,7 +68,7 @@ export default function PantallaHome({ onConfirmCcaas, onSeguimientos, numSeguim
             <button
               type="button"
               onClick={onSeguimientos}
-              aria-label={`${numSeguimientos} seguimientos`}
+              aria-label={`${numSeguimientos} favoritos`}
               className="focus:outline-none"
               style={{
                 position: "absolute",

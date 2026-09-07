@@ -3,13 +3,13 @@ import { Bell, BellRing, Smartphone } from "lucide-react";
 import { activarNotificacionesSeguimiento, notificacionesSoportadas } from "../../notificaciones.js";
 import { C, FONT_BODY } from "../../theme.js";
 
-async function confirmarNotificaciones(etiqueta, setNotifEstado, onGuardar) {
+async function confirmarNotificaciones(etiqueta, setNotifEstado, onGuardar, listaSeguimientos) {
   if (!notificacionesSoportadas()) {
     setNotifEstado("guardado");
     onGuardar?.();
     return;
   }
-  const perm = await activarNotificacionesSeguimiento(etiqueta);
+  const perm = await activarNotificacionesSeguimiento(etiqueta, listaSeguimientos || []);
   if (perm === "granted") setNotifEstado("activo");
   else if (perm === "denied") setNotifEstado("denegado");
   else setNotifEstado("guardado");
@@ -19,7 +19,7 @@ async function confirmarNotificaciones(etiqueta, setNotifEstado, onGuardar) {
 function AvisoNotifDenegada() {
   return (
     <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.clay, marginTop: 8, lineHeight: 1.4 }}>
-      Sin permiso de notificaciones. Actívalas en ajustes del navegador para recibir avisos al abrir la app.
+      Sin permiso de notificaciones. Actívalas en ajustes del navegador para recibir avisos push.
     </p>
   );
 }
@@ -33,7 +33,7 @@ function AvisoSeguimientoSinNotif() {
 }
 
 const TEXTO_AVISO_AL_ABRIR =
-  "Al abrir la app te avisaremos si ha cambiado tu posición. No es un aviso en tiempo real.";
+  "Con el permiso activado te avisaremos en segundo plano si cambia tu posición (cuando actualicemos las listas). No sustituye la llamada oficial.";
 
 /** CTA seguir + estados de notificación (compartible en Fase B). */
 export default function BloqueSeguir({
@@ -42,6 +42,7 @@ export default function BloqueSeguir({
   avisoOficial,
   guardado = false,
   onGuardar,
+  listaSeguimientos,
 }) {
   const [notifEstado, setNotifEstado] = useState(guardado ? "activo" : "inicial");
 
@@ -114,7 +115,12 @@ export default function BloqueSeguir({
             <button
               type="button"
               onClick={() =>
-                confirmarNotificaciones(etiquetaSeguimiento || ctaLabel, setNotifEstado, onGuardar)
+                confirmarNotificaciones(
+                  etiquetaSeguimiento || ctaLabel,
+                  setNotifEstado,
+                  onGuardar,
+                  listaSeguimientos,
+                )
               }
               className="flex-1 font-bold focus:outline-none"
               style={{
@@ -151,7 +157,7 @@ export default function BloqueSeguir({
         >
           <BellRing size={16} color={C.ok} />
           <p style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 13.5, color: C.ok, margin: 0 }}>
-            Siguiendo {etiquetaSeguimiento || "lista"} — te avisaremos al abrir la app
+            Siguiendo {etiquetaSeguimiento || "lista"} — avisos push si cambia tu posición
           </p>
         </div>
       )}

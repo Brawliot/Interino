@@ -43,15 +43,14 @@ export function mensajeLimiteSeguimientos() {
 
 /** Lo que la app hace hoy (pantalla Más). */
 export const FEATURES_HOY = [
-  "Seguimientos en este dispositivo; con cuenta, también en la nube",
-  "Avisos al abrir la app si cambia tu posición (con permiso del navegador)",
+  "Favoritos de aspirantes concretos (tú u otros) por DNI público o apellidos",
+  "Avisos push configurables por aspirante (posición / fuera del listado)",
   "Exportar e importar una copia en archivo JSON",
   "Entrar con enlace mágico por email (sin contraseña ni pagos)",
 ];
 
 /** Ideas de producto — no disponibles aún. */
 export const FEATURES_PREVISTAS = [
-  "Avisos push en segundo plano",
   `Más seguimientos con un plan de pago (~${PLAN.premiumPrecioEur} €/mes)`,
 ];
 

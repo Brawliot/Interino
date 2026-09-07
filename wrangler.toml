@@ -1,6 +1,7 @@
-# Cloudflare Pages + D1 (auth / seguimientos en nube)
+# Cloudflare Pages + D1 (auth / seguimientos / push)
 name = "interino"
 compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
 
 [[d1_databases]]
@@ -14,6 +15,9 @@ migrations_dir = "migrations"
 [vars]
 APP_ORIGIN = "https://interino.pages.dev"
 AUTH_DEV_MODE = "1"
+R2_PUBLIC_URL = "https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev/"
+VAPID_SUBJECT = "mailto:fedebotija@gmail.com"
 
-# Secrets opcionales en dashboard (no van en este archivo):
+# Secrets en dashboard (no van en este archivo):
 # RESEND_API_KEY, AUTH_FROM_EMAIL, AUTH_SECRET
+# VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, CRON_SECRET

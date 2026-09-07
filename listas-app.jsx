@@ -9,6 +9,7 @@ import {
   normalizarSeguimiento,
   refrescarTodosSeguimientos,
   notificarCambiosSeguimientos,
+  mismoSeguimiento,
 } from "./src/seguimientos.js";
 import {
   consumirParamLogin,
@@ -17,7 +18,11 @@ import {
   fusionarSeguimientos,
   putSeguimientosNube,
 } from "./src/auth.js";
-import { notificacionesHabilitadasEnDispositivo } from "./src/notificaciones.js";
+import {
+  notificacionesHabilitadasEnDispositivo,
+  sincronizarPushSeguimientos,
+} from "./src/notificaciones.js";
+import { leerPrefsNotif, guardarPrefsNotif } from "./src/notifPrefs.js";
 import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 import { C, GRAIN, FONT_BODY } from "./src/theme.js";
 import Barra from "./src/components/Barra.jsx";
@@ -153,6 +158,7 @@ export default function ListasApp() {
   const [user, setUser] = useState(null);
   const [authConfigured, setAuthConfigured] = useState(false);
   const [syncEstado, setSyncEstado] = useState("");
+  const [notifPrefs, setNotifPrefs] = useState(() => leerPrefsNotif());
   const [cargandoSector, setCargandoSector] = useState(false);
   const seguimientosRef = useRef(seguimientos);
   seguimientosRef.current = seguimientos;
@@ -195,6 +201,23 @@ export default function ListasApp() {
           setSyncEstado("El enlace de acceso no es válido o ha caducado. Pide otro.");
           setPaso("cuenta");
           setPasoCuentaOrigen("inicio");
+        } else if (!cancelado) {
+          try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("paso") === "seguimientos") {
+              setPaso("seguimientos");
+              setPasoSeguimientosOrigen("inicio");
+              params.delete("paso");
+              const q = params.toString();
+              window.history.replaceState(
+                {},
+                "",
+                `${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`,
+              );
+            }
+          } catch {
+            /* ignore */
+          }
         }
       } catch {
         if (!cancelado) setAuthConfigured(false);
@@ -245,7 +268,7 @@ export default function ListasApp() {
         if (cancelado) return;
         setSeguimientos(resultados.map((r) => r.seguimientoActualizado));
         if (notificacionesHabilitadasEnDispositivo()) {
-          notificarCambiosSeguimientos(resultados);
+          notificarCambiosSeguimientos(resultados, leerPrefsNotif());
         }
       } catch {
         /* red / datos: se mantienen snapshots previos */
@@ -273,6 +296,16 @@ export default function ListasApp() {
     }, 700);
     return () => clearTimeout(t);
   }, [seguimientos, user, authListo]);
+
+  // Sincroniza suscripción Web Push con la lista local (avisos en segundo plano).
+  useEffect(() => {
+    if (!seguimientosListos) return undefined;
+    if (!notificacionesHabilitadasEnDispositivo()) return undefined;
+    const t = setTimeout(() => {
+      sincronizarPushSeguimientos(seguimientos).catch(() => undefined);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [seguimientos, seguimientosListos]);
 
   useEffect(() => {
     try {
@@ -489,18 +522,25 @@ export default function ListasApp() {
         s.candidato.nombreCompleto === nombreCompleto
     );
 
-  const guardarSeguimiento = (gerencia, ambito, resultado, categoria = categoriaActual, grupoId = grupoIdActual, ccaaId) => {
+  const guardarSeguimiento = (gerencia, ambito, resultado, categoria = categoriaActual, grupoId = grupoIdActual, ccaaId, extras = {}) => {
     setSeguimientos((prev) => {
-      if (
-        prev.some(
-          (s) =>
-            s.categoria === categoria &&
-            s.gerencia === gerencia &&
-            s.ambito === (ambito || "") &&
-            (ccaaId ? s.ccaaId === ccaaId : true) &&
-            (s.persona?.nombreCompleto || s.candidato?.nombreCompleto) === resultado.nombreCompleto
-        )
-      ) {
+      const sector =
+        resultado?.sector ||
+        (sectorId === "educacion" || sectorId === "administracion" ? sectorId : "sanidad");
+      const candidato = crearSeguimiento({
+        categoria,
+        gerencia,
+        ambito: ambito || "",
+        grupoId,
+        ccaaId: ccaaId || capaDatos.ccaaId,
+        sector,
+        modoListado: sector === "educacion" ? listadoEducacionModo : null,
+        resultado,
+        alias: extras.alias || "",
+        avisos: extras.avisos !== false,
+        origen: extras.origen || "resultado",
+      });
+      if (prev.some((s) => mismoSeguimiento(s, candidato))) {
         return prev;
       }
       if (!puedeAnadirSeguimiento(prev.length)) {
@@ -508,23 +548,40 @@ export default function ListasApp() {
         return prev;
       }
       setAvisoLimite("");
-      const sector =
-        resultado?.sector ||
-        (sectorId === "educacion" || sectorId === "administracion" ? sectorId : "sanidad");
-      return [
-        ...prev,
-        crearSeguimiento({
-          categoria,
-          gerencia,
-          ambito: ambito || "",
-          grupoId,
-          ccaaId: ccaaId || capaDatos.ccaaId,
-          sector,
-          modoListado: sector === "educacion" ? listadoEducacionModo : null,
-          resultado,
-        }),
-      ];
+      return [...prev, candidato];
     });
+  };
+
+  const anadirAspiranteManual = (payload) => {
+    setSeguimientos((prev) => {
+      const nuevo = crearSeguimiento(payload);
+      if (prev.some((s) => mismoSeguimiento(s, nuevo))) {
+        setAvisoLimite("Ese aspirante ya está en favoritos para esa lista.");
+        return prev;
+      }
+      if (!puedeAnadirSeguimiento(prev.length)) {
+        setAvisoLimite(mensajeLimiteSeguimientos());
+        return prev;
+      }
+      setAvisoLimite("");
+      return [...prev, nuevo];
+    });
+  };
+
+  const eliminarSeguimiento = (id) => {
+    setSeguimientos((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const toggleAvisosSeguimiento = (id, valor) => {
+    setSeguimientos((prev) =>
+      prev.map((s) => (s.id === id ? normalizarSeguimiento({ ...s, avisos: valor }) : s)).filter(Boolean),
+    );
+  };
+
+  const cambiarAliasSeguimiento = (id, alias) => {
+    setSeguimientos((prev) =>
+      prev.map((s) => (s.id === id ? normalizarSeguimiento({ ...s, alias }) : s)).filter(Boolean),
+    );
   };
 
   const importarSeguimientos = async (file) => {
@@ -734,6 +791,57 @@ export default function ListasApp() {
             modoAdministracion={modoAdministracion}
             modoListadoEducacion={listadoEducacionModo}
             atras={() => setPaso(pantallaPrevia)}
+            esFavorito={(fila) => {
+              const esEdu = modoEducacion || capaDatos.sector === "educacion";
+              const g = esEdu ? GERENCIA_EDUCACION : (fila.gerencia || listadoGerencia);
+              const a = esEdu ? "" : (fila.ambito || listadoAmbito || "");
+              return estaGuardado(g, a, fila.nombreCompleto, listadoCategoria, capaDatos.ccaaId);
+            }}
+            onToggleFavorito={(fila, todasLasFilas) => {
+              const esEducacionListado = modoEducacion || capaDatos.sector === "educacion";
+              const esAdministracionListado = modoAdministracion || capaDatos.sector === "administracion";
+              const gerencia = esEducacionListado
+                ? GERENCIA_EDUCACION
+                : fila.gerencia || listadoGerencia || "";
+              const ambito = esEducacionListado ? "" : fila.ambito || listadoAmbito || "";
+              if (estaGuardado(gerencia, ambito, fila.nombreCompleto, listadoCategoria, capaDatos.ccaaId)) {
+                setSeguimientos((prev) =>
+                  prev.filter(
+                    (s) =>
+                      !(
+                        s.categoria === listadoCategoria &&
+                        s.gerencia === gerencia &&
+                        s.ambito === ambito &&
+                        (s.persona?.nombreCompleto || s.candidato?.nombreCompleto) === fila.nombreCompleto
+                      ),
+                  ),
+                );
+                return;
+              }
+              const cand = candidatoDesdeFilasListado(fila, todasLasFilas, {
+                categoria: listadoCategoria,
+                grupoId: listadoGrupoId,
+                ccaaId: capaDatos.ccaaId || "clm",
+                esEducacion: esEducacionListado,
+                esAdministracion: esAdministracionListado,
+                tipoListado: capaDatos.tipoListado,
+              });
+              const ap = cand.apariciones?.[0] || {};
+              guardarSeguimiento(
+                ap.gerencia || gerencia,
+                esEducacionListado ? "" : ap.ambito || ambito,
+                {
+                  ...cand,
+                  ...ap,
+                  nombreCompleto: cand.nombreCompleto,
+                  dniParcial: cand.dniParcial,
+                },
+                listadoCategoria,
+                listadoGrupoId,
+                capaDatos.ccaaId,
+                { origen: "listado", avisos: true },
+              );
+            }}
             onAbrirPersona={(fila, todasLasFilas) => {
               const esEducacionListado = modoEducacion || capaDatos.sector === "educacion";
               const esAdministracionListado = modoAdministracion || capaDatos.sector === "administracion";
@@ -761,10 +869,21 @@ export default function ListasApp() {
             seguimientos={seguimientos}
             atras={() => setPaso(pasoSeguimientosOrigen)}
             limiteMax={limiteSeguimientos()}
+            puedeAnadir={puedeAnadirSeguimiento(seguimientos.length)}
             onExportar={() => exportarSeguimientos(seguimientos)}
             onImportar={importarSeguimientos}
             gruposSanidad={gruposSanidad}
             onAbrir={abrirSeguimiento}
+            notifPrefs={notifPrefs}
+            onNotifPrefsChange={(next) => {
+              const saved = guardarPrefsNotif(next);
+              setNotifPrefs(saved);
+              sincronizarPushSeguimientos(seguimientos).catch(() => undefined);
+            }}
+            onAnadirAspirante={anadirAspiranteManual}
+            onEliminar={eliminarSeguimiento}
+            onToggleAvisos={toggleAvisosSeguimiento}
+            onAliasChange={cambiarAliasSeguimiento}
           />
         )}
 

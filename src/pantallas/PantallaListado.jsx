@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, AlertTriangle } from "lucide-react";
+import { ChevronRight, AlertTriangle, Star } from "lucide-react";
 import { useCapaDatos, coincideBusqueda } from "../datos.jsx";
 import { PROVINCIAS_CLM, tipoBolsaLegible, esBolsaOrdinaria, esModoAfin } from "../educacion.js";
 import { subBolsaLegible } from "../admin-clm.js";
@@ -8,7 +8,20 @@ import AvisoActualizacion from "../components/AvisoActualizacion.jsx";
 import { etiquetaLista } from "../utils/etiquetasLista.js";
 import { C, FONT_DISPLAY, FONT_BODY, FONT_MONO } from "../theme.js";
 
-export default function PantallaListado({ categoria, gerencia, ambito, grupoId, grupoActivo, atras, modoEducacion, modoAdministracion, modoListadoEducacion, onAbrirPersona }) {
+export default function PantallaListado({
+  categoria,
+  gerencia,
+  ambito,
+  grupoId,
+  grupoActivo,
+  atras,
+  modoEducacion,
+  modoAdministracion,
+  modoListadoEducacion,
+  onAbrirPersona,
+  esFavorito,
+  onToggleFavorito,
+}) {
   const capa = useCapaDatos();
   const esEducacion = modoEducacion || capa.sector === "educacion";
   const esAdministracion = modoAdministracion || capa.sector === "administracion";
@@ -103,7 +116,7 @@ export default function PantallaListado({ categoria, gerencia, ambito, grupoId, 
           </div>
         )}
         <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, margin: "6px 0 4px" }}>
-          Útil si un compañero opositor te ha dicho que está en esta lista y quieres ver en qué puesto queda. Toca una fila para ver su perfil.
+          Toca una fila para ver el perfil. La estrella añade o quita el aspirante de favoritos (con avisos).
         </p>
 
         <div className="mt-2" style={{ border: `1px solid ${C.line}`, borderRadius: "10px 3px 10px 3px", overflow: "hidden" }}>
@@ -121,22 +134,31 @@ export default function PantallaListado({ categoria, gerencia, ambito, grupoId, 
             ) : (
               <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.goldSoft }}>PUNTOS</span>
             )}
+            {onToggleFavorito && <span style={{ flex: "0 0 28px" }} aria-hidden="true" />}
             {onAbrirPersona && <span style={{ flex: "0 0 18px" }} aria-hidden="true" />}
           </div>
-          {mostradas.map((f, idx) => (
-            <button
+          {mostradas.map((f, idx) => {
+            const fav = Boolean(esFavorito?.(f));
+            return (
+            <div
               key={`${f.pos}-${f.nombreCompleto}-${f.ambito || ""}-${idx}`}
-              type="button"
-              onClick={() => onAbrirPersona?.(f, filas)}
-              disabled={!onAbrirPersona}
-              className="w-full flex items-center text-left focus:outline-none focus:ring-2"
+              className="w-full flex items-center"
               style={{
                 padding: "10px 14px",
                 borderTop: `1px solid ${C.line}`,
                 background: C.card,
+              }}
+            >
+            <button
+              type="button"
+              onClick={() => onAbrirPersona?.(f, filas)}
+              disabled={!onAbrirPersona}
+              className="flex-1 flex items-center text-left focus:outline-none focus:ring-2 min-w-0"
+              style={{
+                background: "transparent",
                 border: "none",
+                padding: 0,
                 cursor: onAbrirPersona ? "pointer" : "default",
-                transition: "background .12s ease",
               }}
             >
               <span style={{ flex: "0 0 40px", fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 14, color: C.navy }}>{f.pos}</span>
@@ -173,7 +195,30 @@ export default function PantallaListado({ categoria, gerencia, ambito, grupoId, 
                 <ChevronRight size={16} color={C.inkSoft} style={{ flex: "0 0 18px", marginLeft: 4 }} />
               )}
             </button>
-          ))}
+            {onToggleFavorito && (
+              <button
+                type="button"
+                title={fav ? "Quitar de favoritos" : "Añadir a favoritos"}
+                aria-label={fav ? "Quitar de favoritos" : "Añadir a favoritos"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFavorito(f, filas);
+                }}
+                className="focus:outline-none"
+                style={{
+                  flex: "0 0 28px",
+                  background: "transparent",
+                  border: "none",
+                  padding: 4,
+                  marginLeft: 2,
+                }}
+              >
+                <Star size={16} color={fav ? C.gold : C.inkSoft} fill={fav ? C.gold : "none"} />
+              </button>
+            )}
+            </div>
+            );
+          })}
           {mostradas.length === 0 && (
             <p style={{ padding: 16, fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft, background: C.card }}>Sin coincidencias con ese nombre.</p>
           )}
