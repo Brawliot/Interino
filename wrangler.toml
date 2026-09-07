@@ -6,7 +6,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "interino-auth"
-database_id = "00000000-0000-0000-0000-000000000001"
+database_id = "c81a0bcc-4ed6-4e0e-bae2-cdf6f5cfc666"
 migrations_dir = "migrations"
 
 # Secrets / vars (Pages → Settings → Environment variables):
