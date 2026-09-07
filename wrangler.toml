@@ -9,9 +9,11 @@ database_name = "interino-auth"
 database_id = "c81a0bcc-4ed6-4e0e-bae2-cdf6f5cfc666"
 migrations_dir = "migrations"
 
-# Secrets / vars (Pages → Settings → Environment variables):
-# AUTH_SECRET          — string largo aleatorio (reserva futura)
-# APP_ORIGIN           — https://interino.pages.dev
-# AUTH_DEV_MODE        — "1" para devolver magic link en JSON (sin email)
-# RESEND_API_KEY       — opcional si AUTH_DEV_MODE=0
-# AUTH_FROM_EMAIL      — p.ej. Interino <onboarding@resend.dev>
+# Runtime vars para Pages Functions (también se pueden poner en el dashboard).
+# Quita AUTH_DEV_MODE cuando tengas Resend en producción.
+[vars]
+APP_ORIGIN = "https://interino.pages.dev"
+AUTH_DEV_MODE = "1"
+
+# Secrets opcionales en dashboard (no van en este archivo):
+# RESEND_API_KEY, AUTH_FROM_EMAIL, AUTH_SECRET

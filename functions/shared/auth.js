@@ -19,7 +19,8 @@ export function appOrigin(env) {
 }
 
 export function isDevMode(env) {
-  return env.AUTH_DEV_MODE === "1" || env.AUTH_DEV_MODE === "true";
+  const v = env?.AUTH_DEV_MODE;
+  return v === "1" || v === 1 || v === true || String(v).trim().toLowerCase() === "true";
 }
 
 export function randomId(bytes = 16) {
