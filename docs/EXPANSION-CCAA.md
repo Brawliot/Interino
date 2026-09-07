@@ -2,6 +2,28 @@
 
 Regla de oro (README): clasificar cada fuente en **maximo 1 hora**.
 
+## Plan 15 dias — eje de 5 CCAA (fijado 7 sep 2026)
+
+**Eje:** CLM · Murcia · Madrid · Castilla y León · Extremadura.  
+**Mejor profundidad en estas 5 que dispersar al resto de España.**
+
+| CCAA | Objetivo sprint | Fuera / aparcado |
+|------|-----------------|------------------|
+| **CLM** | Entera (3 sectores) — ya | Facultativo SESCAM = B |
+| **Murcia** | Sanidad + educación (Maestros+) | Admin = **B** (no pelear) |
+| **Madrid** | Sanidad (hecho) + **admin** | Educación = A débil (~20 h) |
+| **Castilla y León** | **Sanidad** primero; edu/admin solo si A en ≤1 h | — |
+| **Extremadura** | **Sanidad** primero; edu/admin solo si A en ≤1 h | — |
+
+**No entra en el sprint:** Valencia, Andalucía, Cataluña, País Vasco, Navarra, Canarias, Baleares, resto — salvo sobra tiempo tras clasificar el eje.
+
+**Orden de trabajo datos:**
+1. Cerrar frescura/vigía CLM (R2 al día).
+2. Madrid admin (ya Cajón A pendiente).
+3. Clasificar CyL + Extremadura (sanidad, 1 h c/u) → scrapear solo A.
+4. Edu/admin CyL/Ext solo si salen A baratos.
+5. Pipeline de expansión (plantillas) en paralelo cuando toque repetir scrape.
+
 ## Cajon A — seguir
 
 - PDF o HTML publico sin login
@@ -25,26 +47,31 @@ Regla de oro (README): clasificar cada fuente en **maximo 1 hora**.
 | Murcia | Educacion | A | `scraper_educacion_murcia.py` | Si (Maestros) | App Educación Murcia |
 | Murcia | Admin general | B | No | No | Fuera del sprint |
 | Madrid | Sanidad SERMAS | A | `scraper_madrid.py` | Si (32 cats) | Anexo I PDF multi-formato |
-| Madrid | Educacion | A débil | No | No | Hay puntuación pero índice fragmentado (~20h) — aparcar sprint |
-| Madrid | Admin general | A | No | No | BOCM+sede; tras sanidad |
-| Resto | — | — | No | No | Mapa bloqueado en app |
+| Madrid | Educacion | A débil | No | No | Índice fragmentado — aparcar sprint |
+| Madrid | Admin general | A | No | No | BOCM+sede; siguiente celda |
+| Castilla y León | Sanidad | ? | No | No | Eje 15 d — clasificar ≤1 h |
+| Castilla y León | Edu / Admin | ? | No | No | Solo si A barato |
+| Extremadura | Sanidad | ? | No | No | Eje 15 d — clasificar ≤1 h |
+| Extremadura | Edu / Admin | ? | No | No | Solo si A barato |
+| Resto | — | — | No | No | Fuera del eje 15 d |
 
 Clasificacion Murcia (sep 2026): sanidad y educacion OK; admin B.
 Clasificacion Madrid (sep 2026): sanidad cerrada 32/32; educacion A aparcado (sin índice); admin pendiente.
+Eje 15 d (7 sep 2026): CLM + MUR + MAD + CyL + EXT (sanidad primero en CyL/EXT).
 
 ## Pendiente — automatizar expansion (no CCAA a CCAA a mano)
 
 Objetivo: no repetir el proceso manual por cada comunidad.
 
 **Hacer (pendiente):**
-1. Clasificar A/B en lote (prompts / agente en paralelo) para varias CCAA×sector.
+1. Clasificar A/B en lote para CyL × sanidad y Extremadura × sanidad (luego edu/admin si aplica).
 2. Plantilla de scraper por tipo de fuente (HTML tablas / PDF / indice URLs), no un scraper unico de Espana.
 3. Misma forma JSON + subida R2 + vigia; adaptador por CCAA en la app.
 4. UI ya centralizada por flujo (buscar → confirmar → resultado); reforzar adaptadores, no pantallas nuevas por portal.
 
-**No hacer:** scraper unico que digiera todos los portales; pelear Cajon B.
+**No hacer:** scraper unico que digiera todos los portales; pelear Cajon B; ampliar a Valencia/Andalucía antes de cerrar el eje.
 
-Estado: **pendiente** (apuntado 6 sep 2026). Seguir tras cerrar Murcia admin (B, solo UI si aplica) y antes/durante Madrid.
+Estado: **en curso** (eje fijado 7 sep 2026). Tras vigía/frescura → Madrid admin → clasificar CyL + Extremadura.
 
 ## Murcia — detalle clasificacion
 
@@ -63,7 +90,7 @@ Estado: **pendiente** (apuntado 6 sep 2026). Seguir tras cerrar Murcia admin (B,
 - Scraper: `scraper_educacion_murcia.py` (MVP Maestros 2025/2026)
 - Salida: `data/educacion-murcia/` → R2 prefijo `educacion-murcia/`
 - Si Radware Captcha: descargar PDF a mano + `--pdf`
-- Pendiente app: sector Educación en Murcia; cuerpos no-Maestros
+- Pendiente app: cuerpos no-Maestros
 
 ### Administracion general (B)
 
@@ -98,7 +125,11 @@ python scripts/subir_sectores_r2.py --sectores madrid --skip-existing
 ## Madrid — educacion / admin
 
 - Educacion: hay listas con puntuación, pero índice fragmentado (BOCM + comunidad + educa2; PDFs de ejemplo a menudo 404). **Aparcar en sprint** (~20h). No scrapear hasta índice usable.
-- Admin: BOCM (`www.bocm.es`) + sede listas espera; siguiente celda de datos tras sanidad.
+- Admin: BOCM (`www.bocm.es`) + sede listas espera; siguiente celda de datos tras sanidad (eje 15 d).
+
+## Castilla y León / Extremadura
+
+Pendiente clasificacion (plantilla 1 h). Objetivo: sanidad Cajón A → scraper + R2 + adaptador app. Edu/admin solo si A barato.
 
 ## Plantilla exploracion (1h)
 
