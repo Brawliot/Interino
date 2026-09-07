@@ -10,6 +10,10 @@ export function tabBarraInferior(paso) {
     paso === "simulador-baremo" ||
     paso === "simulador-gerencia" ||
     paso === "mapa-oportunidades" ||
+    paso === "analisis-puntos" ||
+    paso === "plan-accion" ||
+    paso === "informe-pdf" ||
+    paso === "recomendador-especialidades" ||
     paso === "calculadora-nomina" ||
     paso === "guia-llamamiento" ||
     paso === "calculadora-meritos"

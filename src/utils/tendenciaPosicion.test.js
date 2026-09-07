@@ -4,6 +4,8 @@ import {
   analizarTendenciaPosicion,
   regresionLineal,
   textoDireccion,
+  diasHastaPosicionObjetivo,
+  situacionVsCorte,
 } from "./tendenciaPosicion.js";
 
 describe("tendenciaPosicion", () => {
@@ -34,5 +36,19 @@ describe("tendenciaPosicion", () => {
     expect(r.direccion).toBe("mejorando");
     expect(r.proyecciones[0].posicion).toBeLessThan(r.posicionActual);
     expect(textoDireccion(r).tipo).toBe("mejorando");
+  });
+
+  it("diasHastaPosicionObjetivo y situacionVsCorte", () => {
+    const r = analizarTendenciaPosicion([
+      { fecha: "2026-01-01", posicion: 100 },
+      { fecha: "2026-02-01", posicion: 90 },
+      { fecha: "2026-03-01", posicion: 80 },
+      { fecha: "actual", posicion: 70 },
+    ]);
+    const h = diasHastaPosicionObjetivo(r, 50);
+    expect(h.ok).toBe(true);
+    expect(h.dias).toBeGreaterThan(0);
+    expect(situacionVsCorte(80, 75).porEncima).toBe(true);
+    expect(situacionVsCorte(70, 75).gap).toBe(-5);
   });
 });

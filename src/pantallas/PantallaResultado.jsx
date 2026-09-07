@@ -15,7 +15,7 @@ import {
   normalizarAparicion,
 } from "../utils/candidatosListado.js";
 
-export default function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, modoEducacion, modoAdministracion, modoListadoEducacion }) {
+export default function PantallaResultado({ categoria, grupoId, grupoActivo, candidato, atras, estaGuardado, onGuardar, onVerListado, onInfoLlamamientos, onInformePdf, modoEducacion, modoAdministracion, modoListadoEducacion }) {
   const capa = useCapaDatos();
   const apariciones = candidato?.apariciones ?? [];
   const esEducacion = modoEducacion || apariciones[0]?.sector === "educacion";
@@ -54,6 +54,26 @@ export default function PantallaResultado({ categoria, grupoId, grupoActivo, can
               <span style={{ fontFamily: FONT_MONO, fontSize: 11.5 }}> · DNI {candidato.dniParcial}</span>
             )}
           </p>
+          {onInformePdf && (
+            <button
+              type="button"
+              onClick={onInformePdf}
+              className="focus:outline-none"
+              style={{
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+                fontWeight: 600,
+                color: C.navy,
+                background: C.paperDeep,
+                border: `1px solid ${C.line}`,
+                borderRadius: 8,
+                padding: "8px 12px",
+                marginBottom: 12,
+              }}
+            >
+              Generar informe PDF
+            </button>
+          )}
           <TarjetaEducacion
             categoria={catAparicion}
             grupoId={grupoAparicion}
@@ -272,6 +292,26 @@ export default function PantallaResultado({ categoria, grupoId, grupoActivo, can
             <span style={{ fontFamily: FONT_MONO, fontSize: 11.5 }}> · DNI {candidato.dniParcial}</span>
           )}
         </p>
+        {onInformePdf && (
+          <button
+            type="button"
+            onClick={onInformePdf}
+            className="focus:outline-none"
+            style={{
+              fontFamily: FONT_BODY,
+              fontSize: 12,
+              fontWeight: 600,
+              color: C.navy,
+              background: C.paperDeep,
+              border: `1px solid ${C.line}`,
+              borderRadius: 8,
+              padding: "8px 12px",
+              marginBottom: 12,
+            }}
+          >
+            Generar informe PDF
+          </button>
+        )}
         <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.navy, fontWeight: 600, marginBottom: 16 }}>
           {categoriaMostrada || "Resultado"}
           {numCategorias > 1 && (

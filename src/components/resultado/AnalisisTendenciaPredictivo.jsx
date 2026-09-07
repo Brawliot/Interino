@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
-import { useDatos } from "../../datos.jsx";
+import { useDatos, useCapaDatos } from "../../datos.jsx";
 import { opcionesDesdeIndex } from "../../cursosHistoricos.js";
 import { construirSerieEvolucion } from "../../utils/comparativaPosicion.js";
-import { analizarTendenciaPosicion, textoDireccion } from "../../utils/tendenciaPosicion.js";
+import {
+  analizarTendenciaPosicion,
+  textoDireccion,
+  diasHastaPosicionObjetivo,
+  situacionVsCorte,
+} from "../../utils/tendenciaPosicion.js";
 import { C, FONT_BODY, FONT_MONO } from "../../theme.js";
 
 /**
  * Estimación lineal de cómo puede moverse la posición (no IA / no llamamiento).
+ * Opcionalmente compara con el último corte histórico de la gerencia.
  */
 export default function AnalisisTendenciaPredictivo({
   categoria,
@@ -21,6 +27,7 @@ export default function AnalisisTendenciaPredictivo({
   totalActual = 0,
 }) {
   const datos = useDatos();
+  const capa = useCapaDatos();
   const opciones = useMemo(
     () =>
       opcionesDesdeIndex(datos.archiveIndex, {
@@ -32,6 +39,20 @@ export default function AnalisisTendenciaPredictivo({
 
   const [analisis, setAnalisis] = useState(null);
   const [cargando, setCargando] = useState(false);
+
+  const corteUltimo = useMemo(() => {
+    try {
+      const h = capa.historialCorte?.(categoria, gerencia, ambito || "", grupoId) || [];
+      return h.length ? h[h.length - 1].puntos : null;
+    } catch {
+      return null;
+    }
+  }, [capa, categoria, gerencia, ambito, grupoId]);
+
+  const vsCorte = useMemo(
+    () => situacionVsCorte(puntosActual, corteUltimo),
+    [puntosActual, corteUltimo],
+  );
 
   useEffect(() => {
     if (!opciones.length || !candidato || (ccaaId || "clm") !== "clm") {
@@ -92,6 +113,10 @@ export default function AnalisisTendenciaPredictivo({
   const colorDir =
     dir?.tipo === "mejorando" ? C.ok : dir?.tipo === "empeorando" ? C.clay : C.inkSoft;
 
+  const metaPuesto =
+    totalActual > 0 ? Math.max(1, Math.round(totalActual * 0.1)) : Math.max(1, Math.round((posicionActual || 100) * 0.5));
+  const hastaMeta = analisis?.ok ? diasHastaPosicionObjetivo(analisis, metaPuesto) : null;
+
   return (
     <div
       style={{
@@ -109,8 +134,26 @@ export default function AnalisisTendenciaPredictivo({
         </p>
       </div>
       <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4, margin: "0 0 10px" }}>
-        Extrapolación lineal sobre tus posiciones archivadas. No es IA ni predicción de llamamiento.
+        Extrapolación lineal sobre tus posiciones archivadas y, si hay dato, comparación con el último corte
+        histórico. No es IA ni predicción de plaza o llamamiento.
       </p>
+
+      {vsCorte && (
+        <p
+          style={{
+            fontFamily: FONT_BODY,
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: vsCorte.porEncima ? C.ok : C.clay,
+            margin: "0 0 10px",
+            lineHeight: 1.4,
+          }}
+        >
+          {vsCorte.porEncima
+            ? `Tus ${Number(puntosActual).toFixed(1)} pt están por encima del último corte (~${vsCorte.corte.toFixed(1)}; +${vsCorte.gap.toFixed(1)}).`
+            : `Tus ${Number(puntosActual).toFixed(1)} pt quedan ~${Math.abs(vsCorte.gap).toFixed(1)} por debajo del último corte (~${vsCorte.corte.toFixed(1)}).`}
+        </p>
+      )}
 
       {cargando && (
         <p style={{ fontFamily: FONT_BODY, fontSize: 13, color: C.inkSoft }}>Calculando…</p>
@@ -152,6 +195,17 @@ export default function AnalisisTendenciaPredictivo({
               </div>
             ))}
           </div>
+          {hastaMeta?.ok && !hastaMeta.yaAlcanzado && (
+            <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.inkSoft, marginTop: 10, lineHeight: 1.4 }}>
+              A este ritmo, el puesto ~#{hastaMeta.meta} (aprox. top 10% del listado) llegaría en ~
+              {hastaMeta.meses} mes(es). Es una proyección frágil: adjudicaciones y cambios de listado la invalidan.
+            </p>
+          )}
+          {hastaMeta?.ok && hastaMeta.yaAlcanzado && (
+            <p style={{ fontFamily: FONT_BODY, fontSize: 11.5, color: C.ok, marginTop: 10, lineHeight: 1.4 }}>
+              Ya estás en o por encima del umbral orientativo ~#{hastaMeta.meta}.
+            </p>
+          )}
           <p style={{ fontFamily: FONT_BODY, fontSize: 11, color: C.inkSoft, marginTop: 10, lineHeight: 1.4 }}>
             Basado en {analisis.n} puntos · span {Math.round(analisis.spanDias)} días. Si el ritmo cambia
             (adjudicaciones, desactivaciones), la proyección deja de valer.

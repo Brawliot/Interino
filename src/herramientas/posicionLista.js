@@ -16,6 +16,87 @@ export function posicionEnFilas(filas, puntos) {
   };
 }
 
+/** Puntos del inscrito que ocupa exactamente la posición N (1-based). */
+export function puntosEnPosicion(filas, posicionObjetivo) {
+  const n = Number(posicionObjetivo) || 0;
+  if (!filas?.length || n < 1) return { ok: false, motivo: "sin_datos" };
+  const ordenadas = [...filas].sort((a, b) => b.puntos - a.puntos || a.pos - b.pos);
+  if (n > ordenadas.length) {
+    return {
+      ok: false,
+      motivo: "fuera_rango",
+      total: ordenadas.length,
+      mensaje: `Solo hay ${ordenadas.length} personas en este listado.`,
+    };
+  }
+  const fila = ordenadas[n - 1];
+  return {
+    ok: true,
+    posicion: n,
+    total: ordenadas.length,
+    puntos: Number(fila.puntos) || 0,
+  };
+}
+
+/**
+ * Puntos mínimos orientativos para entrar en el puesto N
+ * (puntos del actual N-ésimo; empates → puede hacer falta superar).
+ */
+export function puntosParaPosicion(filas, posicionObjetivo) {
+  const r = puntosEnPosicion(filas, posicionObjetivo);
+  if (!r.ok) return r;
+  return {
+    ...r,
+    puntosMinimos: r.puntos,
+    avisoEmpates: "Si hay empates de baremo, puede hacer falta superar ese umbral.",
+  };
+}
+
+export const UMBRALES_POSICION = [100, 500, 1000];
+
+/** Umbrales anónimos #100 / #500 / #1000. */
+export function umbralesIntercambio(filas, umbrales = UMBRALES_POSICION) {
+  return (umbrales || []).map((n) => ({
+    posicion: n,
+    ...puntosEnPosicion(filas, n),
+  }));
+}
+
+/** Percentiles de la distribución de puntos (anónimo). */
+export function percentilesPuntos(filas, qs = [0.1, 0.25, 0.5, 0.75, 0.9]) {
+  if (!filas?.length) return [];
+  const pts = [...filas].map((f) => Number(f.puntos) || 0).sort((a, b) => a - b);
+  return qs.map((q) => {
+    const idx = Math.min(pts.length - 1, Math.max(0, Math.floor(q * (pts.length - 1))));
+    return { q, label: `P${Math.round(q * 100)}`, puntos: pts[idx] };
+  });
+}
+
+/**
+ * Sitúa una puntuación en el ranking anónimo del listado.
+ */
+export function rankingAnonimo(filas, puntos) {
+  const est = posicionEnFilas(filas, puntos);
+  if (!est.posicion || !est.total) return null;
+  const percentil = Math.round((1 - est.posicion / est.total) * 100);
+  return {
+    posicion: est.posicion,
+    total: est.total,
+    delante: Math.max(0, est.posicion - 1),
+    detras: Math.max(0, est.total - est.posicion),
+    percentil,
+    puntos: Number(puntos) || 0,
+  };
+}
+
+/** Normaliza filas de app (pos/puntos) desde listado completo. */
+export function filasAPuntos(filas) {
+  return (filas || []).map((f) => ({
+    pos: Number(f.pos ?? f.orden ?? f.posicion) || 0,
+    puntos: Number(f.puntos ?? f.comprobado_baremo) || 0,
+  }));
+}
+
 /** Analiza todas las gerencias de un snapshot para una categoría. */
 export function analizarPorGerencias(snapshot, puntos, obtenerCorte) {
   const listados = snapshot?.listados ?? [];

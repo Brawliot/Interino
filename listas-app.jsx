@@ -23,6 +23,7 @@ import {
   sincronizarPushSeguimientos,
 } from "./src/notificaciones.js";
 import { leerPrefsNotif, guardarPrefsNotif } from "./src/notifPrefs.js";
+import { desbloquearLogro } from "./src/herramientas/gamificacion.js";
 import PantallaPoliticaPrivacidad from "./src/components/PantallaPoliticaPrivacidad.jsx";
 import { C, GRAIN, FONT_BODY } from "./src/theme.js";
 import Barra from "./src/components/Barra.jsx";
@@ -44,6 +45,10 @@ import PantallaInfoLlamamientos from "./src/pantallas/PantallaInfoLlamamientos.j
 const SimuladorBaremo = lazy(() => import("./src/herramientas/SimuladorBaremo.jsx"));
 const SimuladorGerencia = lazy(() => import("./src/herramientas/SimuladorGerencia.jsx"));
 const MapaOportunidades = lazy(() => import("./src/herramientas/MapaOportunidades.jsx"));
+const AnalisisPuntosListado = lazy(() => import("./src/herramientas/AnalisisPuntosListado.jsx"));
+const PlanAccionPersonalizado = lazy(() => import("./src/herramientas/PlanAccionPersonalizado.jsx"));
+const InformeDescargable = lazy(() => import("./src/herramientas/InformeDescargable.jsx"));
+const RecomendadorEspecialidades = lazy(() => import("./src/herramientas/RecomendadorEspecialidades.jsx"));
 const CalculadoraNomina = lazy(() => import("./src/herramientas/CalculadoraNomina.jsx"));
 const GuiaLlamamiento = lazy(() => import("./src/herramientas/GuiaLlamamiento.jsx"));
 const CalculadoraMeritos = lazy(() => import("./src/herramientas/CalculadoraMeritos.jsx"));
@@ -404,6 +409,33 @@ export default function ListasApp() {
     setPaso("simulador-gerencia");
   };
 
+  const irHerramientaConCtx = (pasoId, puntos, categoria) => {
+    setHerramientasCtx({
+      puntos: puntos ?? herramientasCtx.puntos,
+      categoria: categoria || herramientasCtx.categoria || categoriaActual || "",
+    });
+    setPaso(pasoId);
+  };
+
+  const contextoInforme = () => {
+    const ap = candidatoElegido?.apariciones?.[0];
+    return {
+      nombre: candidatoElegido?.nombreCompleto || "",
+      dniParcial: candidatoElegido?.dniParcial || "",
+      categoria: herramientasCtx.categoria || categoriaActual || ap?.categoria || "",
+      gerencia: ap?.gerencia || "",
+      ambito: ap?.ambito || "",
+      posicion: Number(ap?.posicion ?? ap?.pos ?? 0) || 0,
+      total: Number(ap?.total ?? 0) || 0,
+      puntos: Number(herramientasCtx.puntos ?? ap?.puntos ?? 0) || 0,
+      percentil:
+        ap?.total > 0 && (ap?.posicion || ap?.pos)
+          ? Math.round((1 - Number(ap.posicion ?? ap.pos) / Number(ap.total)) * 100)
+          : null,
+      notas: [],
+    };
+  };
+
   const iniciarBusqueda = async (categoria, consulta) => {
     if (!datos.listo) return -1;
     const packs = packsParaContexto({
@@ -489,6 +521,7 @@ export default function ListasApp() {
     if (!capa?.buscarGlobal) return 0;
     setBusquedaGlobal(true);
     setCategoriaActual("");
+    desbloquearLogro("multi_bolsa");
     const res = await capa.buscarGlobal(consulta);
     const personas = res.personas;
     if (consulta.trim()) {
@@ -677,6 +710,8 @@ export default function ListasApp() {
             onCuenta={abrirCuenta}
             user={user}
             atras={() => setPaso("inicio")}
+            numFavoritos={seguimientos.length}
+            notifOn={notificacionesHabilitadasEnDispositivo()}
           />
         )}
 
@@ -773,6 +808,14 @@ export default function ListasApp() {
               setPaso("listado");
             }}
             onInfoLlamamientos={() => setPaso("info-llamamientos")}
+            onInformePdf={() => {
+              const ap = candidatoElegido?.apariciones?.[0];
+              setHerramientasCtx({
+                puntos: ap?.puntos ?? herramientasCtx.puntos,
+                categoria: categoriaActual || ap?.categoria || "",
+              });
+              setPaso("informe-pdf");
+            }}
           />
         )}
 
@@ -923,6 +966,49 @@ export default function ListasApp() {
               puntosIniciales={herramientasCtx.puntos}
               atras={() => setPaso("mas")}
             />
+          </Suspense>
+        )}
+
+        {paso === "analisis-puntos" && (
+          <Suspense fallback={<CargandoHerramienta />}>
+            <AnalisisPuntosListado
+              C={C}
+              Barra={Barra}
+              gruposSanidad={gruposSanidad}
+              grupoDeCategoria={grupoDeCategoria}
+              categoriaInicial={herramientasCtx.categoria || categoriaActual}
+              puntosIniciales={herramientasCtx.puntos}
+              atras={() => setPaso("mas")}
+              onIrGerencia={(puntos) => irHerramientaConCtx("mapa-oportunidades", puntos)}
+            />
+          </Suspense>
+        )}
+
+        {paso === "plan-accion" && (
+          <Suspense fallback={<CargandoHerramienta />}>
+            <PlanAccionPersonalizado
+              C={C}
+              Barra={Barra}
+              gruposSanidad={gruposSanidad}
+              grupoDeCategoria={grupoDeCategoria}
+              categoriaInicial={herramientasCtx.categoria || categoriaActual}
+              puntosIniciales={herramientasCtx.puntos}
+              atras={() => setPaso("mas")}
+              onAbrirMapa={(puntos, cat) => irHerramientaConCtx("mapa-oportunidades", puntos, cat)}
+              onAbrirInversa={(puntos, cat) => irHerramientaConCtx("analisis-puntos", puntos, cat)}
+            />
+          </Suspense>
+        )}
+
+        {paso === "informe-pdf" && (
+          <Suspense fallback={<CargandoHerramienta />}>
+            <InformeDescargable C={C} Barra={Barra} atras={() => setPaso("mas")} contexto={contextoInforme()} />
+          </Suspense>
+        )}
+
+        {paso === "recomendador-especialidades" && (
+          <Suspense fallback={<CargandoHerramienta />}>
+            <RecomendadorEspecialidades C={C} Barra={Barra} atras={() => setPaso("mas")} />
           </Suspense>
         )}
 

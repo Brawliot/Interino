@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { calcularBaremo, AVISO_BAREMO } from "./baremoReglas.js";
 import { AvisoEstimacion, SeccionColapsable, CampoNumero, ResultadoCaja, BotonSecundario, FONT_BODY, FONT_MONO, FONT_DISPLAY } from "./shared.jsx";
+import { desbloquearLogro } from "./gamificacion.js";
 
 export default function SimuladorBaremo({ C, Barra, onIrGerencia, atras }) {
   const [form, setForm] = useState({
@@ -18,6 +19,10 @@ export default function SimuladorBaremo({ C, Barra, onIrGerencia, atras }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const resultado = useMemo(() => calcularBaremo(form), [form]);
+
+  useEffect(() => {
+    if (resultado.total > 0) desbloquearLogro("baremo_usado");
+  }, [resultado.total]);
 
   return (
     <div>

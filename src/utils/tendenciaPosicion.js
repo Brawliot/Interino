@@ -129,3 +129,38 @@ export function textoDireccion(analisis) {
     texto: `Posición relativamente estable. ${conf} (R²=${analisis.r2.toFixed(2)}).`,
   };
 }
+
+/**
+ * Si la posición mejora a ritmo constante, estima días hasta un puesto objetivo.
+ * No predice plazas ni llamamientos.
+ */
+export function diasHastaPosicionObjetivo(analisis, posicionObjetivo) {
+  const meta = Number(posicionObjetivo) || 0;
+  if (!analisis?.ok || meta < 1) return null;
+  const actual = analisis.posicionActual;
+  if (actual <= meta) {
+    return { ok: true, dias: 0, yaAlcanzado: true, meta };
+  }
+  if (!(analisis.velocidadDia < 0)) {
+    return { ok: false, motivo: "sin_mejora", meta };
+  }
+  const gap = actual - meta;
+  const dias = Math.ceil(gap / Math.abs(analisis.velocidadDia));
+  if (!Number.isFinite(dias) || dias > 3650) {
+    return { ok: false, motivo: "inestable", meta };
+  }
+  return { ok: true, dias, yaAlcanzado: false, meta, meses: Math.round((dias / 30) * 10) / 10 };
+}
+
+/** Compara puntos actuales con el último corte histórico (orientativo). */
+export function situacionVsCorte(puntosActual, cortePuntos) {
+  if (cortePuntos == null || !Number.isFinite(Number(cortePuntos))) return null;
+  const pts = Number(puntosActual) || 0;
+  const corte = Number(cortePuntos);
+  const gap = Math.round((pts - corte) * 100) / 100;
+  return {
+    corte,
+    gap,
+    porEncima: gap >= 0,
+  };
+}

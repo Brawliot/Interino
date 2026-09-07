@@ -1,6 +1,21 @@
-import { Calculator, ArrowLeftRight, Map as MapIcon, Banknote, PhoneCall, Award, ShieldAlert, Lock, UserRound } from "lucide-react";
+import {
+  Calculator,
+  ArrowLeftRight,
+  Map as MapIcon,
+  Banknote,
+  PhoneCall,
+  Award,
+  ShieldAlert,
+  Lock,
+  UserRound,
+  Target,
+  ClipboardList,
+  FileDown,
+  GraduationCap,
+} from "lucide-react";
 import { PLAN, mensajeLimiteSeguimientos, FEATURES_HOY, FEATURES_PREVISTAS } from "../plan.js";
 import Barra from "../components/Barra.jsx";
+import PanelLogros from "../components/PanelLogros.jsx";
 import { C, FONT_BODY } from "../theme.js";
 
 const CONTACTO_EMAIL = "fedebotija@gmail.com";
@@ -8,8 +23,12 @@ const CONTACTO_FEEDBACK = `mailto:${CONTACTO_EMAIL}?subject=${encodeURIComponent
 
 const HERRAMIENTAS = [
   { id: "simulador-baremo", titulo: "Simulador de baremo", subtitulo: "¿Cuántos puntos tendrías?", icono: Calculator, activo: true },
+  { id: "analisis-puntos", titulo: "Puntos ↔ posición", subtitulo: "Inversa, #100/#500/#1000 y ranking anónimo", icono: Target, activo: true },
   { id: "simulador-gerencia", titulo: "Simulador de provincia", subtitulo: "Tu puesto en cada gerencia SESCAM", icono: ArrowLeftRight, activo: true },
-  { id: "mapa-oportunidades", titulo: "Mapa de oportunidades", subtitulo: "Dónde tienes más opciones", icono: MapIcon, activo: true },
+  { id: "mapa-oportunidades", titulo: "Mapa de oportunidades", subtitulo: "Mapa CLM + distancia al corte", icono: MapIcon, activo: true },
+  { id: "plan-accion", titulo: "Plan de acción", subtitulo: "Checklist según puntos y cortes", icono: ClipboardList, activo: true },
+  { id: "informe-pdf", titulo: "Informe PDF", subtitulo: "Resumen imprimible orientativo", icono: FileDown, activo: true },
+  { id: "recomendador-especialidades", titulo: "Recomendador especialidades", subtitulo: "Educación CLM · propias y afines", icono: GraduationCap, activo: true },
   { id: "calculadora-nomina", titulo: "Calculadora de nómina", subtitulo: "¿Cuánto cobrarías?", icono: Banknote, activo: true },
   { id: "guia-llamamiento", titulo: "Guía del llamamiento", subtitulo: "Te han llamado, ¿ahora qué?", icono: PhoneCall, activo: true },
   { id: "calculadora-meritos", titulo: "Calculadora de méritos", subtitulo: "¿Cuánto sube tu baremo?", icono: Award, activo: true },
@@ -47,7 +66,15 @@ function AvisoLegal({ onAbrirPrivacidad }) {
   );
 }
 
-export default function PantallaMas({ onHerramienta, onPrivacidad, onCuenta, user, atras }) {
+export default function PantallaMas({
+  onHerramienta,
+  onPrivacidad,
+  onCuenta,
+  user,
+  atras,
+  numFavoritos = 0,
+  notifOn = false,
+}) {
   return (
     <div className="pb-8">
       <Barra titulo="Más" atras={atras} />
@@ -132,6 +159,8 @@ export default function PantallaMas({ onHerramienta, onPrivacidad, onCuenta, use
             );
           })}
         </div>
+        <PanelLogros numFavoritos={numFavoritos} notifOn={notifOn} />
+
         <div style={{ marginTop: 28, padding: "14px 16px", background: C.card, border: `1px solid ${C.line}`, borderRadius: "12px 4px 12px 4px" }}>
           <p style={{ fontFamily: FONT_BODY, fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 6 }}>
             Plan · {PLAN.nombre}

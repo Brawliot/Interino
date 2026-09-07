@@ -1134,6 +1134,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
     obtenerListadoCompleto,
     buscarPersonas,
     plazasAfinPara,
+    metaEspecialidad: (categoriaUi, grupoId) => metaDe(categoriaUi, grupoId),
     afinidadDoc,
     historialCorte: () => [],
     estadoActualizacion,
