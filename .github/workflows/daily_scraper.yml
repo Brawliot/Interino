@@ -59,16 +59,25 @@ jobs:
           R2_PUBLIC_URL: https://pub-1d2aaf9854a14a9b98dac42c39874392.r2.dev
         run: python scripts/auditar_paridad_clm.py --smoke
 
-      - name: Commit y push (sanidad + metadatos + vigía)
-        if: steps.vigia.outcome == 'failure'
+      - name: Commit y push (estado vigía y/o datos)
+        if: steps.vigia.outcome == 'success' || steps.vigia.outcome == 'failure'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           mkdir -p data/public data/_local
-          git add data/public/ \
-            data/_local/vigia_estado.json \
-            data/_local/vigia_cambios.json \
-            data/_local/vigia_sectores_r2.json \
-            data/admin-clm/categorias.json
-          git diff --staged --quiet || git commit -m "Actualizacion automatica CLM - $(date +'%Y-%m-%d')"
-          git push
+          # Siempre persistir huellas del vigía (evita bucle «inicializado» en edu/admin).
+          git add data/_local/vigia_estado.json
+          if [ -f data/_local/vigia_cambios.json ]; then
+            git add data/_local/vigia_cambios.json
+          fi
+          if [ -f data/_local/vigia_sectores_r2.json ]; then
+            git add data/_local/vigia_sectores_r2.json
+          fi
+          # Datos scrapeados solo si hubo cambios (pasos anteriores).
+          git add data/public/ data/admin-clm/categorias.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Nada que commitear"
+          else
+            git commit -m "Actualizacion automatica CLM - $(date +'%Y-%m-%d')"
+            git push
+          fi

@@ -63,7 +63,12 @@ def _actualizar_fechas_admin(claves: list[str]) -> None:
         estado = json.loads(VIGIA_ESTADO.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return
-    admin = estado.get("admin_clm", {}).get("bolsas") or {}
+    admin = (
+        (estado.get("grupos") or {}).get("admin_clm")
+        or estado.get("admin_clm")
+        or {}
+    )
+    admin = admin.get("bolsas") or {}
     if not admin:
         return
 

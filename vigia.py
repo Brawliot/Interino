@@ -7,8 +7,11 @@ Admin CLM: fecha_modificacion de cada bolsa vs categorias.json.
 No descarga ni parsea PDFs de listados.
 
 Salida:
-  - exit 0: sin cambios
-  - exit 1: al menos un grupo/bolsa/cuerpo cambió (ver data/_local/vigia_cambios.json)
+  - exit 0: sin cambios (el estado en vigia_estado.json se guarda igual)
+  - exit 1: al menos un grupo/bolsa/cuerpo cambió o es la 1ª observación
+    (ver data/_local/vigia_cambios.json). La 1ª observación fuerza scrape
+    para alinear R2; sin persistir estado, edu/admin quedarían en bucle
+    «inicializado» eterno.
 """
 
 from __future__ import annotations
@@ -206,9 +209,9 @@ def _guardar_cambios(cambios: list[str]) -> None:
 
 
 def _comparar_grupo(anterior: dict | None, actual: dict) -> bool:
-    """True si hay cambio respecto al estado anterior."""
+    """True si hay cambio respecto al estado anterior o es la 1ª observación."""
     if not anterior:
-        return False  # bootstrap: primera vez no dispara scrape
+        return True
     claves = ("convocatoria", "num_categorias", "categorias")
     return any(anterior.get(k) != actual.get(k) for k in claves)
 
@@ -329,11 +332,13 @@ def _estado_educacion_bolsa() -> dict:
 
 
 def _comparar_educacion_cuerpos(anterior: dict | None, actual: dict, prefijo: str) -> list[str]:
+    cuerpos = actual.get("cuerpos") or {}
     if not anterior:
-        return []
+        # 1ª observación: forzar scrape de todos los cuerpos vistos
+        return [f"{prefijo}:{codigo}" for codigo in cuerpos]
     cambios: list[str] = []
     prev_cuerpos = anterior.get("cuerpos") or {}
-    for codigo, info in (actual.get("cuerpos") or {}).items():
+    for codigo, info in cuerpos.items():
         prev = prev_cuerpos.get(codigo) or {}
         nueva_fecha = info.get("pdf_fecha")
         prev_fecha = prev.get("pdf_fecha")
@@ -342,6 +347,8 @@ def _comparar_educacion_cuerpos(anterior: dict | None, actual: dict, prefijo: st
         if nueva_fecha and prev_fecha and nueva_fecha != prev_fecha:
             cambios.append(f"{prefijo}:{codigo}")
         elif nueva_url and prev_url and nueva_url != prev_url:
+            cambios.append(f"{prefijo}:{codigo}")
+        elif codigo not in prev_cuerpos:
             cambios.append(f"{prefijo}:{codigo}")
     return cambios
 
@@ -393,9 +400,10 @@ def _estado_admin_clm() -> dict:
 
 
 def _comparar_admin(anterior: dict | None, actual: dict, catalogo: list[dict]) -> list[str]:
-    """Lista de bolsas con fecha_modificacion distinta a categorias.json."""
+    """Lista de bolsas con fecha_modificacion distinta o 1ª observación."""
+    bolsas = actual.get("bolsas") or {}
     if not anterior:
-        return []
+        return list(bolsas)
 
     cambios: list[str] = []
     fechas_guardadas = {
@@ -404,7 +412,7 @@ def _comparar_admin(anterior: dict | None, actual: dict, catalogo: list[dict]) -
         if e.get("slug_pagina") and not e.get("error")
     }
 
-    for clave, info in actual.get("bolsas", {}).items():
+    for clave, info in bolsas.items():
         prev_fecha = (anterior.get("bolsas") or {}).get(clave, {}).get("fecha_modificacion")
         nueva = info.get("fecha_modificacion")
         guardada = fechas_guardadas.get(clave)
@@ -413,6 +421,9 @@ def _comparar_admin(anterior: dict | None, actual: dict, catalogo: list[dict]) -
             cambios.append(clave)
             continue
         if prev_fecha and nueva and nueva != prev_fecha:
+            if clave not in cambios:
+                cambios.append(clave)
+        elif clave not in (anterior.get("bolsas") or {}):
             if clave not in cambios:
                 cambios.append(clave)
 
@@ -445,7 +456,10 @@ def main() -> int:
         prev = anterior.get(grupo)
         if _comparar_grupo(prev, actual):
             cambios.append(f"sanidad:{grupo}")
-            print(f"CAMBIO DETECTADO en sanidad/{grupo}")
+            if not prev:
+                print(f"PRIMERA OBSERVACIÓN sanidad/{grupo} → scrape")
+            else:
+                print(f"CAMBIO DETECTADO en sanidad/{grupo}")
             print(
                 f"  convocatoria: {prev.get('convocatoria')} -> {actual['convocatoria']}"
                 if prev
@@ -456,10 +470,9 @@ def main() -> int:
                     f"  categorías: {prev.get('num_categorias')} -> {actual['num_categorias']}"
                 )
         else:
-            etiqueta = "inicializado" if not prev else "sin cambio"
             print(
                 f"sanidad/{grupo}: {actual['convocatoria']} "
-                f"({actual['num_categorias']} categorías, {etiqueta})"
+                f"({actual['num_categorias']} categorías, sin cambio)"
             )
 
     # --- Administración CLM ---
@@ -472,18 +485,18 @@ def main() -> int:
             cambios_admin = _comparar_admin(prev_admin, actual_admin, catalogo_admin)
             n = actual_admin.get("num_bolsas", 0)
             if cambios_admin:
+                etiqueta = "PRIMERA OBSERVACIÓN" if not prev_admin else "CAMBIO DETECTADO"
                 for clave in cambios_admin:
                     info = actual_admin["bolsas"].get(clave, {})
                     prev_info = (prev_admin or {}).get("bolsas", {}).get(clave, {})
-                    print(f"CAMBIO DETECTADO en admin/{clave}")
+                    print(f"{etiqueta} en admin/{clave}")
                     print(
                         f"  fecha: {prev_info.get('fecha_modificacion')} -> "
                         f"{info.get('fecha_modificacion')} ({info.get('categoria')})"
                     )
                     cambios.append(f"admin:{clave}")
             else:
-                etiqueta = "inicializado" if not prev_admin else "sin cambio"
-                print(f"admin-clm: {n} bolsas consultadas ({etiqueta})")
+                print(f"admin-clm: {n} bolsas consultadas (sin cambio)")
             if actual_admin.get("errores"):
                 print(f"  avisos admin: {len(actual_admin['errores'])} páginas con error")
             actual_por_grupo["admin_clm"] = actual_admin
@@ -501,20 +514,20 @@ def main() -> int:
                 prev_edu_disp, actual_edu_disp, "educacion:disponibles"
             )
             if cambios_edu_disp:
+                etiqueta = "PRIMERA OBSERVACIÓN" if not prev_edu_disp else "CAMBIO DETECTADO"
                 for clave in cambios_edu_disp:
                     codigo = clave.split(":")[-1]
                     info = actual_edu_disp["cuerpos"].get(codigo, {})
                     prev_info = (prev_edu_disp or {}).get("cuerpos", {}).get(codigo, {})
-                    print(f"CAMBIO DETECTADO en educacion/disponibles/{codigo}")
+                    print(f"{etiqueta} en educacion/disponibles/{codigo}")
                     print(
                         f"  PDF: {prev_info.get('pdf_fecha')} -> "
                         f"{info.get('pdf_fecha')} ({info.get('nombre')})"
                     )
                     cambios.append(clave)
             else:
-                etiqueta = "inicializado" if not prev_edu_disp else "sin cambio"
                 print(
-                    f"educacion/disponibles: {actual_edu_disp['num_cuerpos']} cuerpos ({etiqueta})"
+                    f"educacion/disponibles: {actual_edu_disp['num_cuerpos']} cuerpos (sin cambio)"
                 )
             if actual_edu_disp.get("errores"):
                 print(f"  avisos educación disponibles: {len(actual_edu_disp['errores'])}")
@@ -529,19 +542,19 @@ def main() -> int:
                 prev_edu_bolsa, actual_edu_bolsa, "educacion:bolsa"
             )
             if cambios_edu_bolsa:
+                etiqueta = "PRIMERA OBSERVACIÓN" if not prev_edu_bolsa else "CAMBIO DETECTADO"
                 for clave in cambios_edu_bolsa:
                     codigo = clave.split(":")[-1]
                     info = actual_edu_bolsa["cuerpos"].get(codigo, {})
                     prev_info = (prev_edu_bolsa or {}).get("cuerpos", {}).get(codigo, {})
-                    print(f"CAMBIO DETECTADO en educacion/bolsa/{codigo}")
+                    print(f"{etiqueta} en educacion/bolsa/{codigo}")
                     print(
                         f"  PDF: {prev_info.get('pdf_fecha')} -> "
                         f"{info.get('pdf_fecha')} ({info.get('nombre')})"
                     )
                     cambios.append(clave)
             else:
-                etiqueta = "inicializado" if not prev_edu_bolsa else "sin cambio"
-                print(f"educacion/bolsa: {actual_edu_bolsa['num_cuerpos']} cuerpos ({etiqueta})")
+                print(f"educacion/bolsa: {actual_edu_bolsa['num_cuerpos']} cuerpos (sin cambio)")
             if actual_edu_bolsa.get("errores"):
                 print(f"  avisos educación bolsa: {len(actual_edu_bolsa['errores'])}")
             actual_por_grupo["educacion_bolsa"] = actual_edu_bolsa
@@ -550,10 +563,11 @@ def main() -> int:
     else:
         print("educacion: sin categorias.json — omitido")
 
-    # Fusionar estado: conservar grupos previos no consultados + nuevos
+    # Fusionar estado: conservar grupos previos no consultados + nuevos.
+    # Siempre persistir: si no, edu/admin «inicializado» no entran en git y
+    # el día siguiente vuelven a inicializarse sin scrapear nunca.
     estado_nuevo = {**anterior, **actual_por_grupo}
-    if not anterior or cambios:
-        _guardar_estado(estado_nuevo)
+    _guardar_estado(estado_nuevo)
     if cambios:
         _guardar_cambios(cambios)
 

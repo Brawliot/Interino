@@ -62,10 +62,13 @@ Con `-SkipExisting`, los manifests (`manifest.json`, `afinidad.json`) **siempre 
 Workflow: `.github/workflows/daily_scraper.yml`
 
 1. `vigia.py` — detecta cambios en portales CLM
-2. Si hay cambios → `ejecutar_vigia_scrapers.py` (scrape por sector)
+2. Si hay cambios **o primera observación** de un sector → `ejecutar_vigia_scrapers.py`
 3. Si educacion cambio → regenera `data/educacion/afinidad.json`
 4. Sube sectores afectados a R2 (`subir_sectores_r2.py --skip-existing`)
-5. Commit sanidad + metadatos admin + estado vigia
+5. **Siempre** commit de `vigia_estado.json` (aunque no haya scrape). Sin esto,
+   edu/admin se reinicializan cada día y nunca scrapean.
+
+La 1ª observación de un sector marca cambios a propósito para alinear R2.
 
 Secrets necesarios en GitHub → Settings → Secrets → Actions:
 
