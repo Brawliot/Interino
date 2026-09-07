@@ -4,7 +4,7 @@ import {
   json,
   readCookie,
   COOKIE,
-} from "../../../_lib/auth.js";
+} from "../../lib/auth.js";
 
 export async function onRequestPost(context) {
   const { request, env } = context;

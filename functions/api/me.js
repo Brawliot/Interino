@@ -1,4 +1,4 @@
-import { clearSessionCookie, cookieSecure, getSessionUser, json } from "../../_lib/auth.js";
+import { clearSessionCookie, cookieSecure, getSessionUser, json } from "../lib/auth.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
