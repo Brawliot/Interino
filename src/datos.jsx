@@ -10,6 +10,13 @@ import {
   frescuraDesdeManifests,
 } from "./cobertura-clm.js";
 
+/** Evita que el navegador/PWA sirva JSON viejos de R2 tras un scrape. */
+const FETCH_DATOS = { cache: "no-store" };
+
+async function fetchDatos(url, init = {}) {
+  return fetch(url, { ...FETCH_DATOS, ...init });
+}
+
 /**
  * Base URL para todos los JSON de datos (listados + metadatos).
  * Desarrollo: /data/ → data/public/  |  Producción (R2): VITE_DATA_CATEGORIAS_URL=https://…
@@ -246,7 +253,7 @@ function crearCapaBusqueda({
     if (!rel) return null;
     const key = `idx/${rel}`;
     if (cache.has(key)) return cache.get(key);
-    const res = await fetch(`${baseUrl}${rel}`);
+    const res = await fetchDatos(`${baseUrl}${rel}`);
     if (!res.ok) return null;
     const data = await res.json();
     cache.set(key, data);
@@ -257,7 +264,7 @@ function crearCapaBusqueda({
     const rel = rutaListado(categoriaUi, grupoId);
     const key = rel;
     if (cache.has(key)) return cache.get(key);
-    const res = await fetch(`${baseUrl}${rel}`);
+    const res = await fetchDatos(`${baseUrl}${rel}`);
     if (!res.ok) throw new Error(`No se pudo cargar ${baseUrl}${rel} (${res.status})`);
     const data = await res.json();
     cache.set(key, data);
@@ -539,7 +546,7 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo) {
       const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
       const cat = categoriaScraper(categoriaUi);
       const rel = `${gid}/${slugArchivo(cat)}.json`;
-      const res = await fetch(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
+      const res = await fetchDatos(`${DATA_CATEGORIAS_BASE_URL}${rel}`);
       if (!res.ok) throw new Error(`No se pudo cargar ${DATA_CATEGORIAS_BASE_URL}${rel} (${res.status})`);
       return res.json();
     },
@@ -798,7 +805,7 @@ export function crearCapaDatosEducacionClm(manifest, categoriasDoc, opciones = {
   async function cargarJson(rel) {
     if (!rel) throw new Error("Sin ruta");
     if (cache.has(rel)) return cache.get(rel);
-    const res = await fetch(`${baseUrl}${rel}`);
+    const res = await fetchDatos(`${baseUrl}${rel}`);
     if (!res.ok) throw new Error(`No se pudo cargar ${baseUrl}${rel} (${res.status})`);
     const data = await res.json();
     cache.set(rel, data);
@@ -1361,7 +1368,7 @@ export function crearCapaDatosAdminClm(manifest, categoriasList, opciones = {}) 
   async function cargarJson(rel) {
     if (!rel) throw new Error("Sin ruta");
     if (cache.has(rel)) return cache.get(rel);
-    const res = await fetch(`${baseUrl}${rel}`);
+    const res = await fetchDatos(`${baseUrl}${rel}`);
     if (!res.ok) throw new Error(`No se pudo cargar ${baseUrl}${rel} (${res.status})`);
     const data = await res.json();
     cache.set(rel, data);
@@ -1557,7 +1564,7 @@ async function fetchJsonOptional(url) {
   if (jsonMemo.has(url)) return jsonMemo.get(url);
   const promise = (async () => {
     try {
-      const res = await fetch(url);
+      const res = await fetchDatos(url);
       if (!res.ok) return { ok: false, status: res.status, data: null };
       return { ok: true, status: res.status, data: await res.json() };
     } catch {

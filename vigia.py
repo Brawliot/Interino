@@ -208,12 +208,27 @@ def _guardar_cambios(cambios: list[str]) -> None:
         )
 
 
+def _estado_obsoleto(anterior: dict | None, dias: int = 14) -> bool:
+    """True si no hay huella o la última consulta tiene ≥ dias."""
+    if not anterior:
+        return True
+    raw = anterior.get("consultado") or ""
+    try:
+        prev = datetime.strptime(raw[:19], "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return True
+    return (datetime.now() - prev).days >= dias
+
+
 def _comparar_grupo(anterior: dict | None, actual: dict) -> bool:
-    """True si hay cambio respecto al estado anterior o es la 1ª observación."""
+    """True si hay cambio, 1ª observación, o huella sin refrescar ≥14 días."""
     if not anterior:
         return True
     claves = ("convocatoria", "num_categorias", "categorias")
-    return any(anterior.get(k) != actual.get(k) for k in claves)
+    if any(anterior.get(k) != actual.get(k) for k in claves):
+        return True
+    # Misma convocatoria: re-scrape periódico para alinear R2 / aviso de frescura.
+    return _estado_obsoleto(anterior, 14)
 
 
 def _fecha_admin_iso(fecha_dmY: str) -> str | None:
@@ -458,6 +473,10 @@ def main() -> int:
             cambios.append(f"sanidad:{grupo}")
             if not prev:
                 print(f"PRIMERA OBSERVACIÓN sanidad/{grupo} → scrape")
+            elif _estado_obsoleto(prev, 14) and all(
+                prev.get(k) == actual.get(k) for k in ("convocatoria", "num_categorias", "categorias")
+            ):
+                print(f"REFRESCO (≥14 d) sanidad/{grupo} → scrape")
             else:
                 print(f"CAMBIO DETECTADO en sanidad/{grupo}")
             print(

@@ -103,7 +103,11 @@ def _subir_carpeta(
             continue
 
         ctype, _ = mimetypes.guess_type(path.name)
-        extra = {"ContentType": ctype or "application/octet-stream"}
+        extra = {
+            "ContentType": ctype or "application/octet-stream",
+            # Sin esto el navegador puede cachear JSON de bolsas semanas.
+            "CacheControl": "no-cache, max-age=0, must-revalidate",
+        }
         try:
             print(f"  {key}" + (" [manifest]" if forzar else ""))
             s3.upload_file(str(path), bucket, key, ExtraArgs=extra)
