@@ -4,6 +4,7 @@ import {
   opcionesDesdeIndex,
   resumirPorCurso,
   sectoresArchivePara,
+  snapshotInicioCurso,
   urlBaseArchive,
 } from "./cursosHistoricos.js";
 
@@ -36,6 +37,16 @@ describe("cursosHistoricos", () => {
     const r = resumirPorCurso(ops);
     expect(r).toHaveLength(2);
     expect(r.find((x) => x.curso === "2025/26").fecha).toBe("2026-01-10");
+  });
+
+  it("snapshotInicioCurso toma la fecha más temprana del curso", () => {
+    const ops = [
+      { fecha: "2025-09-01", curso: "2025/26", label: "a" },
+      { fecha: "2026-01-10", curso: "2025/26", label: "b" },
+      { fecha: "2026-09-01", curso: "2026/27", label: "c" },
+    ];
+    expect(snapshotInicioCurso(ops, { curso: "2025/26" }).fecha).toBe("2025-09-01");
+    expect(snapshotInicioCurso(ops, { hoy: "2026-03-01" }).fecha).toBe("2025-09-01");
   });
 
   it("urlBaseArchive", () => {
