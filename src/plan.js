@@ -45,6 +45,8 @@ export function mensajeLimiteSeguimientos() {
 export const FEATURES_HOY = [
   "Favoritos de aspirantes concretos (tú u otros) por DNI público o apellidos",
   "Avisos push configurables por aspirante (posición / fuera del listado)",
+  "Buscar en todas las bolsas de la comunidad + simulador de provincia SESCAM",
+  "Posición con filtros (lista completa / sin G.P. / con disponibilidad) y quién iba por delante al inicio de curso",
   "Exportar e importar una copia en archivo JSON",
   "Entrar con enlace mágico por email (sin contraseña ni pagos)",
 ];

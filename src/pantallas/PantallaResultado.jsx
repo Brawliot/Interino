@@ -30,6 +30,10 @@ export default function PantallaResultado({ categoria, grupoId, grupoActivo, can
   const filas = useMemo(() => construirFilasResumen(apariciones), [apariciones]);
   const categoriaMostrada = useMemo(() => tituloCategoriaResultado(categoria, apariciones), [categoria, apariciones]);
   const numGerencias = filas.length;
+  const numCategorias = useMemo(() => {
+    const cats = new Set((apariciones || []).map((a) => a.categoria).filter(Boolean));
+    return cats.size;
+  }, [apariciones]);
 
   useEffect(() => {
     setDetalleFila(null);
@@ -270,8 +274,17 @@ export default function PantallaResultado({ categoria, grupoId, grupoActivo, can
         </p>
         <p style={{ fontFamily: FONT_BODY, fontSize: 13.5, color: C.navy, fontWeight: 600, marginBottom: 16 }}>
           {categoriaMostrada || "Resultado"}
+          {numCategorias > 1 && (
+            <span style={{ color: C.inkSoft, fontWeight: 500 }}>
+              {" "}
+              · {numCategorias} bolsas/categorías
+            </span>
+          )}
           {numGerencias > 0 && (
-            <span style={{ color: C.inkSoft, fontWeight: 500 }}> · {numGerencias} gerencia{numGerencias !== 1 ? "s" : ""}</span>
+            <span style={{ color: C.inkSoft, fontWeight: 500 }}>
+              {" "}
+              · {numGerencias} gerencia{numGerencias !== 1 ? "s" : ""}
+            </span>
           )}
         </p>
 
@@ -313,7 +326,9 @@ export default function PantallaResultado({ categoria, grupoId, grupoActivo, can
 
           {filas.map((fila, i) => {
             const esMejor = fila.posicion === mejorPosicion;
+            const catApar = fila.categoria || fila.apariciones?.[0]?.categoria;
             const etiquetaGerencia = [
+              catApar && numCategorias > 1 ? catApar : null,
               fila.ccaaNombre ? `${fila.ccaaNombre} · ${fila.gerencia}` : fila.gerencia,
               fila.ambitoLabel,
             ]

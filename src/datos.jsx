@@ -175,6 +175,7 @@ function filaScraperAApp(fila, total) {
     total,
     dniParcial: fila.dni_parcial,
     tiposContrato: fila.tipos_contrato,
+    grupoPreferente: Boolean(fila.grupo_preferente),
     ambito: fila.ambito,
     gerencia: gerenciaCorta(fila.gerencia),
     gerenciaCompleta: fila.gerencia,
@@ -318,6 +319,12 @@ function crearCapaBusqueda({
               ...a,
               nombreCompleto: p.nombreCompleto,
               dniParcial: p.dniParcial,
+              sector,
+              ccaaId,
+              categoria: categoriaUi,
+              grupoId,
+              grupoPreferente: Boolean(a.grupoPreferente ?? a.grupo_preferente),
+              tiposContrato: a.tiposContrato || a.tipos_contrato || {},
             }))
           ),
         }));
@@ -350,6 +357,8 @@ function crearCapaBusqueda({
         delante: Math.max(0, f.pos - 1),
         categoria: categoriaUi,
         grupoId,
+        tiposContrato: f.tiposContrato || {},
+        grupoPreferente: Boolean(f.grupoPreferente),
       });
     });
     return {
@@ -426,6 +435,42 @@ function crearCapaBusqueda({
     }
   }
 
+  /** Todas las categorías/grupos activos de esta capa (comunidad × sector). */
+  async function buscarGlobal(consulta) {
+    const q = consulta.trim();
+    if (!q) return { personas: [], gerencias: [] };
+    const porPersona = new Map();
+    for (const g of gruposSanidad) {
+      if (!g.activo) continue;
+      for (const cat of g.categorias || []) {
+        if (!tieneDatosReales(cat, g.id)) continue;
+        // eslint-disable-next-line no-await-in-loop
+        const res = await buscarPersonas(g.id, cat, q);
+        for (const p of res.personas || []) {
+          const clave = p.dniParcial || p.nombreCompleto;
+          const enriquecidas = (p.apariciones || []).map((a) => ({
+            ...a,
+            categoria: a.categoria || cat,
+            grupoId: a.grupoId || g.id,
+            sector: a.sector || sector,
+            ccaaId: a.ccaaId || ccaaId,
+          }));
+          const prev = porPersona.get(clave);
+          if (prev) {
+            prev.apariciones = deduplicarApariciones([...prev.apariciones, ...enriquecidas]);
+          } else {
+            porPersona.set(clave, {
+              nombreCompleto: p.nombreCompleto,
+              dniParcial: p.dniParcial,
+              apariciones: deduplicarApariciones(enriquecidas),
+            });
+          }
+        }
+      }
+    }
+    return { personas: [...porPersona.values()], gerencias: [] };
+  }
+
   return {
     ccaaId,
     sector,
@@ -436,6 +481,7 @@ function crearCapaBusqueda({
     gerenciasDeCategoria,
     obtenerListadoCompleto,
     buscarPersonas,
+    buscarGlobal,
     historialCorte,
     estadoActualizacion,
     archivosDisponibles,
@@ -558,6 +604,7 @@ export function crearCapaDatosClm(historico, manifest, categoriasPorGrupo, opcio
       const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
       return capa.buscarPersonas(gid, categoriaUi, consulta);
     },
+    buscarGlobal: (consulta) => capa.buscarGlobal(consulta),
     obtenerListadoCompleto: async (grupoId, categoriaUi, gerencia, ambito) => {
       const gid = grupoId || grupoDeCategoriaUi(categoriaUi);
       return capa.obtenerListadoCompleto(gid, categoriaUi, gerencia, ambito);

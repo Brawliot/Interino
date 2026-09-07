@@ -97,11 +97,12 @@ export function construirFilasResumen(apariciones = []) {
   const map = new Map();
   apariciones.forEach((raw, idx) => {
     const a = normalizarAparicion(raw);
-    const key = `${a.ccaaId || ""}\0${a.gerencia}\0${a.posicion}\0${a.puntos}`;
+    const key = `${a.ccaaId || ""}\0${a.categoria || ""}\0${a.gerencia}\0${a.ambito || ""}\0${a.posicion}\0${a.puntos}`;
     if (!map.has(key)) {
       map.set(key, {
         gerencia: a.gerencia,
         ccaaNombre: a.ccaaNombre,
+        categoria: a.categoria || "",
         posicion: a.posicion,
         puntos: a.puntos,
         apariciones: [a],
@@ -119,7 +120,7 @@ export function construirFilasResumen(apariciones = []) {
       return {
         ...row,
         ambitoLabel,
-        key: `${row.gerencia}-${row.posicion}-${row.puntos}-${ambitoLabel}`,
+        key: `${row.categoria}-${row.gerencia}-${row.posicion}-${row.puntos}-${ambitoLabel}`,
       };
     })
     .sort((a, b) => a.posicion - b.posicion || (a.gerencia || "").localeCompare(b.gerencia || "", "es"));

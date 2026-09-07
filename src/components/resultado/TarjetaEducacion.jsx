@@ -140,7 +140,9 @@ export default function TarjetaEducacion({ categoria, grupoId, grupoActivo, r, g
               </p>
               <p style={{ fontFamily: FONT_BODY, fontSize: 12, color: C.inkSoft, lineHeight: 1.45, margin: 0 }}>
                 Listado por puntuación de la renovación anual (junio/julio). Incluye a todas las
-                personas admitidas, no solo quienes están disponibles para sustituciones.
+                personas admitidas, no solo quienes están disponibles para sustituciones. Educación CLM
+                no publica «lista general vs promoción interna» como otras CCAA: aquí ves bolsa ordinaria
+                / disponibles / reserva (`tipo_bolsa`) y el código de acceso del PDF.
               </p>
               {r?.bolsa_codigo != null && (
                 <p style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.inkSoft, marginTop: 8, marginBottom: 0 }}>

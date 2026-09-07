@@ -8,7 +8,7 @@ const CONTACTO_FEEDBACK = `mailto:${CONTACTO_EMAIL}?subject=${encodeURIComponent
 
 const HERRAMIENTAS = [
   { id: "simulador-baremo", titulo: "Simulador de baremo", subtitulo: "¿Cuántos puntos tendrías?", icono: Calculator, activo: true },
-  { id: "simulador-gerencia", titulo: "Simulador de gerencia", subtitulo: "Tu posición en otra gerencia", icono: ArrowLeftRight, activo: true },
+  { id: "simulador-gerencia", titulo: "Simulador de provincia", subtitulo: "Tu puesto en cada gerencia SESCAM", icono: ArrowLeftRight, activo: true },
   { id: "mapa-oportunidades", titulo: "Mapa de oportunidades", subtitulo: "Dónde tienes más opciones", icono: MapIcon, activo: true },
   { id: "calculadora-nomina", titulo: "Calculadora de nómina", subtitulo: "¿Cuánto cobrarías?", icono: Banknote, activo: true },
   { id: "guia-llamamiento", titulo: "Guía del llamamiento", subtitulo: "Te han llamado, ¿ahora qué?", icono: PhoneCall, activo: true },

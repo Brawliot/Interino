@@ -714,6 +714,7 @@ def construir_indice_busqueda(listados: list[dict], categoria: str) -> dict:
                 "puntos": fila.get("comprobado_baremo"),
                 "delante": max(0, (fila.get("orden") or 1) - 1),
                 "tiposContrato": fila.get("tipos_contrato") or {},
+                "grupoPreferente": bool(fila.get("grupo_preferente")),
             }
             if clave not in por_persona:
                 por_persona[clave] = {

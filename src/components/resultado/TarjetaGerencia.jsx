@@ -15,6 +15,8 @@ import ComparativaPosicionFechas from "./ComparativaPosicionFechas.jsx";
 import PosicionInicioVsActual from "./PosicionInicioVsActual.jsx";
 import EvolucionHistoricaCandidato from "./EvolucionHistoricaCandidato.jsx";
 import AnalisisTendenciaPredictivo from "./AnalisisTendenciaPredictivo.jsx";
+import PanelPosicionFiltrada from "./PanelPosicionFiltrada.jsx";
+import QuienPorDelanteCurso from "./QuienPorDelanteCurso.jsx";
 
 export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const capa = useCapaDatos();
@@ -49,6 +51,9 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
     puntosActual: puntos,
     totalActual: total,
   };
+  const chipsExtra = [];
+  if (r.grupoPreferente) chipsExtra.push({ key: "gp", label: "Grupo preferente (G.P.)" });
+  contratosActivos.forEach((tipo) => chipsExtra.push({ key: tipo, label: tipo }));
 
   return (
     <ResultadoShell
@@ -80,13 +85,34 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
           {mostrarHistorico && <AnalisisTendenciaPredictivo {...propsHist} />}
           {mostrarHistorico && <PosicionInicioVsActual {...propsHist} />}
           {mostrarHistorico && <ComparativaPosicionFechas {...propsHist} />}
+          {mostrarHistorico && (
+            <QuienPorDelanteCurso
+              categoria={categoria}
+              grupoId={grupoId}
+              gerencia={gerencia}
+              ambito={ambito || r.ambito || ""}
+              ccaaId={regionId}
+              candidato={candidato}
+              posicionActual={posicion}
+            />
+          )}
+          {regionId === "clm" && posicion > 0 && (
+            <PanelPosicionFiltrada
+              categoria={categoria}
+              grupoId={grupoId}
+              gerencia={gerencia}
+              ambito={ambito || r.ambito || ""}
+              candidato={candidato}
+              posicionOficial={posicion}
+              totalOficial={total}
+            />
+          )}
         </>
       }
       secondary={
-        <ResultadoChips
-          label="Disponible:"
-          items={contratosActivos.map((tipo) => ({ key: tipo, label: tipo }))}
-        />
+        chipsExtra.length > 0 ? (
+          <ResultadoChips label="Marcas del listado:" items={chipsExtra} />
+        ) : null
       }
       colapsable={
         <ResultadoColapsable label="Ver distancia al corte">

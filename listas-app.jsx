@@ -699,7 +699,7 @@ export default function ListasApp() {
             ccaas={ccaas.length ? ccaas : [ccaaPorId("clm")]}
             atras={() => setPaso("inicio")}
             onBuscar={iniciarBusqueda}
-            onBuscarGlobal={!modoEducacion && !modoAdministracion && capaDatos.multi ? iniciarBusquedaGlobal : undefined}
+            onBuscarGlobal={!modoEducacion && !modoAdministracion ? iniciarBusquedaGlobal : undefined}
             onVerListado={(categoria, gerencia) => {
               const g = grupoDeCategoria(categoria, gruposSanidad);
               setListadoCategoria(categoria);

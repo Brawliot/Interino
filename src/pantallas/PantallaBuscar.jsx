@@ -655,7 +655,7 @@ export default function PantallaBuscar({
           <Search size={16} /> Buscar en la lista
         </button>
 
-        {multi && onBuscarGlobal && (
+        {onBuscarGlobal && (
           <button
             onClick={() => buscarGlobal(consulta)}
             disabled={!consulta.trim()}
@@ -671,7 +671,8 @@ export default function PantallaBuscar({
               cursor: consulta.trim() ? "pointer" : "default",
             }}
           >
-            <Search size={15} /> Buscar en todas mis comunidades
+            <Search size={15} />{" "}
+            {multi ? "Buscar en todas mis comunidades" : "Buscar en todas las bolsas de la comunidad"}
           </button>
         )}
 
