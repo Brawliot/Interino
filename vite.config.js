@@ -112,4 +112,7 @@ function dataStaticPlugin() {
 
 export default defineConfig({
   plugins: [react(), dataStaticPlugin(), politicaStaticPlugin()],
+  test: {
+    environment: "node",
+  },
 });
