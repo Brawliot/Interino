@@ -71,6 +71,31 @@ export function resumirPorCurso(opciones) {
 }
 
 /**
+ * Snapshot más temprano de un curso (= “inicio” disponible en archive).
+ * @param {ReturnType<typeof opcionesDesdeIndex>} opciones
+ * @param {{ curso?: string|null, hoy?: string }} [opts]
+ */
+export function snapshotInicioCurso(opciones, opts = {}) {
+  const hoy = opts.hoy || new Date().toISOString().slice(0, 10);
+  const curso = opts.curso || cursoDeFecha(hoy);
+  if (!curso) return null;
+  const delCurso = (opciones || [])
+    .filter((o) => o.curso === curso)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+  if (!delCurso.length) return null;
+  return { ...delCurso[0], curso };
+}
+
+/** Cursos presentes en el índice (para selector), del más reciente al más viejo. */
+export function cursosDisponibles(opciones) {
+  const set = new Set();
+  for (const o of opciones || []) {
+    if (o.curso) set.add(o.curso);
+  }
+  return [...set].sort((a, b) => b.localeCompare(a));
+}
+
+/**
  * Prefijo R2 live → base URL del snapshot.
  * @param {string} dataBase — DATA_CATEGORIAS_BASE_URL
  * @param {string} fecha

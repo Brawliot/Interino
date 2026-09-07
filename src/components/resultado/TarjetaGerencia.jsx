@@ -12,6 +12,7 @@ import {
 import { etiquetaLista } from "../../utils/etiquetasLista.js";
 import PanelCorteGerencia from "./PanelCorteGerencia.jsx";
 import ComparativaPosicionFechas from "./ComparativaPosicionFechas.jsx";
+import PosicionInicioVsActual from "./PosicionInicioVsActual.jsx";
 
 export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, grupoActivo, ccaaId, r, guardado, onGuardar, onVerListado, onInfoLlamamientos }) {
   const capa = useCapaDatos();
@@ -30,7 +31,11 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
   const contratosActivos = r.tiposContrato
     ? Object.entries(r.tiposContrato).filter(([, activo]) => activo).map(([tipo]) => tipo)
     : [];
-  const mostrarComparativa = regionId === "clm" && !capa.modoHistorico;
+  const mostrarHistorico = regionId === "clm" && !capa.modoHistorico;
+  const candidato = {
+    nombreCompleto: r.nombreCompleto,
+    dniParcial: r.dniParcial,
+  };
 
   return (
     <ResultadoShell
@@ -58,17 +63,27 @@ export default function TarjetaGerencia({ categoria, gerencia, ambito, grupoId, 
             grupoActivo={grupoActivo}
             tieneResultado={posicion > 0}
           />
-          {mostrarComparativa && (
+          {mostrarHistorico && (
+            <PosicionInicioVsActual
+              categoria={categoria}
+              grupoId={grupoId}
+              gerencia={gerencia}
+              ambito={ambito || r.ambito || ""}
+              ccaaId={regionId}
+              candidato={candidato}
+              posicionActual={posicion}
+              puntosActual={puntos}
+              totalActual={total}
+            />
+          )}
+          {mostrarHistorico && (
             <ComparativaPosicionFechas
               categoria={categoria}
               grupoId={grupoId}
               gerencia={gerencia}
               ambito={ambito || r.ambito || ""}
               ccaaId={regionId}
-              candidato={{
-                nombreCompleto: r.nombreCompleto,
-                dniParcial: r.dniParcial,
-              }}
+              candidato={candidato}
               posicionActual={posicion}
               puntosActual={puntos}
               totalActual={total}
