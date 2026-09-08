@@ -1,5 +1,5 @@
 {
-  "generado": "2026-09-07T12:14:05",
+  "generado": "2026-09-08T12:41:19",
   "grupos": {
     "licenciados": {
       "convocatoria": "Vigesima Convocatoria 2025",
@@ -66,7 +66,7 @@
       "categoria_muestra": "FARMACEUTICO/A DE ATENCIÓN PRIMARIA",
       "gerencia_muestra": "Gerencia de Atención Integrada de Albacete",
       "pdf_muestra": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/FARMACEUTICO_A%20DE%20ATENCION%20PRIMARIA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-      "consultado": "2026-09-07T12:09:36"
+      "consultado": "2026-09-08T12:37:08"
     },
     "diplomado": {
       "convocatoria": "Vigesima Convocatoria 2025",
@@ -92,7 +92,7 @@
       "categoria_muestra": "DIETISTA-NUTRICIONISTA",
       "gerencia_muestra": "Gerencia de Atención Especializada de Toledo",
       "pdf_muestra": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/DIETISTA-NUTRICIONISTA_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Especializada%20-%20Gerencia%20de%20Atencion%20Especializada%20de%20Toledo.pdf",
-      "consultado": "2026-09-07T12:09:36"
+      "consultado": "2026-09-08T12:37:07"
     },
     "gestion": {
       "convocatoria": "Vigesima Convocatoria 2025",
@@ -131,7 +131,7 @@
       "categoria_muestra": "ALBANIL",
       "gerencia_muestra": "Gerencia de Atención Especializada de Toledo",
       "pdf_muestra": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/ALBANIL_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Especializada%20-%20Gerencia%20de%20Atencion%20Especializada%20de%20Toledo.pdf",
-      "consultado": "2026-09-07T12:09:36"
+      "consultado": "2026-09-08T12:37:08"
     },
     "tecnico": {
       "convocatoria": "Vigesima Convocatoria 2025",
@@ -150,346 +150,356 @@
       "categoria_muestra": "HIGIENISTA DENTAL",
       "gerencia_muestra": "Gerencia de Atención Integrada de Albacete",
       "pdf_muestra": "https://sanidad.castillalamancha.es/sites/sescam.castillalamancha.es/files/selecta-pdfs/HIGIENISTA%20DENTAL_Listado%20DEFINITIVO%20de%20ADMITIDOS.%20Vigesima%20Convocatoria%202025%20-%20Atencion%20Primaria%20-%20Gerencia%20de%20Atencion%20Integrada%20de%20Albacete.pdf",
-      "consultado": "2026-09-07T12:09:36"
+      "consultado": "2026-09-08T12:37:07"
     },
     "admin_clm": {
-      "num_bolsas": 48,
+      "num_bolsas": 50,
       "bolsas": {
+        "funcionario/cuerpo-agente-medioambiental-agente-medioambiental": {
+          "categoria": "Agente Medioambiental",
+          "fecha_modificacion": "2026-08-19",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-agente-medioambiental-agente-medioambiental",
+          "consultado": "2026-09-08T12:37:09"
+        },
         "funcionario/cuerpo-ejecutivo-administrativos": {
           "categoria": "Administrativos",
           "fecha_modificacion": "2026-09-01",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-administrativos",
-          "consultado": "2026-09-07T12:09:37"
+          "consultado": "2026-09-08T12:37:09"
         },
         "funcionario/cuerpo-auxiliar-auxiliar": {
           "categoria": "Auxiliar",
           "fecha_modificacion": "2026-09-01",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-auxiliar-auxiliar",
-          "consultado": "2026-09-07T12:09:37"
-        },
-        "funcionario/cuerpo-agente-medioambiental-agente-medioambiental": {
-          "categoria": "Agente Medioambiental",
-          "fecha_modificacion": "2026-08-19",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-agente-medioambiental-agente-medioambiental",
-          "consultado": "2026-09-07T12:09:37"
+          "consultado": "2026-09-08T12:37:09"
         },
         "funcionario/cuerpo-auxiliar-escala-auxiliar-de-archivos-y-bibliotecas": {
           "categoria": "Escala Auxiliar de Archivos y Bibliotecas",
           "fecha_modificacion": "2026-09-03",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-auxiliar-escala-auxiliar-de-archivos-y-bibliotecas",
-          "consultado": "2026-09-07T12:09:38"
-        },
-        "funcionario/cuerpo-ejecutivo-escala-administrativa-de-archivos-y-bibliotecas": {
-          "categoria": "Escala Administrativa de Archivos y Bibliotecas",
-          "fecha_modificacion": "2026-09-03",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-escala-administrativa-de-archivos-y-bibliotecas",
-          "consultado": "2026-09-07T12:09:39"
-        },
-        "funcionario/cuerpo-ejecutivo-escala-administrativa-de-informatica": {
-          "categoria": "Escala Administrativa de Informática",
-          "fecha_modificacion": "2026-08-06",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-escala-administrativa-de-informatica",
-          "consultado": "2026-09-07T12:09:39"
-        },
-        "funcionario/cuerpo-ejecutivo-escala-administrativa-de-prevencion-de-riesgos": {
-          "categoria": "Escala Administrativa de Prevención de Riesgos Laborales",
-          "fecha_modificacion": "2026-09-02",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-escala-administrativa-de-prevencion-de-riesgos",
-          "consultado": "2026-09-07T12:09:39"
+          "consultado": "2026-09-08T12:37:09"
         },
         "funcionario/cuerpo-superior-administracion-general": {
           "categoria": "Administración General",
           "fecha_modificacion": "2026-09-01",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-administracion-general",
-          "consultado": "2026-09-07T12:09:39"
+          "consultado": "2026-09-08T12:37:10"
         },
-        "funcionario/cuerpo-superior-arqueologia": {
-          "categoria": "Arqueología",
+        "funcionario/cuerpo-ejecutivo-escala-administrativa-de-informatica": {
+          "categoria": "Escala Administrativa de Informática",
+          "fecha_modificacion": "2026-08-06",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-escala-administrativa-de-informatica",
+          "consultado": "2026-09-08T12:37:10"
+        },
+        "funcionario/cuerpo-ejecutivo-escala-administrativa-de-prevencion-de-riesgos": {
+          "categoria": "Escala Administrativa de Prevención de Riesgos Laborales",
+          "fecha_modificacion": "2026-09-02",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-escala-administrativa-de-prevencion-de-riesgos",
+          "consultado": "2026-09-08T12:37:10"
+        },
+        "funcionario/cuerpo-ejecutivo-escala-administrativa-de-archivos-y-bibliotecas": {
+          "categoria": "Escala Administrativa de Archivos y Bibliotecas",
           "fecha_modificacion": "2026-09-03",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-arqueologia",
-          "consultado": "2026-09-07T12:09:40"
-        },
-        "funcionario/cuerpo-superior-biologia": {
-          "categoria": "Biología",
-          "fecha_modificacion": "2026-08-19",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-biologia",
-          "consultado": "2026-09-07T12:09:40"
-        },
-        "funcionario/cuerpo-superior-ciencias-ambientales": {
-          "categoria": "Ciencias Ambientales",
-          "fecha_modificacion": "2026-08-19",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ciencias-ambientales",
-          "consultado": "2026-09-07T12:09:41"
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-ejecutivo-escala-administrativa-de-archivos-y-bibliotecas",
+          "consultado": "2026-09-08T12:37:10"
         },
         "funcionario/cuerpo-superior-arquitectura": {
           "categoria": "Arquitectura",
           "fecha_modificacion": "2026-09-02",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-arquitectura",
-          "consultado": "2026-09-07T12:09:41"
+          "consultado": "2026-09-08T12:37:11"
         },
-        "funcionario/cuerpo-superior-economica": {
-          "categoria": "Económica",
-          "fecha_modificacion": "2026-08-11",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-economica",
-          "consultado": "2026-09-07T12:09:42"
+        "funcionario/cuerpo-superior-arqueologia": {
+          "categoria": "Arqueología",
+          "fecha_modificacion": "2026-09-03",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-arqueologia",
+          "consultado": "2026-09-08T12:37:11"
         },
-        "funcionario/cuerpo-superior-escala-sociosanitaria-psicologia": {
-          "categoria": "Escala Sociosanitaria. Psicología",
-          "fecha_modificacion": "2022-10-07",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-sociosanitaria-psicologia",
-          "consultado": "2026-09-07T12:09:42"
+        "funcionario/cuerpo-superior-biologia": {
+          "categoria": "Biología",
+          "fecha_modificacion": "2026-08-19",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-biologia",
+          "consultado": "2026-09-08T12:37:12"
+        },
+        "funcionario/cuerpo-superior-ciencias-ambientales": {
+          "categoria": "Ciencias Ambientales",
+          "fecha_modificacion": "2026-08-19",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ciencias-ambientales",
+          "consultado": "2026-09-08T12:37:12"
         },
         "funcionario/cuerpo-superior-de-investigacion-recursos-fitogeneticos": {
           "categoria": "Recursos Fitogenéticos",
           "fecha_modificacion": "2026-01-26",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-de-investigacion-recursos-fitogeneticos",
-          "consultado": "2026-09-07T12:09:42"
+          "consultado": "2026-09-08T12:37:12"
         },
         "funcionario/cuerpo-superior-cuerpo-de-letrados": {
           "categoria": "Cuerpo de Letrados",
           "fecha_modificacion": "2026-08-03",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-cuerpo-de-letrados",
-          "consultado": "2026-09-07T12:09:42"
+          "consultado": "2026-09-08T12:37:13"
+        },
+        "funcionario/cuerpo-superior-economica": {
+          "categoria": "Económica",
+          "fecha_modificacion": "2026-08-11",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-economica",
+          "consultado": "2026-09-08T12:37:13"
+        },
+        "funcionario/cuerpo-superior-escala-sociosanitaria-psicologia": {
+          "categoria": "Escala Sociosanitaria. Psicología",
+          "fecha_modificacion": "2022-10-07",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-sociosanitaria-psicologia",
+          "consultado": "2026-09-08T12:37:13"
         },
         "funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y": {
           "categoria": "Escala Superior de Archivos, Bibliotecas y Museos.Bibliotecas",
           "fecha_modificacion": "2026-09-03",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y",
-          "consultado": "2026-09-07T12:09:43"
-        },
-        "funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos": {
-          "categoria": "Escala Superior de Archivos, Bibliotecas y Museos. Archivos",
-          "fecha_modificacion": "2026-08-11",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos",
-          "consultado": "2026-09-07T12:09:43"
-        },
-        "funcionario/cuerpo-superior-escala-superior-de-prevencion-de-riesgos-laborales": {
-          "categoria": "Escala Superior de Prevención de Riesgos Laborales - Medicina del Trabajo",
-          "fecha_modificacion": "2026-08-11",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-prevencion-de-riesgos-laborales",
-          "consultado": "2026-09-07T12:09:44"
+          "consultado": "2026-09-08T12:37:13"
         },
         "funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos-museos": {
           "categoria": "Escala Superior de Archivos, Bibliotecas y Museos. Museos",
           "fecha_modificacion": "2026-09-03",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos-museos",
-          "consultado": "2026-09-07T12:09:44"
+          "consultado": "2026-09-08T12:37:14"
+        },
+        "funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos": {
+          "categoria": "Escala Superior de Archivos, Bibliotecas y Museos. Archivos",
+          "fecha_modificacion": "2026-08-11",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos",
+          "consultado": "2026-09-08T12:37:14"
         },
         "funcionario/cuerpo-superior-escala-superior-de-sistemas-y-tecnologias-de-la": {
           "categoria": "Escala Superior de Sistemas y Tecnologías de la Información",
           "fecha_modificacion": "2026-08-06",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-sistemas-y-tecnologias-de-la",
-          "consultado": "2026-09-07T12:09:45"
+          "consultado": "2026-09-08T12:37:14"
+        },
+        "funcionario/cuerpo-superior-escala-superior-de-prevencion-de-riesgos-laborales": {
+          "categoria": "Escala Superior de Prevención de Riesgos Laborales - Medicina del Trabajo",
+          "fecha_modificacion": "2026-08-11",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-de-prevencion-de-riesgos-laborales",
+          "consultado": "2026-09-08T12:37:14"
         },
         "funcionario/cuerpo-superior-escala-superior-sanitarios-locales-farmacia": {
           "categoria": "Escala Superior Sanitarios Locales - Farmacia",
           "fecha_modificacion": "2026-07-03",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-sanitarios-locales-farmacia",
-          "consultado": "2026-09-07T12:09:45"
-        },
-        "funcionario/cuerpo-superior-farmacia": {
-          "categoria": "Farmacia",
-          "fecha_modificacion": "2026-09-01",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-farmacia",
-          "consultado": "2026-09-07T12:09:45"
+          "consultado": "2026-09-08T12:37:15"
         },
         "funcionario/cuerpo-superior-escala-superior-sanitarios-locales-veterinaria": {
           "categoria": "Escala Superior Sanitarios Locales - Veterinaria",
           "fecha_modificacion": "2026-07-10",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-escala-superior-sanitarios-locales-veterinaria",
-          "consultado": "2026-09-07T12:09:57"
+          "consultado": "2026-09-08T12:37:15"
+        },
+        "funcionario/cuerpo-superior-farmacia": {
+          "categoria": "Farmacia",
+          "fecha_modificacion": "2026-09-01",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-farmacia",
+          "consultado": "2026-09-08T12:37:15"
         },
         "funcionario/cuerpo-superior-ingenieria-agronomica": {
           "categoria": "Ingeniería Agronómica",
           "fecha_modificacion": "2026-08-06",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ingenieria-agronomica",
-          "consultado": "2026-09-07T12:09:58"
+          "consultado": "2026-09-08T12:37:15"
         },
         "funcionario/cuerpo-superior-ingenieria-de-caminos-canales-y-puertos": {
           "categoria": "Ingenieria de Caminos, Canales y Puertos",
           "fecha_modificacion": "2026-08-06",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ingenieria-de-caminos-canales-y-puertos",
-          "consultado": "2026-09-07T12:09:58"
-        },
-        "funcionario/cuerpo-superior-ingenieria-de-minas": {
-          "categoria": "Ingeniería de Minas",
-          "fecha_modificacion": "2025-05-05",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ingenieria-de-minas",
-          "consultado": "2026-09-07T12:09:59"
+          "consultado": "2026-09-08T12:37:16"
         },
         "funcionario/cuerpo-superior-ingenieria-industrial": {
           "categoria": "Ingeniería Industrial",
           "fecha_modificacion": "2026-08-19",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-ingenieria-industrial",
-          "consultado": "2026-09-07T12:09:59"
+          "consultado": "2026-09-08T12:37:17"
+        },
+        "funcionario/cuerpo-superior-juridica": {
+          "categoria": "Jurídica",
+          "fecha_modificacion": "2026-09-01",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-juridica",
+          "consultado": "2026-09-08T12:37:17"
+        },
+        "funcionario/cuerpo-superior-medicina": {
+          "categoria": "Medicina",
+          "fecha_modificacion": "2026-09-01",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-medicina",
+          "consultado": "2026-09-08T12:37:30"
         },
         "funcionario/cuerpo-superior-patrimonio-historico": {
           "categoria": "Patrimonio histórico",
           "fecha_modificacion": "2026-09-03",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-patrimonio-historico",
-          "consultado": "2026-09-07T12:10:01"
+          "consultado": "2026-09-08T12:37:30"
         },
         "funcionario/cuerpo-superior-psicologia": {
           "categoria": "Psicología",
           "fecha_modificacion": "2026-09-01",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-psicologia",
-          "consultado": "2026-09-07T12:10:03"
+          "consultado": "2026-09-08T12:37:31"
         },
         "funcionario/cuerpo-superior-quimica": {
           "categoria": "Química",
           "fecha_modificacion": "2026-09-01",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-quimica",
-          "consultado": "2026-09-07T12:10:16"
+          "consultado": "2026-09-08T12:37:31"
         },
         "funcionario/cuerpo-superior-veterinaria": {
           "categoria": "Veterinaria",
           "fecha_modificacion": "2026-08-06",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-superior-veterinaria",
-          "consultado": "2026-09-07T12:10:17"
+          "consultado": "2026-09-08T12:37:32"
         },
         "funcionario/cuerpo-tecnico-arquitectura-tecnica": {
           "categoria": "Arquitectura Técnica",
           "fecha_modificacion": "2026-09-02",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-arquitectura-tecnica",
-          "consultado": "2026-09-07T12:10:19"
+          "consultado": "2026-09-08T12:37:32"
         },
         "funcionario/cuerpo-tecnico-enfermeria": {
           "categoria": "Enfermería",
           "fecha_modificacion": "2026-09-01",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-enfermeria",
-          "consultado": "2026-09-07T12:10:23"
+          "consultado": "2026-09-08T12:37:33"
+        },
+        "funcionario/cuerpo-tecnico-escala-educativa": {
+          "categoria": "Escala Educativa",
+          "fecha_modificacion": "2026-08-24",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-educativa",
+          "consultado": "2026-09-08T12:37:46"
         },
         "funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria": {
           "categoria": "Escala Sociosanitaria. Enfermería",
           "fecha_modificacion": "2022-09-20",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
-          "consultado": "2026-09-07T12:10:36"
+          "consultado": "2026-09-08T12:37:53"
         },
         "funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia": {
           "categoria": "Escala Sociosanitaria. Fisioterapia",
           "fecha_modificacion": "2024-09-04",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
-          "consultado": "2026-09-07T12:10:38"
+          "consultado": "2026-09-08T12:37:59"
         },
-        "funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos": {
-          "categoria": "Escala Técnica de Archivos, Bibliotecas y Museos. Bibliotecas",
+        "funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos": {
+          "categoria": "Escala Técnica de Archivos, Bibliotecas y Museos. Museos",
           "fecha_modificacion": "2026-09-03",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
-          "consultado": "2026-09-07T12:10:39"
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
+          "consultado": "2026-09-08T12:38:01"
+        },
+        "funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales": {
+          "categoria": "Escala Técnica de Prevención de Riesgos Laborales - General",
+          "fecha_modificacion": "2026-09-02",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+          "consultado": "2026-09-08T12:38:02"
+        },
+        "funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales": {
+          "categoria": "Escala Técnica de Prevención en Riesgos Laborales- Enfermería del Trabajo",
+          "fecha_modificacion": "2026-08-11",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
+          "consultado": "2026-09-08T12:38:05"
+        },
+        "funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica": {
+          "categoria": "Escala Técnica de Sistemas e Informática",
+          "fecha_modificacion": "2026-08-06",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+          "consultado": "2026-09-08T12:38:06"
         },
         "funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos": {
           "categoria": "Escala Técnica de Archivos, Bibliotecas y Museos. Archivos",
           "fecha_modificacion": "2026-08-11",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
-          "consultado": "2026-09-07T12:10:40"
+          "consultado": "2026-09-08T12:38:09"
         },
-        "funcionario/cuerpo-tecnico-fisioterapia": {
-          "categoria": "Fisioterapia",
-          "fecha_modificacion": "2026-08-24",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-fisioterapia",
-          "consultado": "2026-09-07T12:11:09"
+        "funcionario/cuerpo-tecnico-gestion-administrativa": {
+          "categoria": "Gestión Administrativa",
+          "fecha_modificacion": "2026-09-01",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-gestion-administrativa",
+          "consultado": "2026-09-08T12:38:22"
         },
-        "funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas": {
-          "categoria": "Ingeniería Técnica de Minas",
-          "fecha_modificacion": "2026-08-19",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-          "consultado": "2026-09-07T12:11:12"
+        "funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas": {
+          "categoria": "Ingeniería Técnica de Obras Públicas",
+          "fecha_modificacion": "2026-04-08",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
+          "consultado": "2026-09-08T12:38:27"
+        },
+        "funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola": {
+          "categoria": "Ingeniería Técnica Agrícola",
+          "fecha_modificacion": "2026-08-06",
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+          "consultado": "2026-09-08T12:38:30"
         },
         "funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal": {
           "categoria": "Ingeniería Técnica Forestal",
           "fecha_modificacion": "2026-08-19",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
-          "consultado": "2026-09-07T12:11:34"
+          "consultado": "2026-09-08T12:38:31"
         },
-        "funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial": {
-          "categoria": "Ingeniería Técnica Industrial",
-          "fecha_modificacion": "2026-08-19",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-          "consultado": "2026-09-07T12:11:35"
-        },
-        "funcionario/cuerpo-tecnico-terapia-ocupacional": {
-          "categoria": "Terapia Ocupacional",
+        "funcionario/cuerpo-tecnico-logopedia": {
+          "categoria": "Logopedia",
           "fecha_modificacion": "2026-09-07",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-terapia-ocupacional",
-          "consultado": "2026-09-07T12:11:37"
-        },
-        "laboral/grupo-iii-auxiliar-tecnico-educativo": {
-          "categoria": "Auxiliar Técnico Educativo",
-          "fecha_modificacion": "2026-08-27",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-auxiliar-tecnico-educativo",
-          "consultado": "2026-09-07T12:11:38"
+          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-funcionario/cuerpo-tecnico-logopedia",
+          "consultado": "2026-09-08T12:38:44"
         },
         "laboral/grupo-iv-auxiliar-de-laboratorio": {
           "categoria": "Auxiliar de Laboratorio",
           "fecha_modificacion": "2026-09-07",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-auxiliar-de-laboratorio",
-          "consultado": "2026-09-07T12:12:51"
-        },
-        "laboral/grupo-iv-auxiliar-de-enfermeria": {
-          "categoria": "Auxiliar de Enfermería",
-          "fecha_modificacion": "2026-09-07",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-auxiliar-de-enfermeria",
-          "consultado": "2026-09-07T12:12:51"
-        },
-        "laboral/grupo-iv-vigilante-de-carreteras": {
-          "categoria": "Vigilante de Carreteras",
-          "fecha_modificacion": "2026-07-24",
-          "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-vigilante-de-carreteras",
-          "consultado": "2026-09-07T12:12:57"
+          "consultado": "2026-09-08T12:40:07"
         },
         "laboral/grupo-v-ordenanza": {
           "categoria": "Ordenanza",
           "fecha_modificacion": "2026-08-27",
           "url_pagina": "https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-v-ordenanza",
-          "consultado": "2026-09-07T12:13:24"
+          "consultado": "2026-09-08T12:40:48"
         }
       },
       "errores": [
-        "funcionario/cuerpo-superior-ingenieria-de-montes: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-superior-ingenieria-de-montes (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6b73d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-superior-medicina: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-superior-medicina (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6aa550>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-superior-juridica: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-superior-juridica (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6b7bd0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-educacion-social: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-educacion-social (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6b63d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6d6590>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-educativa: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-educativa (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6d6210>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6c64d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6d7b10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6c7dd0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0 (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6c6a50>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6abf10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-gestion-administrativa: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-gestion-administrativa (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe9713e4210>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6dd710>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6de0d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6a9590>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-encargadoa-agrario-y-medio-ambiental: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-encargadoa-agrario-y-medio-ambiental",
-        "funcionario/cuerpo-tecnico-logopedia: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-logopedia (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6d54d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "funcionario/cuerpo-tecnico-trabajo-social: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-trabajo-social (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6d7750>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-cocineroa: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-cocineroa (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e689890>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-encargadoa-general-obras-publicas: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-encargadoa-general-obras-publicas",
-        "laboral/grupo-iii-encargadoa-de-servicios: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-encargadoa-de-servicios (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6dea10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-encargadoa-general-agrario-y-medio-ambiental: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-encargadoa-general-agrario-y-medio-ambiental (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6e88d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-superior-ingenieria-de-minas: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-superior-ingenieria-de-minas (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d9cb90>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-superior-ingenieria-de-montes: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-superior-ingenieria-de-montes (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d955d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-educacion-social: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-educacion-social (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3da4ed0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3ddb310>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3ddaf50>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0 (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3de9750>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-fisioterapia: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-fisioterapia (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3dd9c90>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d9f710>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d97d10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3de9cd0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-terapia-ocupacional: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-terapia-ocupacional (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3deac90>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "funcionario/cuerpo-tecnico-trabajo-social: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-funcionario/cuerpo-tecnico-trabajo-social (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3ded110>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-encargadoa-de-servicios: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-encargadoa-de-servicios",
+        "laboral/grupo-iii-encargadoa-general-agrario-y-medio-ambiental: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-encargadoa-general-agrario-y-medio-ambiental",
+        "laboral/grupo-iii-encargadoa-general-de-servicios: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-encargadoa-general-de-servicios",
+        "laboral/grupo-iii-auxiliar-tecnico-educativo: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-auxiliar-tecnico-educativo (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3deeb50>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-cocineroa: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-cocineroa (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3deb6d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-encargadoa-obras-publicas: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-encargadoa-obras-publicas",
         "laboral/grupo-iii-jefea-de-mantenimiento: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-jefea-de-mantenimiento",
-        "laboral/grupo-iii-encargadoa-general-de-servicios: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-encargadoa-general-de-servicios (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6ea310>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-monitora-de-medio-ambiente: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-monitora-de-medio-ambiente",
-        "laboral/grupo-iii-encargadoa-obras-publicas: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-encargadoa-obras-publicas (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6ddd10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-especialista-de-laboratorio: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-especialista-de-laboratorio (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6b5210>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-especialista-de-laboratorio: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-especialista-de-laboratorio",
+        "laboral/grupo-iii-encargadoa-agrario-y-medio-ambiental: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-encargadoa-agrario-y-medio-ambiental (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d9ca50>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-monitora-jefe-de-taller: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-monitora-jefe-de-taller",
+        "laboral/grupo-iii-encargadoa-general-obras-publicas: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-encargadoa-general-obras-publicas (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d97850>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-operadora-maquinaria-pesada: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-operadora-maquinaria-pesada",
         "laboral/grupo-iii-tec-especialista-en-lengua-de-signos: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-tec-especialista-en-lengua-de-signos",
-        "laboral/grupo-iii-monitora-de-centro: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-monitora-de-centro (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6c5e10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
         "laboral/grupo-iii-verificadora: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-verificadora",
-        "laboral/grupo-iii-monitora-jefe-de-taller: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-monitora-jefe-de-taller (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e688b10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iii-operadora-maquinaria-pesada: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-operadora-maquinaria-pesada (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6ab2d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iv-conductora: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-conductora",
-        "laboral/grupo-iv-mecanicoa: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-mecanicoa",
+        "laboral/grupo-iii-monitora-de-centro: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-monitora-de-centro (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3da7c90>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-monitora-de-medio-ambiente: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-monitora-de-medio-ambiente (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3ddba90>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iii-tecespecialista-en-jardin-de-infancia: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iii-tecespecialista-en-jardin-de-infancia (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3dee490>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iv-auxiliar-de-enfermeria: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-auxiliar-de-enfermeria (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3dee350>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iv-ayudante-de-cocina: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-ayudante-de-cocina (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3dd9390>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
         "laboral/grupo-iv-oficial-primera-agrario-y-medio-ambiental: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-oficial-primera-agrario-y-medio-ambiental",
-        "laboral/grupo-iv-oficial-primera-mantenimiento: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-oficial-primera-mantenimiento",
-        "laboral/grupo-iii-tecespecialista-en-jardin-de-infancia: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iii-tecespecialista-en-jardin-de-infancia",
-        "laboral/grupo-iv-vigilante-de-obras: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-vigilante-de-obras",
-        "laboral/grupo-iv-ayudante-de-cocina: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-ayudante-de-cocina (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6def50>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iv-oficial-segunda-agrario-y-medio-ambiental: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-oficial-segunda-agrario-y-medio-ambiental (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6ab4d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
-        "laboral/grupo-iv-oficial-segunda-de-mantenimiento: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-oficial-segunda-de-mantenimiento (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e6dec50>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iv-oficial-segunda-agrario-y-medio-ambiental: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-oficial-segunda-agrario-y-medio-ambiental",
+        "laboral/grupo-iv-conductora: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-conductora (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d9e790>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iv-oficial-segunda-de-mantenimiento: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-iv-oficial-segunda-de-mantenimiento",
+        "laboral/grupo-iv-mecanicoa: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-mecanicoa (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3d941d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iv-oficial-primera-mantenimiento: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-oficial-primera-mantenimiento (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3dea390>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-v-peona-especialista: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-v-peona-especialista",
         "laboral/grupo-v-personal-limpieza-y-servicios-domesticos: 404 Client Error: Not Found for url: https://empleopublico.castillalamancha.es/bolsas/personal-laboral/grupo-v-personal-limpieza-y-servicios-domesticos",
-        "laboral/grupo-v-peona-especialista: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-v-peona-especialista (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7fe96e688510>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))"
+        "laboral/grupo-iv-vigilante-de-carreteras: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-vigilante-de-carreteras (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3dc8f10>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))",
+        "laboral/grupo-iv-vigilante-de-obras: HTTPSConnectionPool(host='empleopublico.castillalamancha.es', port=443): Max retries exceeded with url: /bolsas/personal-laboral/grupo-iv-vigilante-de-obras (Caused by ConnectTimeoutError(<HTTPSConnection(host='empleopublico.castillalamancha.es', port=443) at 0x7f3ea3de81d0>, 'Connection to empleopublico.castillalamancha.es timed out. (connect timeout=12)'))"
       ],
-      "consultado": "2026-09-07T12:13:40"
+      "consultado": "2026-09-08T12:40:56"
     },
     "educacion_disponibles": {
       "num_cuerpos": 9,
@@ -498,59 +508,59 @@
           "nombre": "Maestros",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200597%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:42"
+          "consultado": "2026-09-08T12:40:57"
         },
         "0590": {
           "nombre": "Profesores de Enseñanza Secundaria",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200590%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:43"
+          "consultado": "2026-09-08T12:40:58"
         },
         "0591": {
           "nombre": "PROFESORES TECNICOS DE FORMACION PROFESIONAL",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200591%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:44"
+          "consultado": "2026-09-08T12:41:00"
         },
         "0592": {
           "nombre": "PROFESORES DE ESCUELAS OFICIALES DE IDIOMAS",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200592%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:45"
+          "consultado": "2026-09-08T12:41:01"
         },
         "0593": {
           "nombre": "CATEDRATICOS DE MUSICA Y ARTES ESCENICAS",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200593%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:47"
+          "consultado": "2026-09-08T12:41:02"
         },
         "0594": {
           "nombre": "PROFESORES DE MUSICA Y ARTES ESCENICAS",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200594%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:48"
+          "consultado": "2026-09-08T12:41:03"
         },
         "0595": {
           "nombre": "PROFESORES DE ARTES PLASTICAS Y DISEÑO",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200595%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:49"
+          "consultado": "2026-09-08T12:41:04"
         },
         "0596": {
           "nombre": "MAESTROS DE TALLER DE ARTES PLASTICAS DISEÑO",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200596%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:50"
+          "consultado": "2026-09-08T12:41:06"
         },
         "0598": {
           "nombre": "PROFESORES ESPECIALISTAS EN SECTORES SINGULARES DE FORMACION PROFESIONAL",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-09/Aspirantes%20disponibles%200598%2020260905.pdf",
           "pdf_fecha": "20260905",
-          "consultado": "2026-09-07T12:13:52"
+          "consultado": "2026-09-08T12:41:07"
         }
       },
       "errores": [],
-      "consultado": "2026-09-07T12:13:52"
+      "consultado": "2026-09-08T12:41:07"
     },
     "educacion_bolsa": {
       "num_cuerpos": 9,
@@ -559,59 +569,59 @@
           "nombre": "Maestros",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2025-06/20250624 Admitidos Cuerpo 0597.pdf",
           "pdf_fecha": "20250624",
-          "consultado": "2026-09-07T12:13:55"
+          "consultado": "2026-09-08T12:41:09"
         },
         "0590": {
           "nombre": "Profesores de Enseñanza Secundaria",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0590 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:13:56"
+          "consultado": "2026-09-08T12:41:11"
         },
         "0591": {
           "nombre": "PROFESORES TECNICOS DE FORMACION PROFESIONAL",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0591 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:13:57"
+          "consultado": "2026-09-08T12:41:12"
         },
         "0592": {
           "nombre": "PROFESORES DE ESCUELAS OFICIALES DE IDIOMAS",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0592 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:13:59"
+          "consultado": "2026-09-08T12:41:13"
         },
         "0593": {
           "nombre": "CATEDRATICOS DE MUSICA Y ARTES ESCENICAS",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0593 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:14:00"
+          "consultado": "2026-09-08T12:41:14"
         },
         "0594": {
           "nombre": "PROFESORES DE MUSICA Y ARTES ESCENICAS",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0594 202606222.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:14:01"
+          "consultado": "2026-09-08T12:41:15"
         },
         "0595": {
           "nombre": "PROFESORES DE ARTES PLASTICAS Y DISEÑO",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0595 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:14:02"
+          "consultado": "2026-09-08T12:41:17"
         },
         "0596": {
           "nombre": "MAESTROS DE TALLER DE ARTES PLASTICAS DISEÑO",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0596 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:14:04"
+          "consultado": "2026-09-08T12:41:18"
         },
         "0598": {
           "nombre": "PROFESORES ESPECIALISTAS EN SECTORES SINGULARES DE FORMACION PROFESIONAL",
           "pdf_url": "https://educacion.castillalamancha.es/sites/default/files/2026-06/Admitidos ordinaria 0598 20260622.pdf",
           "pdf_fecha": "20260622",
-          "consultado": "2026-09-07T12:14:05"
+          "consultado": "2026-09-08T12:41:19"
         }
       },
       "errores": [],
-      "consultado": "2026-09-07T12:14:05"
+      "consultado": "2026-09-08T12:41:19"
     }
   }
 }
