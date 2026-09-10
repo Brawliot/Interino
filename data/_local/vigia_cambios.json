@@ -1,18 +1,9 @@
 {
-  "generado": "2026-09-09T12:46:25",
+  "generado": "2026-09-10T12:46:14",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-ingenieria-de-montes",
-    "admin:funcionario/cuerpo-superior-ingenieria-de-minas",
-    "admin:funcionario/cuerpo-tecnico-educacion-social",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
-    "admin:funcionario/cuerpo-tecnico-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:laboral/grupo-iv-ayudante-de-cocina"
+    "admin:funcionario/cuerpo-superior-arquitectura",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria"
   ]
 }
