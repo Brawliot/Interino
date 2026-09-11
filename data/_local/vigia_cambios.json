@@ -1,9 +1,25 @@
 {
-  "generado": "2026-09-10T12:46:14",
+  "generado": "2026-09-11T12:41:27",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-arquitectura",
-    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria"
+    "admin:funcionario/cuerpo-ejecutivo-escala-administrativa-de-informatica",
+    "admin:funcionario/cuerpo-superior-economica",
+    "admin:funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos",
+    "admin:funcionario/cuerpo-superior-escala-superior-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-superior-escala-superior-de-sistemas-y-tecnologias-de-la",
+    "admin:funcionario/cuerpo-superior-ingenieria-de-minas",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
+    "admin:funcionario/cuerpo-tecnico-logopedia",
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
+    "educacion:disponibles:0597",
+    "educacion:disponibles:0590",
+    "educacion:disponibles:0591",
+    "educacion:disponibles:0592",
+    "educacion:disponibles:0593",
+    "educacion:disponibles:0594",
+    "educacion:disponibles:0595",
+    "educacion:disponibles:0596",
+    "educacion:disponibles:0598"
   ]
 }
