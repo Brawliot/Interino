@@ -1,21 +1,15 @@
 {
-  "generado": "2026-09-12T12:01:43",
+  "generado": "2026-09-13T13:08:50",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-farmacia",
-    "admin:funcionario/cuerpo-superior-ingenieria-industrial",
-    "admin:funcionario/cuerpo-superior-quimica",
-    "admin:funcionario/cuerpo-superior-veterinaria",
-    "admin:funcionario/cuerpo-tecnico-arquitectura-tecnica",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
-    "admin:funcionario/cuerpo-tecnico-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras"
+    "admin:funcionario/cuerpo-tecnico-escala-educativa",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
+    "admin:funcionario/cuerpo-tecnico-logopedia",
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
+    "admin:laboral/grupo-v-ordenanza"
   ]
 }
