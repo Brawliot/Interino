@@ -1,15 +1,7 @@
 {
-  "generado": "2026-09-13T13:08:50",
+  "generado": "2026-09-14T14:47:20",
   "cambios": [
-    "admin:funcionario/cuerpo-tecnico-escala-educativa",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-vigilante-de-carreteras"
   ]
 }
