@@ -1,15 +1,19 @@
 {
-  "generado": "2026-09-15T13:12:08",
+  "generado": "2026-09-16T13:10:54",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-ingenieria-de-montes",
-    "admin:funcionario/cuerpo-superior-patrimonio-historico",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-farmacia",
+    "admin:funcionario/cuerpo-superior-ingenieria-industrial",
+    "admin:funcionario/cuerpo-tecnico-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
   ]
 }
