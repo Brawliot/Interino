@@ -1,21 +1,17 @@
 {
-  "generado": "2026-09-17T13:05:01",
+  "generado": "2026-09-18T12:44:13",
   "cambios": [
-    "sanidad:licenciados",
-    "admin:funcionario/cuerpo-superior-ingenieria-de-caminos-canales-y-puertos",
-    "admin:funcionario/cuerpo-superior-ingenieria-de-minas",
-    "admin:funcionario/cuerpo-superior-quimica",
-    "admin:funcionario/cuerpo-tecnico-arquitectura-tecnica",
-    "admin:funcionario/cuerpo-tecnico-enfermeria",
-    "admin:funcionario/cuerpo-tecnico-escala-educativa",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-ingenieria-de-montes",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
+    "educacion:disponibles:0597",
+    "educacion:disponibles:0590",
+    "educacion:disponibles:0591",
+    "educacion:disponibles:0592",
+    "educacion:disponibles:0593",
+    "educacion:disponibles:0594",
+    "educacion:disponibles:0595",
+    "educacion:disponibles:0596",
+    "educacion:disponibles:0598"
   ]
 }
