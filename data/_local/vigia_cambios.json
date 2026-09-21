@@ -1,7 +1,9 @@
 {
-  "generado": "2026-09-20T12:54:38",
+  "generado": "2026-09-21T14:52:31",
   "cambios": [
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria"
+    "admin:funcionario/cuerpo-tecnico-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
   ]
 }
