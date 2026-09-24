@@ -1,12 +1,14 @@
 {
-  "generado": "2026-09-23T13:25:15",
+  "generado": "2026-09-24T13:15:49",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-arquitectura",
-    "admin:funcionario/cuerpo-superior-escala-superior-de-sistemas-y-tecnologias-de-la",
-    "admin:funcionario/cuerpo-superior-veterinaria",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
+    "admin:funcionario/cuerpo-superior-escala-superior-sanitarios-locales-veterinaria",
+    "admin:funcionario/cuerpo-tecnico-escala-educativa",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
+    "admin:laboral/grupo-iv-ayudante-de-cocina",
+    "admin:laboral/grupo-v-ordenanza"
   ]
 }
