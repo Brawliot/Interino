@@ -1,23 +1,18 @@
 {
-  "generado": "2026-09-25T13:18:56",
+  "generado": "2026-09-26T12:42:02",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-ingenieria-de-montes",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras",
-    "educacion:disponibles:0597",
-    "educacion:disponibles:0590",
-    "educacion:disponibles:0591",
-    "educacion:disponibles:0592",
-    "educacion:disponibles:0593",
-    "educacion:disponibles:0594",
-    "educacion:disponibles:0595",
-    "educacion:disponibles:0596",
-    "educacion:disponibles:0598"
+    "admin:funcionario/cuerpo-superior-juridica",
+    "admin:funcionario/cuerpo-superior-medicina",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
+    "admin:funcionario/cuerpo-tecnico-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
+    "admin:laboral/grupo-v-ordenanza"
   ]
 }
