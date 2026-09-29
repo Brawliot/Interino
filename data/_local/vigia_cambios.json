@@ -1,14 +1,9 @@
 {
-  "generado": "2026-09-28T16:28:54",
+  "generado": "2026-09-29T14:38:49",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-ingenieria-industrial",
-    "admin:funcionario/cuerpo-superior-veterinaria",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria"
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
+    "admin:laboral/grupo-iv-vigilante-de-carreteras"
   ]
 }
