@@ -1,9 +1,6 @@
 {
-  "generado": "2026-09-29T14:38:49",
+  "generado": "2026-09-30T14:40:33",
   "cambios": [
-    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras"
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria"
   ]
 }
