@@ -1,6 +1,17 @@
 {
-  "generado": "2026-09-30T14:40:33",
+  "generado": "2026-10-01T15:09:14",
   "cambios": [
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria"
+    "admin:funcionario/cuerpo-ejecutivo-administrativos",
+    "admin:funcionario/cuerpo-auxiliar-auxiliar",
+    "admin:funcionario/cuerpo-superior-administracion-general",
+    "admin:funcionario/cuerpo-superior-arquitectura",
+    "admin:funcionario/cuerpo-superior-juridica",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
   ]
 }
