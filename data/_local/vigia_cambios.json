@@ -1,14 +1,7 @@
 {
-  "generado": "2026-10-03T13:03:35",
+  "generado": "2026-10-04T13:44:08",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-veterinaria",
-    "admin:funcionario/cuerpo-tecnico-arquitectura-tecnica",
-    "admin:funcionario/cuerpo-tecnico-escala-educativa",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
+    "admin:laboral/grupo-v-ordenanza"
   ]
 }
