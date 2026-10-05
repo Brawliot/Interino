@@ -1,7 +1,22 @@
 {
-  "generado": "2026-10-04T13:44:08",
+  "generado": "2026-10-05T16:50:51",
   "cambios": [
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-auxiliar-escala-auxiliar-de-archivos-y-bibliotecas",
+    "admin:funcionario/cuerpo-ejecutivo-escala-administrativa-de-archivos-y-bibliotecas",
+    "admin:funcionario/cuerpo-superior-arqueologia",
+    "admin:funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y",
+    "admin:funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos-museos",
+    "admin:funcionario/cuerpo-superior-patrimonio-historico",
+    "admin:funcionario/cuerpo-superior-psicologia",
+    "admin:funcionario/cuerpo-tecnico-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:funcionario/cuerpo-tecnico-logopedia",
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iv-ayudante-de-cocina"
   ]
 }
