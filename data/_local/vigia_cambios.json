@@ -1,13 +1,13 @@
 {
-  "generado": "2026-10-12T17:25:40",
+  "generado": "2026-10-13T15:37:21",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-psicologia",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
-    "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras"
+    "admin:funcionario/cuerpo-agente-medioambiental-agente-medioambiental",
+    "admin:funcionario/cuerpo-superior-biologia",
+    "admin:funcionario/cuerpo-superior-ciencias-ambientales",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
+    "admin:laboral/grupo-v-ordenanza"
   ]
 }
