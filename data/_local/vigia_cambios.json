@@ -1,13 +1,21 @@
 {
-  "generado": "2026-10-13T15:37:21",
+  "generado": "2026-10-14T13:20:25",
   "cambios": [
-    "admin:funcionario/cuerpo-agente-medioambiental-agente-medioambiental",
-    "admin:funcionario/cuerpo-superior-biologia",
-    "admin:funcionario/cuerpo-superior-ciencias-ambientales",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-trabajo-social",
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-ingenieria-de-montes",
+    "admin:funcionario/cuerpo-superior-ingenieria-industrial",
+    "admin:funcionario/cuerpo-superior-juridica",
+    "admin:funcionario/cuerpo-superior-medicina",
+    "admin:funcionario/cuerpo-superior-patrimonio-historico",
+    "admin:funcionario/cuerpo-tecnico-arquitectura-tecnica",
+    "admin:funcionario/cuerpo-tecnico-enfermeria",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+    "admin:funcionario/cuerpo-tecnico-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
+    "admin:laboral/grupo-iv-vigilante-de-carreteras"
   ]
 }
