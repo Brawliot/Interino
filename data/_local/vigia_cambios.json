@@ -1,9 +1,18 @@
 {
-  "generado": "2026-10-17T12:02:49",
+  "generado": "2026-10-18T12:29:09",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-psicologia",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia"
+    "admin:funcionario/cuerpo-superior-ingenieria-agronomica",
+    "admin:funcionario/cuerpo-superior-medicina",
+    "admin:funcionario/cuerpo-superior-veterinaria",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-ayudante-de-cocina"
   ]
 }
