@@ -1,7 +1,10 @@
 {
-  "generado": "2026-10-19T15:19:30",
+  "generado": "2026-10-20T13:23:53",
   "cambios": [
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-ingenieria-de-caminos-canales-y-puertos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
+    "admin:funcionario/cuerpo-tecnico-logopedia",
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social"
   ]
 }
