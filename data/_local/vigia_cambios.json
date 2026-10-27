@@ -1,21 +1,9 @@
 {
-  "generado": "2026-10-23T13:07:13",
+  "generado": "2026-10-27T13:59:57",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-quimica",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
-    "admin:funcionario/cuerpo-tecnico-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "educacion:disponibles:0597",
-    "educacion:disponibles:0590",
-    "educacion:disponibles:0591",
-    "educacion:disponibles:0592",
-    "educacion:disponibles:0593",
-    "educacion:disponibles:0594",
-    "educacion:disponibles:0595",
-    "educacion:disponibles:0596",
-    "educacion:disponibles:0598"
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-ayudante-de-cocina",
+    "admin:laboral/grupo-iv-vigilante-de-carreteras",
+    "admin:laboral/grupo-v-ordenanza"
   ]
 }
