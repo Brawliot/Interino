@@ -1,9 +1,10 @@
 {
-  "generado": "2026-10-27T13:59:57",
+  "generado": "2026-10-28T14:53:19",
   "cambios": [
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
-    "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-tecnico-enfermeria",
+    "admin:funcionario/cuerpo-tecnico-escala-educativa",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
   ]
 }
