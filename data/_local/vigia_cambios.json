@@ -1,7 +1,20 @@
 {
-  "generado": "2026-10-29T14:59:37",
+  "generado": "2026-10-30T14:53:03",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-escala-superior-sanitarios-locales-veterinaria",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-arquitectura",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-ayudante-de-cocina",
+    "educacion:disponibles:0597",
+    "educacion:disponibles:0590",
+    "educacion:disponibles:0591",
+    "educacion:disponibles:0592",
+    "educacion:disponibles:0593",
+    "educacion:disponibles:0594",
+    "educacion:disponibles:0595",
+    "educacion:disponibles:0596",
+    "educacion:disponibles:0598"
   ]
 }
