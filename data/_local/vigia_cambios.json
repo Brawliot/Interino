@@ -1,20 +1,19 @@
 {
-  "generado": "2026-10-30T14:53:03",
+  "generado": "2026-10-31T14:20:25",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-arquitectura",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
-    "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "educacion:disponibles:0597",
-    "educacion:disponibles:0590",
-    "educacion:disponibles:0591",
-    "educacion:disponibles:0592",
-    "educacion:disponibles:0593",
-    "educacion:disponibles:0594",
-    "educacion:disponibles:0595",
-    "educacion:disponibles:0596",
-    "educacion:disponibles:0598"
+    "admin:funcionario/cuerpo-superior-escala-superior-sanitarios-locales-veterinaria",
+    "admin:funcionario/cuerpo-superior-ingenieria-de-minas",
+    "admin:funcionario/cuerpo-superior-psicologia",
+    "admin:funcionario/cuerpo-tecnico-arquitectura-tecnica",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo"
   ]
 }
