@@ -1,12 +1,6 @@
 {
-  "generado": "2026-11-01T14:47:06",
+  "generado": "2026-11-02T17:51:40",
   "cambios": [
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-iv-vigilante-de-carreteras",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica"
   ]
 }
