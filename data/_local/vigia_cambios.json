@@ -1,15 +1,15 @@
 {
-  "generado": "2026-11-07T14:43:38",
+  "generado": "2026-11-08T14:47:36",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-farmacia",
-    "admin:funcionario/cuerpo-superior-medicina",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-quimica",
+    "admin:funcionario/cuerpo-tecnico-enfermeria",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iv-vigilante-de-carreteras"
   ]
 }
