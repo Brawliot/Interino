@@ -1,8 +1,27 @@
 {
-  "generado": "2026-11-09T18:22:09",
+  "generado": "2026-11-10T16:08:01",
   "cambios": [
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
+    "admin:funcionario/cuerpo-superior-ingenieria-agronomica",
+    "admin:funcionario/cuerpo-superior-ingenieria-de-minas",
+    "admin:funcionario/cuerpo-superior-patrimonio-historico",
+    "admin:funcionario/cuerpo-tecnico-educacion-social",
+    "admin:funcionario/cuerpo-superior-veterinaria",
+    "admin:funcionario/cuerpo-tecnico-enfermeria",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
+    "admin:funcionario/cuerpo-tecnico-logopedia",
+    "admin:funcionario/cuerpo-tecnico-terapia-ocupacional",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
     "admin:laboral/grupo-iv-ayudante-de-cocina",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:laboral/grupo-iv-vigilante-de-carreteras"
   ]
 }
