@@ -1,16 +1,9 @@
 {
-  "generado": "2026-11-11T15:53:20",
+  "generado": "2026-11-12T16:38:00",
   "cambios": [
-    "admin:funcionario/cuerpo-ejecutivo-escala-administrativa-de-informatica",
-    "admin:funcionario/cuerpo-superior-economica",
-    "admin:funcionario/cuerpo-superior-escala-superior-de-archivos-bibliotecas-y-museos",
-    "admin:funcionario/cuerpo-superior-escala-superior-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-superior-escala-superior-de-sistemas-y-tecnologias-de-la",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
-    "admin:laboral/grupo-iii-auxiliar-tecnico-educativo",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
+    "admin:funcionario/cuerpo-tecnico-trabajo-social",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
   ]
 }
