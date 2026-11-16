@@ -1,11 +1,18 @@
 {
-  "generado": "2026-11-15T15:23:11",
+  "generado": "2026-11-16T17:59:01",
   "cambios": [
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-obras-publicas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-en-topografia",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-industrial",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio",
-    "admin:laboral/grupo-v-ordenanza"
+    "admin:funcionario/cuerpo-superior-psicologia",
+    "admin:funcionario/cuerpo-superior-veterinaria",
+    "admin:funcionario/cuerpo-tecnico-escala-educativa",
+    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-archivos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-archivos-bibliotecas-y-museos-museos",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-de-riesgos-laborales-0",
+    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-vigilante-de-carreteras"
   ]
 }
