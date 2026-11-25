@@ -1,18 +1,7 @@
 {
-  "generado": "2026-11-24T19:21:02",
+  "generado": "2026-11-25T18:27:44",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-juridica",
-    "admin:funcionario/cuerpo-superior-patrimonio-historico",
-    "admin:funcionario/cuerpo-superior-quimica",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-educacion-social",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-enfermeria",
-    "admin:funcionario/cuerpo-tecnico-escala-sociosanitaria-fisioterapia",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-prevencion-en-riesgos-laborales",
-    "admin:funcionario/cuerpo-tecnico-escala-tecnica-de-sistemas-e-informatica",
-    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-de-minas",
-    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-forestal",
-    "admin:funcionario/cuerpo-tecnico-logopedia",
-    "admin:laboral/grupo-iv-auxiliar-de-laboratorio"
+    "admin:funcionario/cuerpo-superior-ingenieria-industrial",
+    "admin:funcionario/cuerpo-superior-psicologia"
   ]
 }
