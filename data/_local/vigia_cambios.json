@@ -1,7 +1,10 @@
 {
-  "generado": "2026-11-25T18:27:44",
+  "generado": "2026-11-26T18:09:54",
   "cambios": [
-    "admin:funcionario/cuerpo-superior-ingenieria-industrial",
-    "admin:funcionario/cuerpo-superior-psicologia"
+    "admin:funcionario/cuerpo-tecnico-fisioterapia",
+    "admin:funcionario/cuerpo-tecnico-ingenieria-tecnica-agricola",
+    "admin:funcionario/cuerpo-tecnico-gestion-administrativa",
+    "admin:laboral/grupo-iv-auxiliar-de-enfermeria",
+    "admin:laboral/grupo-iv-ayudante-de-cocina"
   ]
 }
